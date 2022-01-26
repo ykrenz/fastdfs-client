@@ -124,7 +124,6 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder stream(InputStream inputStream, long fileSize, long fileOffset) {
-            validateNotNull(inputStream, "inputStream");
             validateGreaterZero(fileSize, "fileSize");
             operations.add(args -> args.inputStream = inputStream);
             operations.add(args -> args.fileSize = fileSize);

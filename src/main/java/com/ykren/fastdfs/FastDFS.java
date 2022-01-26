@@ -1,6 +1,19 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.model.*;
+import com.ykren.fastdfs.model.AbortMultipartRequest;
+import com.ykren.fastdfs.model.AppendFileRequest;
+import com.ykren.fastdfs.model.CompleteMultipartRequest;
+import com.ykren.fastdfs.model.DownloadFileRequest;
+import com.ykren.fastdfs.model.FileInfoRequest;
+import com.ykren.fastdfs.model.InitMultipartUploadRequest;
+import com.ykren.fastdfs.model.MetaDataInfoRequest;
+import com.ykren.fastdfs.model.MetaDataRequest;
+import com.ykren.fastdfs.model.ModifyFileRequest;
+import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
+import com.ykren.fastdfs.model.TruncateFileRequest;
+import com.ykren.fastdfs.model.UploadFileRequest;
+import com.ykren.fastdfs.model.UploadMultipartPartRequest;
+import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
@@ -118,6 +131,7 @@ public interface FastDFS {
 
     /**
      * appender类型文件改名为普通文件 V6.02及以上版本
+     * since V6.02, rename appender file to normal file
      *
      * @param request
      * @return
@@ -137,12 +151,14 @@ public interface FastDFS {
      *
      * @param request
      */
-    void uploadPart(UploadMultipartPartRequest request);
+    void uploadMultipart(UploadMultipartPartRequest request);
 
     /**
-     * 完成分片上传 V6.02及以上版本 5.x版本调用uploadPart完毕即可认为成功
+     * 完成分片上传
+     * V6.02 regenerate = false
      *
      * @param request
+     * @return 最终文件路径
      */
     StorePath completeMultipartUpload(CompleteMultipartRequest request);
 
@@ -153,5 +169,6 @@ public interface FastDFS {
      */
     void abortMultipartUpload(AbortMultipartRequest request);
 
+    //TODO 待完善
 //    List<FilePartInfo> listParts(String groupName, String path);
 }

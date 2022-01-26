@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.ykren.fastdfs.model.CodeUtils.*;
+
 /**
  * 追加文件请求参数
  *
@@ -65,7 +67,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
             if (args.file != null && args.inputStream != null) {
                 throw new IllegalArgumentException("参数file和inputStream必须唯一");
             }
-            CodeUtils.validateNotBlankString(args.path, "path");
+            validateNotBlankString(args.path, "path");
             logWarn(args);
         }
 
@@ -83,7 +85,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
         }
 
         public Builder file(String filePath) {
-            CodeUtils.validateFilename(filePath);
+            validateFilename(filePath);
             File file = Paths.get(filePath).toFile();
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
@@ -97,7 +99,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder file(File file) {
-            CodeUtils.validateFile(file);
+            validateFile(file);
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
             return this;
@@ -112,8 +114,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder stream(InputStream inputStream, long fileSize) {
-            CodeUtils.validateNotNull(inputStream, "inputStream");
-            CodeUtils.validateGreaterZero(fileSize, "fileSize");
+            validateGreaterZero(fileSize, "fileSize");
             operations.add(args -> args.inputStream = inputStream);
             operations.add(args -> args.fileSize = fileSize);
             return this;
@@ -127,7 +128,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData, StorageMetadataSetType type) {
-            CodeUtils.validateNotNull(type, "metadata type");
+            validateNotNull(type, "metadata type");
             operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
             operations.add(args -> args.metaType = type);
             return this;

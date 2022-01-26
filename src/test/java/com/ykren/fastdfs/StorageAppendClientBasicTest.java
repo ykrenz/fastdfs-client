@@ -1,14 +1,15 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.model.fdfs.FileInfo;
-import com.ykren.fastdfs.model.fdfs.MetaData;
-import com.ykren.fastdfs.model.fdfs.StorePath;
-import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.ModifyFileRequest;
 import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
 import com.ykren.fastdfs.model.TruncateFileRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
+import com.ykren.fastdfs.model.fdfs.FileInfo;
+import com.ykren.fastdfs.model.fdfs.MetaData;
+import com.ykren.fastdfs.model.fdfs.StorePath;
+import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +19,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * 文件基础操作测试演示
@@ -178,6 +179,29 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         assertEquals(1, metaData.size());
         assertTrue(metaData.contains(newdata));
 
+
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        for (int i = 0; i < 10; i++) {
+            executorService.submit(() -> {
+                RandomTextFile modifyFile2 = new RandomTextFile();
+                ModifyFileRequest modifyFileRequest2 = ModifyFileRequest.builder()
+                        .group(storePath.getGroup())
+                        .path(storePath.getPath())
+                        .stream(modifyFile2.getInputStream(), modifyFile2.getFileSize(), 0)
+                        .build();
+                System.out.println("start==========" + Thread.currentThread().getName());
+                fastDFS.modifyFile(modifyFileRequest2);
+                LOGGER.info("modify上传文件 size={} result={} text={}", storePath, modifyFile2.getFileSize() / 1024 / 1024,
+
+                        StringUtils.substring(modifyFile2.getText(), modifyFile2.getText().length() - 10));
+                System.out.println("end==========" + Thread.currentThread().getName());
+            });
+        }
+        try {
+            executorService.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         delete(storePath);
     }
 

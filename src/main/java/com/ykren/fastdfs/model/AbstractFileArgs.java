@@ -13,6 +13,11 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.ykren.fastdfs.model.CodeUtils.validateFile;
+import static com.ykren.fastdfs.model.CodeUtils.validateFilename;
+import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
+
 /**
  * 文件请求参数抽象类
  *
@@ -92,27 +97,26 @@ public abstract class AbstractFileArgs extends GroupArgs {
 
         @Override
         public B filePath(String filePath) {
-            CodeUtils.validateFilename(filePath);
+            validateFilename(filePath);
             return super.filePath(filePath);
         }
 
         @Override
         public B file(File file) {
-            CodeUtils.validateFile(file);
+            validateFile(file);
             return super.file(file);
         }
 
         @Override
         public B inputStream(InputStream inputStream, long fileSize, String fileExtName) {
-            CodeUtils.validateNotNull(inputStream, "inputStream");
-            CodeUtils.validateGreaterZero(fileSize, "fileSize");
+            validateGreaterZero(fileSize, "fileSize");
             return super.inputStream(inputStream, fileSize, fileExtName);
         }
 
         @Override
         public B metaData(String name, String value) {
-            CodeUtils.validateNotNull(name, "metaData name");
-            CodeUtils.validateNotNull(value, "metaData value");
+            validateNotNull(name, "metaData name");
+            validateNotNull(value, "metaData value");
             return super.metaData(name, value);
         }
 

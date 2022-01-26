@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.ykren.fastdfs.model.CodeUtils.getAllFieldList;
+
 /**
  * 参数基础类 Base argument class
  *
@@ -115,7 +117,7 @@ public class BaseArgs {
 
         protected void logDebugArgs(A a) {
             if (LOGGER.isDebugEnabled()) {
-                List<Field> fields = CodeUtils.getAllFieldList(a.getClass());
+                List<Field> fields = getAllFieldList(a.getClass());
                 if (!fields.isEmpty()) {
                     LOGGER.debug("args===============");
                     fields.forEach(c -> {

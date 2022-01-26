@@ -1,12 +1,13 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.model.fdfs.FileInfo;
-import com.ykren.fastdfs.model.fdfs.MetaData;
-import com.ykren.fastdfs.model.fdfs.StorePath;
+
 import com.ykren.fastdfs.model.DownloadFileRequest;
 import com.ykren.fastdfs.model.MetaDataRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
+import com.ykren.fastdfs.model.fdfs.FileInfo;
+import com.ykren.fastdfs.model.fdfs.MetaData;
+import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * 文件基础操作测试演示
@@ -41,7 +39,7 @@ public class StorageClientBasicTest extends BaseClientTest {
         StorePath storePath = uploadRandomFile();
 
         RandomTextFile file = new RandomTextFile();
-        UploadFileRequest  fileRequest = UploadFileRequest.builder()
+        UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .build();
         storePath = fastDFS.uploadFile(fileRequest);

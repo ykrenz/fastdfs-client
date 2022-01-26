@@ -29,7 +29,7 @@ public class BaseClientTest {
     protected TrackerClient trackerClient;
     protected FastDFS fastDFS;
 
-    private static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
+    protected static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
     public static final String localFilePath = "/file/test.jpg";
     public static final List<String> TRACKER_LIST = new ArrayList<>();
 
