@@ -7,9 +7,6 @@ import java.util.Objects;
  * @date 2022/1/21
  */
 public class GroupArgs extends BaseArgs {
-    protected GroupArgs() {
-    }
-
     protected String groupName;
 
     public String group() {

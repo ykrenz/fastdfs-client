@@ -2,7 +2,7 @@ package com.ykren.fastdfs.model;
 
 import java.util.Objects;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
 
 /**
  * 初始化分片上传
@@ -11,10 +11,6 @@ import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
  * @date 2022/1/25
  */
 public class InitMultipartUploadRequest extends GroupArgs {
-
-    protected InitMultipartUploadRequest() {
-    }
-
     /**
      * 文件大小
      */
@@ -55,7 +51,7 @@ public class InitMultipartUploadRequest extends GroupArgs {
     /**
      * 参数构建类
      */
-    public static class Builder extends GroupArgs.Builder<InitMultipartUploadRequest.Builder, InitMultipartUploadRequest> {
+    public static final class Builder extends GroupArgs.Builder<InitMultipartUploadRequest.Builder, InitMultipartUploadRequest> {
         @Override
         protected void validate(InitMultipartUploadRequest args) {
             validateGreaterZero(args.fileSize, "fileSize");

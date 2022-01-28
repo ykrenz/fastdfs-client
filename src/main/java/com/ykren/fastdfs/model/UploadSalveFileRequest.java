@@ -1,11 +1,16 @@
 package com.ykren.fastdfs.model;
 
+import com.ykren.fastdfs.model.fdfs.MetaData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.ykren.fastdfs.model.proto.OtherConstants;
-
+import java.io.File;
+import java.io.InputStream;
 import java.util.Objects;
+import java.util.Set;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_FILE_PREFIX_MAX_LEN;
 
 /**
  * 上传从文件参数
@@ -14,66 +19,112 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
  * @date 2022/1/21
  */
 public class UploadSalveFileRequest extends AbstractFileArgs {
-    protected UploadSalveFileRequest() {
-    }
-
-    /**
-     * 主文件 path
-     */
-    protected String masterFilePath;
-
     /**
      * 从文件前缀
      */
     protected String prefix;
 
-
-    public String masterFilePath() {
-        return masterFilePath;
+    /**
+     * 主文件 path
+     */
+    public String masterPath() {
+        return path;
     }
 
     public String prefix() {
         return prefix;
     }
 
+    public String fileExtName() {
+        return fileExtName;
+    }
+
+    public Set<MetaData> metaData() {
+        return metaData;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
 
-    public static final class Builder extends AbstractUploadBuilder<Builder, UploadSalveFileRequest> {
-
-        private static final String PREFIX = "prefix";
-
-        @Override
-        protected void logWarn(UploadSalveFileRequest args) {
-            super.logWarn(args);
-            if (args.prefix != null && args.prefix.length() > OtherConstants.FDFS_FILE_PREFIX_MAX_LEN) {
-                String msg = String.format("参数prefix有误 prefix length > %d", OtherConstants.FDFS_FILE_PREFIX_MAX_LEN);
-                LOGGER.warn(msg);
-            }
-        }
+    public static final class Builder extends AbstractFileArgs.Builder<Builder, UploadSalveFileRequest> {
+        /**
+         * 日志
+         */
+        private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
 
         @Override
         protected void validate(UploadSalveFileRequest args) {
             super.validate(args);
-            //主文件group不能为空
-            validateNotBlankString(args.groupName, "masterFile group");
-            validateNotBlankString(args.masterFilePath, "masterFilePath");
-            validateNotBlankString(args.prefix, PREFIX);
+            validateNotBlankString(args.path, "master file path");
+            validateNotBlankString(args.prefix, "salve prefix");
+            if (args.prefix.length() > FDFS_FILE_PREFIX_MAX_LEN) {
+                String msg = String.format("salve prefix length > %d", FDFS_FILE_PREFIX_MAX_LEN);
+                LOGGER.warn(msg);
+            }
         }
 
-        public Builder masterFilePath(String masterFilePath) {
-            validateNotBlankString(masterFilePath, "masterFilePath");
-            operations.add(args -> args.masterFilePath = masterFilePath);
+        public Builder masterPath(String masterFilePath) {
+            operations.add(args -> args.path = masterFilePath);
             return this;
         }
 
         public Builder prefix(String prefix) {
-            validateNotBlankString(prefix, PREFIX);
-            operations.add(args -> {
-                String prefixResult = handlerFilename(prefix);
-                args.prefix = prefix.isEmpty() ? "." : prefixResult;
-            });
+            operations.add(args -> args.prefix = prefix);
+            return this;
+        }
+
+        public Builder filePath(String filePath) {
+            File file = new File(filePath);
+            return file(file);
+        }
+
+        /**
+         * 上传文件
+         *
+         * @param file
+         * @return
+         */
+        public Builder file(File file) {
+            operations.add(args -> args.file = file);
+            operations.add(args -> args.fileSize = file.length());
+            operations.add(args -> args.fileExtName = getExtension(file.getName()));
+            return this;
+        }
+
+        /**
+         * 上传文件流
+         *
+         * @param stream
+         * @param fileSize
+         * @param fileExtName
+         * @return
+         */
+        public Builder stream(InputStream stream, long fileSize, String fileExtName) {
+            operations.add(args -> args.stream = stream);
+            operations.add(args -> args.fileSize = fileSize);
+            operations.add(args -> args.fileExtName = fileExtName);
+            return this;
+        }
+
+        /**
+         * 元数据信息
+         *
+         * @return
+         */
+        public Builder metaData(String name, String value) {
+            operations.add(args -> args.metaData.add(new MetaData(name, value)));
+            return this;
+        }
+
+        /**
+         * 元数据信息
+         *
+         * @param metaDataSet
+         * @return
+         */
+        public Builder metaData(Set<MetaData> metaDataSet) {
+            operations.add(args -> args.metaData.addAll(metaDataSet));
             return this;
         }
     }
@@ -84,12 +135,11 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         UploadSalveFileRequest that = (UploadSalveFileRequest) o;
-        return Objects.equals(masterFilePath, that.masterFilePath) &&
-                Objects.equals(prefix, that.prefix);
+        return Objects.equals(prefix, that.prefix);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), masterFilePath, prefix);
+        return Objects.hash(super.hashCode(), prefix);
     }
 }

@@ -201,6 +201,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        executorService.shutdown();
         delete(storePath);
     }
 

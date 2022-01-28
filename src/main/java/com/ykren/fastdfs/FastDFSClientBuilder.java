@@ -2,8 +2,8 @@ package com.ykren.fastdfs;
 
 import java.util.List;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateCollectionNotEmpty;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
+import static com.ykren.fastdfs.common.CodeUtils.validateCollectionNotEmpty;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
 
 /**
  * FastDFS构建类

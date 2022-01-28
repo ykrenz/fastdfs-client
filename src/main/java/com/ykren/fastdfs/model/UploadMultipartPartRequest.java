@@ -2,28 +2,16 @@ package com.ykren.fastdfs.model;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.util.Objects;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateFile;
-import static com.ykren.fastdfs.model.CodeUtils.validateFilename;
-import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
 
 /**
  * @author ykren
  * @date 2022/1/25
  */
-public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
-
-    /**
-     * 流信息
-     */
-    protected InputStream stream;
-    /**
-     * 流文件
-     */
-    protected File file;
+public class UploadMultipartPartRequest extends AbstractFileArgs {
     /**
      * 分片索引
      */
@@ -33,19 +21,11 @@ public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
      */
     protected long partSize;
 
-    protected UploadMultipartPartRequest() {
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public InputStream stream() {
-        return stream;
-    }
-
-    public File file() {
-        return file;
+    /**
+     * 初始化文件path
+     */
+    public String path() {
+        return path;
     }
 
     public int partNumber() {
@@ -56,30 +36,43 @@ public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
         return partSize;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * 参数构建类
      */
-    public static class Builder extends AbstractGroupPathArgs.AbstractGroupPathBuilder<Builder, UploadMultipartPartRequest> {
+    public static final class Builder extends AbstractFileArgs.Builder<Builder, UploadMultipartPartRequest> {
 
         @Override
         protected void validate(UploadMultipartPartRequest args) {
-            if (args.file == null && args.stream == null) {
-                throw new IllegalArgumentException("上传文件不能为空");
-            }
-            if (args.file != null && args.stream != null) {
-                throw new IllegalArgumentException("参数file和inputStream必须唯一");
-            }
+            super.validate(args);
             validateGreaterZero(args.partNumber, "partNumber");
+            validateGreaterZero(args.partSize, "partSize");
             validateNotBlankString(args.path, "path");
         }
 
-        public Builder file(String filePath, int partNumber) {
-            validateFilename(filePath);
-            File file = Paths.get(filePath).toFile();
-            operations.add(args -> args.file = file);
-            operations.add(args -> args.partSize = file.length());
-            operations.add(args -> args.partNumber = partNumber);
+        /**
+         * 初始化文件path
+         *
+         * @param path
+         * @return
+         */
+        public Builder path(String path) {
+            operations.add(args -> args.path = path);
             return this;
+        }
+
+        /**
+         * 文件路径
+         *
+         * @param filePath
+         * @param partNumber
+         * @return
+         */
+        public Builder file(String filePath, int partNumber) {
+            return file(new File(filePath), partNumber);
         }
 
         /**
@@ -89,7 +82,6 @@ public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder file(File file, int partNumber) {
-            validateFile(file);
             operations.add(args -> args.file = file);
             operations.add(args -> args.partSize = file.length());
             operations.add(args -> args.partNumber = partNumber);
@@ -104,7 +96,6 @@ public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder stream(InputStream inputStream, int partNumber, long partSize) {
-            validateGreaterZero(partSize, "partSize");
             operations.add(args -> args.stream = inputStream);
             operations.add(args -> args.partNumber = partNumber);
             operations.add(args -> args.partSize = partSize);
@@ -119,13 +110,11 @@ public class UploadMultipartPartRequest extends AbstractGroupPathArgs {
         if (!super.equals(o)) return false;
         UploadMultipartPartRequest that = (UploadMultipartPartRequest) o;
         return partNumber == that.partNumber &&
-                partSize == that.partSize &&
-                Objects.equals(stream, that.stream) &&
-                Objects.equals(file, that.file);
+                partSize == that.partSize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), stream, file, partNumber, partSize);
+        return Objects.hash(super.hashCode(), partNumber, partSize);
     }
 }

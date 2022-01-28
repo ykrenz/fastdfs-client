@@ -5,8 +5,7 @@ import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
 
 import java.util.Objects;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
 
 /**
  * 下载文件信息参数
@@ -14,19 +13,18 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
  * @author ykren
  * @date 2022/1/22
  */
-public class DownloadFileRequest<T> extends AbstractGroupPathArgs {
-
-    protected DownloadFileRequest() {
-    }
-
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
-    }
-
+public class DownloadFileRequest<T> extends GroupPathArgs {
+    /**
+     * 下载部分文件起始值
+     */
     protected long fileOffset;
-
+    /**
+     * 下载文件大小
+     */
     protected long fileSize;
-
+    /**
+     * 下载callback
+     */
     protected DownloadCallback<T> callback;
 
     public long offset() {
@@ -41,15 +39,19 @@ public class DownloadFileRequest<T> extends AbstractGroupPathArgs {
         return callback;
     }
 
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
+    }
+
     /**
      * 参数构建类
      */
-    public static class Builder<T> extends AbstractGroupPathBuilder<Builder<T>, DownloadFileRequest<T>> {
-
+    public static final class Builder<T> extends GroupPathArgs.Builder<Builder<T>, DownloadFileRequest<T>> {
 
         @Override
         protected void validate(DownloadFileRequest<T> args) {
-            validateNotBlankString(args.path, "path");
+            super.validate(args);
+            validateGreaterZero(args.fileOffset, "fileOffset");
             validateGreaterZero(args.fileSize, "fileSize");
         }
 

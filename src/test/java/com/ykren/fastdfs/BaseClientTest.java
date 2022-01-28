@@ -1,21 +1,18 @@
 package com.ykren.fastdfs;
 
+import com.ykren.fastdfs.model.UploadFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import com.ykren.fastdfs.model.FileInfoRequest;
 import com.ykren.fastdfs.model.MetaDataInfoRequest;
-import com.ykren.fastdfs.model.UploadFileRequest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +51,11 @@ public class BaseClientTest {
     @After
     public void closeClient() {
         fastDFS.close();
+    }
+
+    public static void main(String[] args) {
+        UploadFileRequest build = UploadFileRequest.builder().stream(new ByteArrayInputStream(new byte[]{}), 0, "123%").build();
+        System.out.println(build);
     }
 
     public StorePath uploadRandomFile() {

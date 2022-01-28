@@ -20,8 +20,10 @@ public class RandomTextFile {
 
     private String fileExtName = "txt";
 
+    int l = 1024 * 1024 * 5;
+
     public RandomTextFile() {
-        this.text = RandomStringUtils.random(30, "762830abdcefghijklmnopqrstuvwxyz0991822-");
+        this.text = RandomStringUtils.random(l, "762830abdcefghijklmnopqrstuvwxyz0991822-");
         this.fileSize = text.length();
     }
 

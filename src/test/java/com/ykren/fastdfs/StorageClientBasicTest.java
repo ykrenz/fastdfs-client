@@ -100,7 +100,7 @@ public class StorageClientBasicTest extends BaseClientTest {
 
         UploadSalveFileRequest salveFileRequest = UploadSalveFileRequest.builder()
                 .group(storePath.getGroup())
-                .masterFilePath(storePath.getPath())
+                .masterPath(storePath.getPath())
                 .prefix("_")
                 .metaData("salveKey", "salveValue")
 //                .file(getFile())

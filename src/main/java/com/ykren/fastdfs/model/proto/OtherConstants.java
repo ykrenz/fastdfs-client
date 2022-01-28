@@ -63,12 +63,4 @@ public final class OtherConstants {
 
     public static final String GROUP = "group";
     public static final String PATH = "path";
-    /**
-     * 文件名或者文件前缀校验正则
-     */
-    private static final String FILENAME_REGEX = "^[A-Za-z0-9_\\-.]+$";
-    /**
-     * Pattern
-     */
-    public static final Pattern FDFS_FILENAME_PATTEN = Pattern.compile(FILENAME_REGEX);
 }

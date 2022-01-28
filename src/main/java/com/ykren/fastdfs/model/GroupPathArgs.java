@@ -2,14 +2,15 @@ package com.ykren.fastdfs.model;
 
 import java.util.Objects;
 
+import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
+
 /**
  * path参数抽象类
  *
  * @author ykren
  * @date 2022/1/22
  */
-public abstract class AbstractGroupPathArgs extends GroupArgs {
-
+public class GroupPathArgs extends GroupArgs {
     /**
      * 文件路径 path
      */
@@ -25,8 +26,14 @@ public abstract class AbstractGroupPathArgs extends GroupArgs {
      * @param <B>
      * @param <A>
      */
-    public abstract static class AbstractGroupPathBuilder<B extends AbstractGroupPathArgs.AbstractGroupPathBuilder<B, A>, A extends AbstractGroupPathArgs>
+    public static class Builder<B extends Builder<B, A>, A extends GroupPathArgs>
             extends GroupArgs.Builder<B, A> {
+
+        @Override
+        protected void validate(A args) {
+            validateNotBlankString(args.path, "path");
+        }
+
         @SuppressWarnings("unchecked")
         public B path(String path) {
             operations.add(args -> args.path = path);
@@ -39,7 +46,7 @@ public abstract class AbstractGroupPathArgs extends GroupArgs {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        AbstractGroupPathArgs that = (AbstractGroupPathArgs) o;
+        GroupPathArgs that = (GroupPathArgs) o;
         return Objects.equals(path, that.path);
     }
 

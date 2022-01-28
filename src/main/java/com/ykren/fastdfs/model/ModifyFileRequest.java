@@ -2,22 +2,15 @@ package com.ykren.fastdfs.model;
 
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
-import com.ykren.fastdfs.model.proto.OtherConstants;
-import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateFile;
-import static com.ykren.fastdfs.model.CodeUtils.validateFilename;
-import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
+import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
 
 /**
  * 修改文件请求参数
@@ -25,34 +18,31 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
  * @author ykren
  * @date 2022/1/21
  */
-public class ModifyFileRequest extends AbstractGroupPathArgs {
-    protected ModifyFileRequest() {
-    }
-
-    /**
-     * 本地文件
-     */
-    protected File file;
-    /**
-     * 输入流
-     */
-    protected InputStream stream;
-    /**
-     * 文件大小
-     */
-    protected long fileSize;
+public class ModifyFileRequest extends AbstractFileArgs {
     /**
      * 文件修改起始值
      */
     protected long fileOffset;
     /**
-     * 文件元数据
-     */
-    protected Set<MetaData> metaData = new HashSet<>();
-    /**
      * 文件元数据类型
      */
     protected StorageMetadataSetType metaType;
+
+    public String path() {
+        return path;
+    }
+
+    public long offset() {
+        return fileOffset < 0 ? 0 : fileOffset;
+    }
+
+    public Set<MetaData> metaData() {
+        return metaData;
+    }
+
+    public StorageMetadataSetType metaType() {
+        return metaType;
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -61,50 +51,48 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
     /**
      * 参数构建类
      */
-    public static class Builder extends AbstractGroupPathArgs.AbstractGroupPathBuilder<Builder, ModifyFileRequest> {
+    public static final class Builder extends AbstractFileArgs.Builder<Builder, ModifyFileRequest> {
 
         @Override
         protected void validate(ModifyFileRequest args) {
-            if (args.file == null && args.stream == null) {
-                throw new IllegalArgumentException("上传文件不能为空");
-            }
-            if (args.file != null && args.stream != null) {
-                throw new IllegalArgumentException("参数file和inputStream必须唯一");
-            }
+            super.validate(args);
             validateNotBlankString(args.path, "path");
-            logWarn(args);
-        }
-
-        protected void logWarn(ModifyFileRequest args) {
-            if (!CollectionUtils.isEmpty(args.metaData)) {
-                for (MetaData metadata : args.metaData) {
-                    String name = metadata.getName();
-                    if (name.length() > OtherConstants.FDFS_MAX_META_NAME_LEN || metadata.getValue().length() > OtherConstants.FDFS_MAX_META_VALUE_LEN) {
-                        String msg = String.format("参数metadata有误 name length > %d or value length > %d",
-                                OtherConstants.FDFS_MAX_META_NAME_LEN, OtherConstants.FDFS_MAX_META_VALUE_LEN);
-                        LOGGER.warn(msg);
-                    }
-                }
+            validateGreaterZero(args.fileOffset, "fileOffset");
+            if (args.metaData != null && !args.metaData.isEmpty()) {
+                validateNotNull(args.metaType, "metadata type");
             }
         }
 
-        public Builder file(String filePath, long fileOffset) {
-            validateFilename(filePath);
-            File file = Paths.get(filePath).toFile();
-            operations.add(args -> args.file = file);
-            operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.fileOffset = fileOffset);
+        /**
+         * 修改文件path
+         *
+         * @param path
+         * @return
+         */
+        public Builder path(String path) {
+            operations.add(args -> args.path = path);
             return this;
         }
 
         /**
          * 上传文件
          *
+         * @param filePath
+         * @param fileOffset
+         * @return
+         */
+        public Builder file(String filePath, long fileOffset) {
+            return file(new File(filePath), fileOffset);
+        }
+
+        /**
+         * 上传文件
+         *
          * @param file
+         * @param fileOffset
          * @return
          */
         public Builder file(File file, long fileOffset) {
-            validateFile(file);
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
             operations.add(args -> args.fileOffset = fileOffset);
@@ -120,10 +108,20 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder stream(InputStream stream, long fileSize, long fileOffset) {
-            validateGreaterZero(fileSize, "fileSize");
             operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
             operations.add(args -> args.fileOffset = fileOffset);
+            return this;
+        }
+
+        /**
+         * 元数据信息
+         *
+         * @return
+         */
+        public Builder metaData(String name, String value, StorageMetadataSetType type) {
+            operations.add(args -> args.metaData.add(new MetaData(name, value)));
+            operations.add(args -> args.metaType = type);
             return this;
         }
 
@@ -135,35 +133,10 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData, StorageMetadataSetType type) {
-            validateNotNull(type, "metadata type");
-            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
+            operations.add(args -> args.metaData.addAll(metaData));
             operations.add(args -> args.metaType = type);
             return this;
         }
-    }
-
-    public File file() {
-        return file;
-    }
-
-    public InputStream stream() {
-        return stream;
-    }
-
-    public long fileSize() {
-        return fileSize;
-    }
-
-    public long offset() {
-        return fileOffset < 0 ? 0 : fileOffset;
-    }
-
-    public Set<MetaData> metaData() {
-        return metaData;
-    }
-
-    public StorageMetadataSetType metaType() {
-        return metaType;
     }
 
     @Override
@@ -172,16 +145,12 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ModifyFileRequest that = (ModifyFileRequest) o;
-        return fileSize == that.fileSize &&
-                fileOffset == that.fileOffset &&
-                Objects.equals(file, that.file) &&
-                Objects.equals(stream, that.stream) &&
-                Objects.equals(metaData, that.metaData) &&
+        return fileOffset == that.fileOffset &&
                 metaType == that.metaType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), file, stream, fileSize, fileOffset, metaData, metaType);
+        return Objects.hash(super.hashCode(), fileOffset, metaType);
     }
 }

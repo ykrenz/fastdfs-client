@@ -1,4 +1,4 @@
-package com.ykren.fastdfs.model;
+package com.ykren.fastdfs.common;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -17,13 +17,6 @@ import java.util.List;
  */
 public final class CodeUtils {
     private CodeUtils() {
-    }
-
-    public static void validateFilename(String filename) {
-        validateNotBlankString(filename, "filename");
-        if (!Files.isRegularFile(Paths.get(filename))) {
-            throw new IllegalArgumentException(filename + " not a regular file");
-        }
     }
 
     public static void validateFile(File file) {

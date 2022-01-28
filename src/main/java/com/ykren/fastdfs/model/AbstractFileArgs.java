@@ -1,22 +1,22 @@
 package com.ykren.fastdfs.model;
 
+import com.ykren.fastdfs.event.ProgressListener;
 import com.ykren.fastdfs.model.fdfs.MetaData;
-import com.ykren.fastdfs.model.proto.OtherConstants;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateFile;
-import static com.ykren.fastdfs.model.CodeUtils.validateFilename;
-import static com.ykren.fastdfs.model.CodeUtils.validateGreaterZero;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
+import static com.ykren.fastdfs.common.CodeUtils.validateFile;
+import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_NAME_LEN;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_VALUE_LEN;
+
 
 /**
  * 文件请求参数抽象类
@@ -25,7 +25,10 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
  * @date 2022/1/21
  */
 public abstract class AbstractFileArgs extends GroupArgs {
-
+    /**
+     * 进度条监听器
+     */
+    protected ProgressListener listener;
     /**
      * 本地文件
      */
@@ -42,160 +45,14 @@ public abstract class AbstractFileArgs extends GroupArgs {
      * 文件扩展名
      */
     protected String fileExtName;
-
     /**
      * 文件元数据
      */
     protected Set<MetaData> metaData = new HashSet<>();
-
     /**
-     * 文件上传参数构建类
-     *
-     * @param <B>
-     * @param <A>
+     * 文件路径 path
      */
-    public abstract static class AbstractUploadBuilder<B extends AbstractFileArgs.AbstractUploadBuilder<B, A>, A extends AbstractFileArgs>
-            extends AbstractFileArgs.AbstractBuilder<B, A> {
-
-        /**
-         * 参数异常打印 服务器不会报错 但是可能造成和预期不符
-         *
-         * @param args
-         */
-        protected void logWarn(A args) {
-            if (args.fileExtName != null && args.fileExtName.length() > OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN) {
-                String msg = String.format("参数fileExtName有误 fileExtName length > %d", OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN);
-                LOGGER.warn(msg);
-            }
-            if (!CollectionUtils.isEmpty(args.metaData)) {
-                for (MetaData metadata : args.metaData) {
-                    String name = metadata.getName();
-                    if (name.length() > OtherConstants.FDFS_MAX_META_NAME_LEN || metadata.getValue().length() > OtherConstants.FDFS_MAX_META_VALUE_LEN) {
-                        String msg = String.format("参数metadata有误 name length > %d or value length > %d",
-                                OtherConstants.FDFS_MAX_META_NAME_LEN, OtherConstants.FDFS_MAX_META_VALUE_LEN);
-                        LOGGER.warn(msg);
-                    }
-                }
-            }
-        }
-
-        @Override
-        protected void validate(A args) {
-            if (args.file == null && args.stream == null) {
-                throw new IllegalArgumentException("上传文件不能为空");
-            }
-            if (args.file != null && args.stream != null) {
-                throw new IllegalArgumentException("参数file和stream必须唯一");
-            }
-            logWarn(args);
-        }
-
-        @Override
-        public B filePath(String filePath) {
-            validateFilename(filePath);
-            return super.filePath(filePath);
-        }
-
-        @Override
-        public B file(File file) {
-            validateFile(file);
-            return super.file(file);
-        }
-
-        @Override
-        public B stream(InputStream stream, long fileSize, String fileExtName) {
-            validateGreaterZero(fileSize, "fileSize");
-            return super.stream(stream, fileSize, fileExtName);
-        }
-
-        @Override
-        public B metaData(String name, String value) {
-            validateNotNull(name, "metaData name");
-            validateNotNull(value, "metaData value");
-            return super.metaData(name, value);
-        }
-
-        @Override
-        public B metaData(Set<MetaData> metaData) {
-            return super.metaData(metaData == null ? Collections.emptySet() : metaData);
-        }
-    }
-
-    /**
-     * 文件参数构造抽象类
-     *
-     * @param <B>
-     * @param <A>
-     */
-    public abstract static class AbstractBuilder<B extends AbstractFileArgs.AbstractBuilder<B, A>, A extends AbstractFileArgs>
-            extends GroupArgs.Builder<B, A> {
-
-        @SuppressWarnings("unchecked")
-        public B filePath(String filePath) {
-            File file = Paths.get(filePath).toFile();
-            operations.add(args -> args.file = file);
-            operations.add(args -> args.fileSize = file.length());
-            String ext = handlerFilename(getExtension(file.getName()));
-            operations.add(args -> args.fileExtName = ext);
-            return (B) this;
-        }
-
-        /**
-         * 上传文件
-         *
-         * @param file
-         * @return
-         */
-        @SuppressWarnings("unchecked")
-        public B file(File file) {
-            operations.add(args -> args.file = file);
-            operations.add(args -> args.fileSize = file.length());
-            String ext = handlerFilename(getExtension(file.getName()));
-            operations.add(args -> args.fileExtName = ext);
-            return (B) this;
-        }
-
-
-        /**
-         * 上传文件流
-         *
-         * @param stream
-         * @param fileSize
-         * @param fileExtName
-         * @return
-         */
-        @SuppressWarnings("unchecked")
-        public B stream(InputStream stream, long fileSize, String fileExtName) {
-            operations.add(args -> args.stream = stream);
-            operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.fileExtName = (fileExtName == null ? StringUtils.EMPTY : handlerFilename(fileExtName)));
-            return (B) this;
-        }
-
-        /**
-         * 元数据信息
-         *
-         * @return
-         */
-        @SuppressWarnings("unchecked")
-        public B metaData(String name, String value) {
-            operations.add(args -> args.metaData.add(new MetaData(name, value)));
-            return (B) this;
-        }
-
-        /**
-         * 元数据信息
-         *
-         * @param metaDataSet
-         * @return
-         */
-        @SuppressWarnings("unchecked")
-        public B metaData(Set<MetaData> metaDataSet) {
-            operations.add(args -> args.metaData.addAll(metaDataSet));
-            return (B) this;
-        }
-
-    }
+    protected String path;
 
     public File file() {
         return file;
@@ -209,14 +66,62 @@ public abstract class AbstractFileArgs extends GroupArgs {
         return fileSize;
     }
 
-    public String fileExtName() {
-        return fileExtName;
+    public ProgressListener listener() {
+        return listener;
     }
 
-    public Set<MetaData> metaData() {
-        return metaData;
-    }
+    /**
+     * 文件参数构造抽象类
+     *
+     * @param <B>
+     * @param <A>
+     */
+    public abstract static class Builder<B extends Builder<B, A>, A extends AbstractFileArgs>
+            extends GroupArgs.Builder<B, A> {
+        /**
+         * 日志
+         */
+        private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
 
+        @SuppressWarnings("unchecked")
+        public B listener(ProgressListener listener) {
+            operations.add(args -> args.listener = listener);
+            return (B) this;
+        }
+
+        @Override
+        protected void validate(A args) {
+            if (args.file == null && args.stream == null) {
+                throw new IllegalArgumentException("upload content cannot be empty. ");
+            }
+            if (args.file != null && args.stream != null) {
+                throw new IllegalArgumentException("parameters file and stream must be unique. ");
+            }
+            if (args.file != null) {
+                validateFile(args.file);
+            }
+            validateGreaterZero(args.fileSize, "fileSize");
+
+            if (args.fileExtName != null && args.fileExtName.length() > FDFS_FILE_EXT_NAME_MAX_LEN) {
+                String msg = String.format("fileExtName length > %d", FDFS_FILE_EXT_NAME_MAX_LEN);
+                LOGGER.warn(msg);
+            }
+            if (args.metaData != null && !args.metaData.isEmpty()) {
+                for (MetaData metadata : args.metaData) {
+                    String name = metadata.getName();
+                    String value = metadata.getValue();
+                    if (name != null && name.length() > FDFS_MAX_META_NAME_LEN) {
+                        String msg = String.format("metadata name length > %d ", FDFS_MAX_META_NAME_LEN);
+                        LOGGER.warn(msg);
+                    }
+                    if (value != null && value.length() > FDFS_MAX_META_VALUE_LEN) {
+                        String msg = String.format("metadata value length > %d ", FDFS_MAX_META_VALUE_LEN);
+                        LOGGER.warn(msg);
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -225,14 +130,16 @@ public abstract class AbstractFileArgs extends GroupArgs {
         if (!super.equals(o)) return false;
         AbstractFileArgs that = (AbstractFileArgs) o;
         return fileSize == that.fileSize &&
+                Objects.equals(listener, that.listener) &&
                 Objects.equals(file, that.file) &&
                 Objects.equals(stream, that.stream) &&
                 Objects.equals(fileExtName, that.fileExtName) &&
-                Objects.equals(metaData, that.metaData);
+                Objects.equals(metaData, that.metaData) &&
+                Objects.equals(path, that.path);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), file, stream, fileSize, fileExtName, metaData);
+        return Objects.hash(super.hashCode(), listener, file, stream, fileSize, fileExtName, metaData, path);
     }
 }

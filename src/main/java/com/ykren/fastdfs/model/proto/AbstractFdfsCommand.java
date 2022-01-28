@@ -6,10 +6,15 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 
 import com.ykren.fastdfs.conn.Connection;
+import com.ykren.fastdfs.event.ProgressEventType;
+import com.ykren.fastdfs.event.ProgressInputStream;
+import com.ykren.fastdfs.event.ProgressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ykren.fastdfs.exception.FdfsIOException;
+
+import static com.ykren.fastdfs.event.ProgressPublisher.publishProgress;
 
 /**
  * 交易命令抽象类
@@ -86,8 +91,19 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
             out.write(param);
         }
         // 输出文件流
+        ProgressListener listener = ProgressListener.NOOP;
         if (null != inputFile) {
-            sendFileContent(inputFile, fileSize, out);
+            if (inputFile instanceof ProgressInputStream) {
+                listener = ((ProgressInputStream) inputFile).getListener();
+            }
+            try {
+                publishProgress(listener, ProgressEventType.TRANSFER_STARTED_EVENT, fileSize);
+                sendFileContent(inputFile, fileSize, out);
+                publishProgress(listener, ProgressEventType.TRANSFER_COMPLETED_EVENT);
+            } catch (RuntimeException e) {
+                publishProgress(listener, ProgressEventType.TRANSFER_FAILED_EVENT);
+                throw e;
+            }
         }
     }
 
@@ -120,15 +136,12 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
      * @throws IOException
      */
     protected void sendFileContent(InputStream ins, long size, OutputStream ous) throws IOException {
-        // TODO 加入进度条listener
-        LOGGER.debug("开始上传文件流大小为{}", size);
         long remainBytes = size;
         byte[] buff = new byte[256 * 1024];
         int bytes;
         while ((bytes = ins.read(buff)) != -1) {
             ous.write(buff, 0, bytes);
             remainBytes -= bytes;
-            LOGGER.debug("剩余数据量{}", remainBytes);
             if (remainBytes < 0) {
                 throw new IOException("the end of the stream has been reached. not match the expected size ");
             }

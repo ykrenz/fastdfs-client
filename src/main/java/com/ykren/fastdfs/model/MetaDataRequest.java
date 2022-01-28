@@ -2,12 +2,9 @@ package com.ykren.fastdfs.model;
 
 import com.ykren.fastdfs.model.fdfs.MetaData;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
 
 /**
  * 文件元数据参数
@@ -15,14 +12,7 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
  * @author ykren
  * @date 2022/1/22
  */
-public class MetaDataRequest extends AbstractGroupPathArgs {
-
-    protected MetaDataRequest() {
-    }
-
-    public static Builder builder() {
-        return new MetaDataRequest.Builder();
-    }
+public class MetaDataRequest extends GroupPathArgs {
 
     /**
      * 文件元数据
@@ -33,15 +23,14 @@ public class MetaDataRequest extends AbstractGroupPathArgs {
         return metaData;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     /**
      * 参数构建类
      */
-    public static class Builder extends AbstractGroupPathBuilder<MetaDataRequest.Builder, MetaDataRequest> {
-        @Override
-        protected void validate(MetaDataRequest args) {
-            validateNotBlankString(args.path, "path");
-        }
-
+    public static final class Builder extends GroupPathArgs.Builder<Builder, MetaDataRequest> {
         /**
          * 元数据信息
          *
@@ -50,8 +39,6 @@ public class MetaDataRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder metaData(String name, String value) {
-            validateNotBlankString(name, "name");
-            validateNotBlankString(value, "value");
             operations.add(args -> args.metaData.add(new MetaData(name, value)));
             return this;
         }
@@ -63,7 +50,7 @@ public class MetaDataRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData) {
-            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
+            operations.add(args -> args.metaData.addAll(metaData));
             return this;
         }
     }

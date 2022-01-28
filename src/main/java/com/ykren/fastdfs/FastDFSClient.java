@@ -1,10 +1,14 @@
 package com.ykren.fastdfs;
 
+import com.ykren.fastdfs.common.FastDFSUtils;
 import com.ykren.fastdfs.conn.FdfsConnectionPool;
 import com.ykren.fastdfs.conn.TrackerConnectionManager;
+import com.ykren.fastdfs.event.ProgressInputStream;
+import com.ykren.fastdfs.event.ProgressListener;
 import com.ykren.fastdfs.exception.FdfsIOException;
 import com.ykren.fastdfs.exception.FdfsUnavailableException;
 import com.ykren.fastdfs.model.AbortMultipartRequest;
+import com.ykren.fastdfs.model.AbstractFileArgs;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
 import com.ykren.fastdfs.model.DownloadFileRequest;
@@ -47,14 +51,16 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.FastDFSUtils.handlerFilename;
+import static com.ykren.fastdfs.model.proto.OtherConstants.GROUP;
 
 /**
  * FastDFSClient默认客户端
@@ -67,7 +73,7 @@ public class FastDFSClient implements FastDFS {
     /**
      * 日志
      */
-    protected static final Logger LOGGER = LoggerFactory.getLogger(FastDFSClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FastDFSClient.class);
 
     private final TrackerClient trackerClient;
 
@@ -119,24 +125,26 @@ public class FastDFSClient implements FastDFS {
     @Override
     public StorePath uploadFile(UploadFileRequest request) {
         //获取上传流
-        InputStream is = getInputStream(request.file(), request.stream());
+        InputStream is = wrapperStream(request);
         String groupName = getGroup(request);
         LOGGER.debug("获取到上传的group={}", groupName);
         // 上传文件
         return uploadFileAndMetaData(groupName, is,
-                request.fileSize(), request.fileExtName(), request.metaData(), false);
+                request.fileSize(), handlerFilename(request.fileExtName()), request.metaData(), false);
     }
 
     @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
         String groupName = getGroup(request);
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         //获取上传流
-        InputStream is = getInputStream(request.file(), request.stream());
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterFilePath());
+        InputStream is = wrapperStream(request);
+        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
         //上传从文件
-        return uploadSalveFileAndMetaData(client, request.masterFilePath(),
-                is, request.fileSize(), request.prefix(), request.fileExtName(), request.metaData());
+        String handlerPrefix = handlerFilename(request.prefix());
+        String prefix = handlerPrefix.isEmpty() ? "." : handlerPrefix;
+        return uploadSalveFileAndMetaData(client, request.masterPath(),
+                is, request.fileSize(), prefix, handlerFilename(request.fileExtName()), request.metaData());
     }
 
     /**
@@ -206,7 +214,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
         return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -217,7 +225,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
     }
@@ -227,7 +235,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         Set<MetaData> metaDataSet = (request.metaData() == null ? Collections.emptySet() : request.metaData());
         if (metaDataSet.isEmpty()) {
             LOGGER.warn("metadata is empty not merge");
@@ -242,7 +250,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
         return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -253,7 +261,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
         trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -263,7 +271,7 @@ public class FastDFSClient implements FastDFS {
     public <T> T downloadFile(DownloadFileRequest<T> request) {
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageDownloadCommand<T> command = new StorageDownloadCommand<>(groupName, path,
                 request.offset(), request.fileSize(), request.callback());
@@ -277,10 +285,10 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.stream());
+        InputStream inputStream = wrapperStream(request);
         // 上传追加文件
         return uploadFileAndMetaData(groupName, inputStream,
-                request.fileSize(), request.fileExtName(), request.metaData(), true);
+                request.fileSize(), handlerFilename(request.fileExtName()), request.metaData(), true);
     }
 
     @Override
@@ -288,9 +296,9 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.stream());
+        InputStream inputStream = wrapperStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageAppendFileCommand command = new StorageAppendFileCommand(inputStream, request.fileSize(), path);
         trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -326,9 +334,9 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.stream());
+        InputStream inputStream = wrapperStream(request);
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageModifyCommand command = new StorageModifyCommand(path, inputStream, request.fileSize(), request.offset());
@@ -342,7 +350,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
@@ -355,7 +363,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -373,7 +381,7 @@ public class FastDFSClient implements FastDFS {
         String groupName = getGroup(request);
         UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
                 .group(groupName)
-                .stream(new ByteArrayInputStream(new byte[]{}), 0, request.fileExtName())
+                .stream(new ByteArrayInputStream(new byte[]{}), 0, handlerFilename(request.fileExtName()))
                 .metaData(PART_UPLOAD_META, request.fileSize() + UNDERLINE + request.partSize() + UNDERLINE + request.partCount())
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
@@ -394,7 +402,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         MetaDataInfoRequest metaDataInfoRequest = MetaDataInfoRequest.builder().group(groupName).path(path).build();
         Set<MetaData> metadata = getMetadata(metaDataInfoRequest);
         if (metadata.isEmpty()) {
@@ -433,7 +441,7 @@ public class FastDFSClient implements FastDFS {
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, OtherConstants.GROUP);
+        validateNotBlankString(groupName, GROUP);
         StorePath storePath = new StorePath(groupName, path);
         if (request.regenerate()) {
             StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
@@ -474,18 +482,21 @@ public class FastDFSClient implements FastDFS {
     }
 
     /**
-     * 获取文件流
-     *
-     * @return
+     * 获取上传流
      */
-    private InputStream getInputStream(File file, InputStream inputStream) {
+    private InputStream wrapperStream(AbstractFileArgs args) {
+        Objects.requireNonNull(args);
+        File file = args.file();
+        InputStream is = args.stream();
         if (file != null) {
             try {
-                return new AutoCloseInputStream(new FileInputStream(file));
+                is = new AutoCloseInputStream(new FileInputStream(file));
             } catch (FileNotFoundException e) {
                 throw new FdfsIOException(e);
             }
         }
-        return inputStream;
+        ProgressListener listener = args.listener();
+        return (listener == null || listener == ProgressListener.NOOP) ?
+                is : ProgressInputStream.inputStreamForRequest(is, listener);
     }
 }

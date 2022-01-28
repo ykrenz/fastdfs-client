@@ -1,13 +1,14 @@
 package com.ykren.fastdfs.model;
 
 import com.ykren.fastdfs.model.fdfs.MetaData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.ykren.fastdfs.model.CodeUtils.validateNotBlankString;
-import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_NAME_LEN;
+import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_VALUE_LEN;
 
 /**
  * 完成分片上传参数
@@ -15,10 +16,7 @@ import static com.ykren.fastdfs.model.CodeUtils.validateNotNull;
  * @author ykren
  * @date 2022/1/25
  */
-public class CompleteMultipartRequest extends AbstractGroupPathArgs {
-    protected CompleteMultipartRequest() {
-    }
-
+public class CompleteMultipartRequest extends GroupPathArgs {
     /**
      * 是否改为普通文件 默认为true V6.02版本以下请设置为false
      */
@@ -43,15 +41,32 @@ public class CompleteMultipartRequest extends AbstractGroupPathArgs {
     /**
      * 一般文件上传参数构建类
      */
-    public static class Builder extends AbstractGroupPathBuilder<CompleteMultipartRequest.Builder, CompleteMultipartRequest> {
+    public static final class Builder extends GroupPathArgs.Builder<Builder, CompleteMultipartRequest> {
+        /**
+         * 日志
+         */
+        private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
+
         @Override
         protected void validate(CompleteMultipartRequest args) {
-            validateNotBlankString(args.path, "path");
+            super.validate(args);
+            if (args.metaData != null && !args.metaData.isEmpty()) {
+                for (MetaData metadata : args.metaData) {
+                    String name = metadata.getName();
+                    String value = metadata.getValue();
+                    if (name != null && name.length() > FDFS_MAX_META_NAME_LEN) {
+                        String msg = String.format("metadata name length > %d ", FDFS_MAX_META_NAME_LEN);
+                        LOGGER.warn(msg);
+                    }
+                    if (value != null && value.length() > FDFS_MAX_META_VALUE_LEN) {
+                        String msg = String.format("metadata value length > %d ", FDFS_MAX_META_VALUE_LEN);
+                        LOGGER.warn(msg);
+                    }
+                }
+            }
         }
 
         public Builder metaData(String name, String value) {
-            validateNotNull(name, "metaData name");
-            validateNotNull(value, "metaData value");
             operations.add(args -> args.metaData.add(new MetaData(name, value)));
             return this;
         }
@@ -63,7 +78,7 @@ public class CompleteMultipartRequest extends AbstractGroupPathArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData) {
-            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
+            operations.add(args -> args.metaData.addAll(metaData));
             return this;
         }
 
