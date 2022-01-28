@@ -38,14 +38,15 @@ import com.ykren.fastdfs.model.proto.storage.StorageTruncateCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageUploadFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageUploadSlaveFileCommand;
 import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -118,15 +119,12 @@ public class FastDFSClient implements FastDFS {
     @Override
     public StorePath uploadFile(UploadFileRequest request) {
         //获取上传流
-        InputStream is = getInputStream(request.file(), request.inputStream());
+        InputStream is = getInputStream(request.file(), request.stream());
         String groupName = getGroup(request);
         LOGGER.debug("获取到上传的group={}", groupName);
         // 上传文件
-        StorePath storePath = uploadFileAndMetaData(groupName, is,
+        return uploadFileAndMetaData(groupName, is,
                 request.fileSize(), request.fileExtName(), request.metaData(), false);
-        //关闭流信息
-        autoClose(is, request.autoClose());
-        return storePath;
     }
 
     @Override
@@ -134,14 +132,11 @@ public class FastDFSClient implements FastDFS {
         String groupName = getGroup(request);
         validateNotBlankString(groupName, OtherConstants.GROUP);
         //获取上传流
-        InputStream is = getInputStream(request.file(), request.inputStream());
+        InputStream is = getInputStream(request.file(), request.stream());
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterFilePath());
         //上传从文件
-        StorePath storePath = uploadSalveFileAndMetaData(client, request.masterFilePath(),
+        return uploadSalveFileAndMetaData(client, request.masterFilePath(),
                 is, request.fileSize(), request.prefix(), request.fileExtName(), request.metaData());
-        //关闭流信息
-        autoClose(is, request.autoClose());
-        return storePath;
     }
 
     /**
@@ -282,13 +277,10 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.inputStream());
+        InputStream inputStream = getInputStream(request.file(), request.stream());
         // 上传追加文件
-        StorePath storePath = uploadFileAndMetaData(groupName, inputStream,
+        return uploadFileAndMetaData(groupName, inputStream,
                 request.fileSize(), request.fileExtName(), request.metaData(), true);
-        // 关闭流
-        autoClose(inputStream, request.autoClose());
-        return storePath;
     }
 
     @Override
@@ -298,14 +290,12 @@ public class FastDFSClient implements FastDFS {
         String path = request.path();
         validateNotBlankString(groupName, OtherConstants.GROUP);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.inputStream());
+        InputStream inputStream = getInputStream(request.file(), request.stream());
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageAppendFileCommand command = new StorageAppendFileCommand(inputStream, request.fileSize(), path);
         trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         // 上传metadata
         uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
-        // 关闭流
-        autoClose(inputStream, request.autoClose());
     }
 
     private void uploadMetaData(StorageNodeInfo client, String groupName, String path, StorageMetadataSetType type, Set<MetaData> metaData) {
@@ -338,14 +328,13 @@ public class FastDFSClient implements FastDFS {
         String path = request.path();
         validateNotBlankString(groupName, OtherConstants.GROUP);
         // 获取上传流
-        InputStream inputStream = getInputStream(request.file(), request.inputStream());
+        InputStream inputStream = getInputStream(request.file(), request.stream());
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageModifyCommand command = new StorageModifyCommand(path, inputStream, request.fileSize(), request.offset());
         // 修改文件
         trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
-        autoClose(inputStream, request.autoClose());
     }
 
     @Override
@@ -382,27 +371,21 @@ public class FastDFSClient implements FastDFS {
     @Override
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
         String groupName = getGroup(request);
-        try {
-            try (InputStream is = new ByteArrayInputStream(new byte[]{})) {
-                UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
-                        .group(groupName)
-                        .inputStream(is, 0, request.fileExtName())
-                        .metaData(PART_UPLOAD_META, request.fileSize() + UNDERLINE + request.partSize() + UNDERLINE + request.partCount())
-                        .build();
-                StorePath storePath = uploadAppenderFile(uploadFileRequest);
-                if (request.fileSize() > 0) {
-                    TruncateFileRequest truncateFileRequest = TruncateFileRequest.builder()
-                            .group(storePath.getGroup())
-                            .path(storePath.getPath())
-                            .fileSize(request.fileSize())
-                            .build();
-                    truncateFile(truncateFileRequest);
-                }
-                return storePath;
-            }
-        } catch (IOException e) {
-            throw new FdfsIOException("upload empty bytes error");
+        UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
+                .group(groupName)
+                .stream(new ByteArrayInputStream(new byte[]{}), 0, request.fileExtName())
+                .metaData(PART_UPLOAD_META, request.fileSize() + UNDERLINE + request.partSize() + UNDERLINE + request.partCount())
+                .build();
+        StorePath storePath = uploadAppenderFile(uploadFileRequest);
+        if (request.fileSize() > 0) {
+            TruncateFileRequest truncateFileRequest = TruncateFileRequest.builder()
+                    .group(storePath.getGroup())
+                    .path(storePath.getPath())
+                    .fileSize(request.fileSize())
+                    .build();
+            truncateFile(truncateFileRequest);
         }
+        return storePath;
     }
 
 
@@ -469,6 +452,7 @@ public class FastDFSClient implements FastDFS {
 
     @Override
     public void abortMultipartUpload(AbortMultipartRequest request) {
+        // 删除源文件
         String groupName = getGroup(request);
         FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
                 .group(groupName)
@@ -497,26 +481,11 @@ public class FastDFSClient implements FastDFS {
     private InputStream getInputStream(File file, InputStream inputStream) {
         if (file != null) {
             try {
-                return FileUtils.openInputStream(file);
-            } catch (IOException e) {
-                throw new FdfsIOException("open local com.ykren.fastdfs.file io exception", e);
+                return new AutoCloseInputStream(new FileInputStream(file));
+            } catch (FileNotFoundException e) {
+                throw new FdfsIOException(e);
             }
         }
         return inputStream;
-    }
-
-    /**
-     * 自动关闭流
-     *
-     * @param is
-     * @param autoClose
-     */
-    private void autoClose(InputStream is, boolean autoClose) {
-        if (autoClose) {
-            IOUtils.closeQuietly(is);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("上传流关闭={}", is);
-            }
-        }
     }
 }

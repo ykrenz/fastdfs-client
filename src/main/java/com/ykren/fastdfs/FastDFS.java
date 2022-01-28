@@ -169,6 +169,4 @@ public interface FastDFS {
      */
     void abortMultipartUpload(AbortMultipartRequest request);
 
-    //TODO 待完善
-//    List<FilePartInfo> listParts(String groupName, String path);
 }

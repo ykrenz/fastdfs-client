@@ -40,7 +40,7 @@ public class StorageClientBasicTest extends BaseClientTest {
 
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .build();
         storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
@@ -92,7 +92,7 @@ public class StorageClientBasicTest extends BaseClientTest {
     public void uploadSlaveFile() {
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), "jpg")
+                .stream(file.getInputStream(), file.getFileSize(), "jpg")
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         LOGGER.debug("上传主文件 result={}", storePath);
@@ -104,7 +104,7 @@ public class StorageClientBasicTest extends BaseClientTest {
                 .prefix("_")
                 .metaData("salveKey", "salveValue")
 //                .file(getFile())
-                .inputStream(file.getInputStream(), file.getFileSize(), "jpg")
+                .stream(file.getInputStream(), file.getFileSize(), "jpg")
                 .build();
         LOGGER.debug("##上传从文件..##");
         StorePath slavePath = fastDFS.uploadSlaveFile(salveFileRequest);
@@ -213,7 +213,7 @@ public class StorageClientBasicTest extends BaseClientTest {
                 .group(storePath.getGroup())
                 .path(storePath.getPath())
                 .fileSize(2)
-                .file("1.txt")
+                .file("tmp/tmp1.txt")
                 .build();
         fastDFS.downloadFile(request);
 

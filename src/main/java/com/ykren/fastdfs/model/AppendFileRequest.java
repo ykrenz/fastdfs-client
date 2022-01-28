@@ -36,7 +36,7 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
     /**
      * 输入流
      */
-    protected InputStream inputStream;
+    protected InputStream stream;
     /**
      * 文件大小
      */
@@ -49,10 +49,6 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
      * 文件元数据类型
      */
     protected StorageMetadataSetType metaType;
-    /**
-     * 自动关闭流
-     */
-    protected boolean autoClose = true;
 
     /**
      * 参数构建类
@@ -61,11 +57,11 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
 
         @Override
         protected void validate(AppendFileRequest args) {
-            if (args.file == null && args.inputStream == null) {
+            if (args.file == null && args.stream == null) {
                 throw new IllegalArgumentException("上传文件不能为空");
             }
-            if (args.file != null && args.inputStream != null) {
-                throw new IllegalArgumentException("参数file和inputStream必须唯一");
+            if (args.file != null && args.stream != null) {
+                throw new IllegalArgumentException("参数file和stream必须唯一");
             }
             validateNotBlankString(args.path, "path");
             logWarn(args);
@@ -109,13 +105,13 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
         /**
          * 追加文件流
          *
-         * @param inputStream
+         * @param stream
          * @param fileSize
          * @return
          */
-        public Builder stream(InputStream inputStream, long fileSize) {
+        public Builder stream(InputStream stream, long fileSize) {
             validateGreaterZero(fileSize, "fileSize");
-            operations.add(args -> args.inputStream = inputStream);
+            operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
             return this;
         }
@@ -134,25 +130,14 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
             return this;
         }
 
-        /**
-         * 自动关闭流 false则流不关闭
-         *
-         * @param autoClose
-         * @return
-         */
-        public Builder autoClose(boolean autoClose) {
-            operations.add(args -> args.autoClose = autoClose);
-            return this;
-        }
-
     }
 
     public File file() {
         return file;
     }
 
-    public InputStream inputStream() {
-        return inputStream;
+    public InputStream stream() {
+        return stream;
     }
 
     public long fileSize() {
@@ -167,10 +152,6 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
         return metaType;
     }
 
-    public boolean autoClose() {
-        return autoClose;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -178,16 +159,15 @@ public class AppendFileRequest extends AbstractGroupPathArgs {
         if (!super.equals(o)) return false;
         AppendFileRequest that = (AppendFileRequest) o;
         return fileSize == that.fileSize &&
-                autoClose == that.autoClose &&
                 Objects.equals(path, that.path) &&
                 Objects.equals(file, that.file) &&
-                Objects.equals(inputStream, that.inputStream) &&
+                Objects.equals(stream, that.stream) &&
                 Objects.equals(metaData, that.metaData) &&
                 metaType == that.metaType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), path, file, inputStream, fileSize, metaData, metaType, autoClose);
+        return Objects.hash(super.hashCode(), path, file, stream, fileSize, metaData, metaType);
     }
 }

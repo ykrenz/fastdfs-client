@@ -36,7 +36,7 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
     /**
      * 输入流
      */
-    protected InputStream inputStream;
+    protected InputStream stream;
     /**
      * 文件大小
      */
@@ -53,10 +53,6 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
      * 文件元数据类型
      */
     protected StorageMetadataSetType metaType;
-    /**
-     * 自动关闭流
-     */
-    protected boolean autoClose = true;
 
     public static Builder builder() {
         return new Builder();
@@ -69,10 +65,10 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
 
         @Override
         protected void validate(ModifyFileRequest args) {
-            if (args.file == null && args.inputStream == null) {
+            if (args.file == null && args.stream == null) {
                 throw new IllegalArgumentException("上传文件不能为空");
             }
-            if (args.file != null && args.inputStream != null) {
+            if (args.file != null && args.stream != null) {
                 throw new IllegalArgumentException("参数file和inputStream必须唯一");
             }
             validateNotBlankString(args.path, "path");
@@ -119,13 +115,13 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
         /**
          * 追加文件流
          *
-         * @param inputStream
+         * @param stream
          * @param fileSize
          * @return
          */
-        public Builder stream(InputStream inputStream, long fileSize, long fileOffset) {
+        public Builder stream(InputStream stream, long fileSize, long fileOffset) {
             validateGreaterZero(fileSize, "fileSize");
-            operations.add(args -> args.inputStream = inputStream);
+            operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
             operations.add(args -> args.fileOffset = fileOffset);
             return this;
@@ -144,26 +140,14 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
             operations.add(args -> args.metaType = type);
             return this;
         }
-
-        /**
-         * 自动关闭流 false则流不关闭
-         *
-         * @param autoClose
-         * @return
-         */
-        public Builder autoClose(boolean autoClose) {
-            operations.add(args -> args.autoClose = autoClose);
-            return this;
-        }
-
     }
 
     public File file() {
         return file;
     }
 
-    public InputStream inputStream() {
-        return inputStream;
+    public InputStream stream() {
+        return stream;
     }
 
     public long fileSize() {
@@ -182,10 +166,6 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
         return metaType;
     }
 
-    public boolean autoClose() {
-        return autoClose;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -194,15 +174,14 @@ public class ModifyFileRequest extends AbstractGroupPathArgs {
         ModifyFileRequest that = (ModifyFileRequest) o;
         return fileSize == that.fileSize &&
                 fileOffset == that.fileOffset &&
-                autoClose == that.autoClose &&
                 Objects.equals(file, that.file) &&
-                Objects.equals(inputStream, that.inputStream) &&
+                Objects.equals(stream, that.stream) &&
                 Objects.equals(metaData, that.metaData) &&
                 metaType == that.metaType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), file, inputStream, fileSize, fileOffset, metaData, metaType, autoClose);
+        return Objects.hash(super.hashCode(), file, stream, fileSize, fileOffset, metaData, metaType);
     }
 }

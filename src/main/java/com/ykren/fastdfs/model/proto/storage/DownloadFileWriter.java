@@ -1,11 +1,13 @@
 package com.ykren.fastdfs.model.proto.storage;
 
 import com.ykren.fastdfs.exception.FdfsIOException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +41,7 @@ public class DownloadFileWriter implements DownloadCallback<String> {
         FileOutputStream out = null;
         InputStream in = null;
         try {
-            out = new FileOutputStream(fileName);
+            out = FileUtils.openOutputStream(new File(fileName));
             in = new BufferedInputStream(ins);
             // 通过ioutil 对接输入输出流，实现文件下载
             IOUtils.copy(in, out);

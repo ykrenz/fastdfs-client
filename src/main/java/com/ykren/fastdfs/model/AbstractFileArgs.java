@@ -33,7 +33,7 @@ public abstract class AbstractFileArgs extends GroupArgs {
     /**
      * 输入流
      */
-    protected InputStream inputStream;
+    protected InputStream stream;
     /**
      * 文件大小
      */
@@ -47,11 +47,6 @@ public abstract class AbstractFileArgs extends GroupArgs {
      * 文件元数据
      */
     protected Set<MetaData> metaData = new HashSet<>();
-
-    /**
-     * 自动关闭流
-     */
-    protected boolean autoClose = true;
 
     /**
      * 文件上传参数构建类
@@ -86,11 +81,11 @@ public abstract class AbstractFileArgs extends GroupArgs {
 
         @Override
         protected void validate(A args) {
-            if (args.file == null && args.inputStream == null) {
+            if (args.file == null && args.stream == null) {
                 throw new IllegalArgumentException("上传文件不能为空");
             }
-            if (args.file != null && args.inputStream != null) {
-                throw new IllegalArgumentException("参数file和inputStream必须唯一");
+            if (args.file != null && args.stream != null) {
+                throw new IllegalArgumentException("参数file和stream必须唯一");
             }
             logWarn(args);
         }
@@ -108,9 +103,9 @@ public abstract class AbstractFileArgs extends GroupArgs {
         }
 
         @Override
-        public B inputStream(InputStream inputStream, long fileSize, String fileExtName) {
+        public B stream(InputStream stream, long fileSize, String fileExtName) {
             validateGreaterZero(fileSize, "fileSize");
-            return super.inputStream(inputStream, fileSize, fileExtName);
+            return super.stream(stream, fileSize, fileExtName);
         }
 
         @Override
@@ -164,14 +159,14 @@ public abstract class AbstractFileArgs extends GroupArgs {
         /**
          * 上传文件流
          *
-         * @param inputStream
+         * @param stream
          * @param fileSize
          * @param fileExtName
          * @return
          */
         @SuppressWarnings("unchecked")
-        public B inputStream(InputStream inputStream, long fileSize, String fileExtName) {
-            operations.add(args -> args.inputStream = inputStream);
+        public B stream(InputStream stream, long fileSize, String fileExtName) {
+            operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
             operations.add(args -> args.fileExtName = (fileExtName == null ? StringUtils.EMPTY : handlerFilename(fileExtName)));
             return (B) this;
@@ -200,27 +195,14 @@ public abstract class AbstractFileArgs extends GroupArgs {
             return (B) this;
         }
 
-
-        /**
-         * 自动关闭流 false则流不关闭
-         *
-         * @param autoClose
-         * @return
-         */
-        @SuppressWarnings("unchecked")
-        public B autoClose(boolean autoClose) {
-            operations.add(args -> args.autoClose = autoClose);
-            return (B) this;
-        }
-
     }
 
     public File file() {
         return file;
     }
 
-    public InputStream inputStream() {
-        return inputStream;
+    public InputStream stream() {
+        return stream;
     }
 
     public long fileSize() {
@@ -235,10 +217,6 @@ public abstract class AbstractFileArgs extends GroupArgs {
         return metaData;
     }
 
-    public boolean autoClose() {
-        return autoClose;
-    }
-
 
     @Override
     public boolean equals(Object o) {
@@ -247,15 +225,14 @@ public abstract class AbstractFileArgs extends GroupArgs {
         if (!super.equals(o)) return false;
         AbstractFileArgs that = (AbstractFileArgs) o;
         return fileSize == that.fileSize &&
-                autoClose == that.autoClose &&
                 Objects.equals(file, that.file) &&
-                Objects.equals(inputStream, that.inputStream) &&
+                Objects.equals(stream, that.stream) &&
                 Objects.equals(fileExtName, that.fileExtName) &&
                 Objects.equals(metaData, that.metaData);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), file, inputStream, fileSize, fileExtName, metaData, autoClose);
+        return Objects.hash(super.hashCode(), file, stream, fileSize, fileExtName, metaData);
     }
 }

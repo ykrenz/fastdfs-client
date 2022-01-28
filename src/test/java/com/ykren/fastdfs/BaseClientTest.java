@@ -8,10 +8,14 @@ import com.ykren.fastdfs.model.MetaDataInfoRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +59,7 @@ public class BaseClientTest {
     public StorePath uploadRandomFile() {
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
@@ -90,5 +94,4 @@ public class BaseClientTest {
         URL path = BaseClientTest.class.getResource(localFilePath);
         return new File(path.getPath());
     }
-
 }

@@ -44,7 +44,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .build();
         StorePath storePath = fastDFS.uploadAppenderFile(fileRequest);
         assertNotNull(storePath);
@@ -114,7 +114,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
                 .build();
@@ -189,16 +189,15 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
                         .path(storePath.getPath())
                         .stream(modifyFile2.getInputStream(), modifyFile2.getFileSize(), 0)
                         .build();
-                System.out.println("start==========" + Thread.currentThread().getName());
+                LOGGER.info("start==========" + Thread.currentThread().getName());
                 fastDFS.modifyFile(modifyFileRequest2);
                 LOGGER.info("modify上传文件 size={} result={} text={}", storePath, modifyFile2.getFileSize() / 1024 / 1024,
-
                         StringUtils.substring(modifyFile2.getText(), modifyFile2.getText().length() - 10));
-                System.out.println("end==========" + Thread.currentThread().getName());
+                LOGGER.info("end==========" + Thread.currentThread().getName());
             });
         }
         try {
-            executorService.awaitTermination(1, TimeUnit.MINUTES);
+            executorService.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -210,7 +209,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
                 .build();
@@ -245,7 +244,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .inputStream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
                 .build();
