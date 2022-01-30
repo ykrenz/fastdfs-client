@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  * @author ykren
  * @date 2022/1/28
  */
-public class UploadProgressListener implements ProgressListener {
+public abstract class UploadProgressListener implements ProgressListener {
     /**
      * 日志
      */
@@ -17,41 +17,60 @@ public class UploadProgressListener implements ProgressListener {
 
     private long bytesWritten = 0;
     private long totalBytes = -1;
-    private boolean succeed = false;
 
     @Override
     public void progressChanged(ProgressEvent progressEvent) {
         long bytes = progressEvent.getBytes();
         ProgressEventType eventType = progressEvent.getEventType();
         switch (eventType) {
-            case TRANSFER_STARTED_EVENT:
-                LOGGER.debug("Start to upload......");
+            case UPLOAD_STARTED:
                 this.totalBytes = bytes;
+                start(totalBytes);
                 break;
-            case REQUEST_BYTE_TRANSFER_EVENT:
+            case UPLOADING:
                 this.bytesWritten += bytes;
-                if (this.totalBytes != -1) {
-                    int percent = (int) (this.bytesWritten * 100.0 / this.totalBytes);
-                    LOGGER.debug(bytes + " bytes have been written at this time, upload progress: " +
-                            percent + "%(" + this.bytesWritten + "/" + this.totalBytes + ")");
-                } else {
-                    LOGGER.debug(bytes + " bytes have been written at this time, upload ratio: unknown" +
-                            "(" + this.bytesWritten + "/...)");
-                }
+                uploading(totalBytes, bytesWritten);
                 break;
-            case TRANSFER_COMPLETED_EVENT:
-                this.succeed = true;
-                LOGGER.debug("Succeed to upload, " + this.bytesWritten + " bytes have been transferred in total");
+            case UPLOAD_COMPLETED:
+                completed(totalBytes, bytesWritten);
                 break;
-            case TRANSFER_FAILED_EVENT:
-                LOGGER.debug("Failed to upload, " + this.bytesWritten + " bytes have been transferred");
+            case UPLOAD_FAILED:
+                failed(totalBytes, bytesWritten);
                 break;
             default:
                 break;
         }
     }
 
-    public boolean isSucceed() {
-        return succeed;
-    }
+    /**
+     * 开始
+     *
+     * @param totalBytes
+     */
+    public abstract void start(long totalBytes);
+
+    /**
+     * 上传中
+     *
+     * @param totalBytes
+     * @param bytesWritten
+     */
+    public abstract void uploading(long totalBytes, long bytesWritten);
+
+    /**
+     * 上传完毕
+     *
+     * @param totalBytes
+     * @param bytesWritten
+     */
+    public abstract void completed(long totalBytes, long bytesWritten);
+
+    /**
+     * 上传失败
+     *
+     * @param totalBytes
+     * @param bytesWritten
+     */
+    public abstract void failed(long totalBytes, long bytesWritten);
+
 }

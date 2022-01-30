@@ -2,7 +2,7 @@ package com.ykren.fastdfs.event;
 
 import java.io.InputStream;
 
-import static com.ykren.fastdfs.event.ProgressPublisher.publishRequestBytesTransferred;
+import static com.ykren.fastdfs.event.ProgressPublisher.publishUploadIng;
 
 class RequestProgressInputStream extends ProgressInputStream {
 
@@ -17,6 +17,6 @@ class RequestProgressInputStream extends ProgressInputStream {
 
     @Override
     protected void onNotifyBytesRead() {
-        publishRequestBytesTransferred(getListener(), getUnnotifiedByteCount());
+        publishUploadIng(getListener(), getUnnotifiedByteCount());
     }
 }

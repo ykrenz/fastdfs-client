@@ -97,11 +97,11 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
                 listener = ((ProgressInputStream) inputFile).getListener();
             }
             try {
-                publishProgress(listener, ProgressEventType.TRANSFER_STARTED_EVENT, fileSize);
+                publishProgress(listener, ProgressEventType.UPLOAD_STARTED, fileSize);
                 sendFileContent(inputFile, fileSize, out);
-                publishProgress(listener, ProgressEventType.TRANSFER_COMPLETED_EVENT);
+                publishProgress(listener, ProgressEventType.UPLOAD_COMPLETED);
             } catch (RuntimeException e) {
-                publishProgress(listener, ProgressEventType.TRANSFER_FAILED_EVENT);
+                publishProgress(listener, ProgressEventType.UPLOAD_FAILED);
                 throw e;
             }
         }

@@ -1,6 +1,6 @@
 package com.ykren.fastdfs.event;
 
-import static com.ykren.fastdfs.event.ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT;
+import static com.ykren.fastdfs.event.ProgressEventType.UPLOADING;
 
 /**
  * ProgressPublisher
@@ -31,8 +31,8 @@ public class ProgressPublisher {
         listener.progressChanged(new ProgressEvent(eventType, scannedBytes));
     }
 
-    public static void publishRequestBytesTransferred(final ProgressListener listener, final long bytes) {
-        publishByteCountEvent(listener, REQUEST_BYTE_TRANSFER_EVENT, bytes);
+    public static void publishUploadIng(final ProgressListener listener, final long bytes) {
+        publishByteCountEvent(listener, UPLOADING, bytes);
     }
 
     private static void publishByteCountEvent(final ProgressListener listener, final ProgressEventType eventType,

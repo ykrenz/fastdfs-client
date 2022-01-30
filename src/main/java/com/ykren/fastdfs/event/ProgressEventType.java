@@ -1,12 +1,24 @@
 
 package com.ykren.fastdfs.event;
 
+/**
+ * 进度事件类型
+ */
 public enum ProgressEventType {
-
     /**
-     * Transfer events.
+     * 开始上传
      */
-    REQUEST_BYTE_TRANSFER_EVENT,
-    TRANSFER_STARTED_EVENT, TRANSFER_COMPLETED_EVENT, TRANSFER_FAILED_EVENT, TRANSFER_CANCELED_EVENT,
-    TRANSFER_PART_STARTED_EVENT, TRANSFER_PART_COMPLETED_EVENT, TRANSFER_PART_FAILED_EVENT
+    UPLOAD_STARTED,
+    /**
+     * 上传中
+     */
+    UPLOADING,
+    /**
+     * 上传完毕
+     */
+    UPLOAD_COMPLETED,
+    /**
+     * 上传失败
+     */
+    UPLOAD_FAILED
 }
