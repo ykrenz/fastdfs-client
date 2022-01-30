@@ -5,6 +5,7 @@ import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
@@ -133,7 +134,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData, StorageMetadataSetType type) {
-            operations.add(args -> args.metaData.addAll(metaData));
+            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
             operations.add(args -> args.metaType = type);
             return this;
         }

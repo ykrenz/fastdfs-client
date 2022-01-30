@@ -14,10 +14,14 @@ import org.springframework.util.DigestUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,6 +45,7 @@ public class MultipartTest extends BaseClientTest {
         StorePath storePath = fastDFS.initMultipartUpload(initRequest);
         LOGGER.info("初始化完毕StorePath={}", storePath);
 
+        long start = System.currentTimeMillis();
         for (File file : chunks) {
             int partNumber = Integer.parseInt(file.getName());
             LOGGER.info("开始上传分片 partNumber={}", partNumber);
@@ -72,14 +77,14 @@ public class MultipartTest extends BaseClientTest {
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
-        LOGGER.info("上传完毕StorePath={} 源文件md5={} 可查看服务器md5进行对比", finalPath, md5);
+        LOGGER.info("上传完毕StorePath={} 源文件md5={} 可查看服务器md5进行对比 耗时={}", finalPath, md5, System.currentTimeMillis() - start);
 //        delete(finalPath);
         FileUtils.deleteDirectory(new File(chunkPath));
     }
 
 
     @Test
-    public void uploadThreadTest() throws IOException, InterruptedException {
+    public void uploadThreadTest() throws IOException, InterruptedException, ExecutionException {
         List<File> chunks = LocalFileOperation.chunkFile(testFilePath, chunkPath, partSize);
         chunks.sort(Comparator.comparingInt(c -> Integer.parseInt(c.getName())));
         InitMultipartUploadRequest initRequest = InitMultipartUploadRequest.builder()
@@ -89,24 +94,34 @@ public class MultipartTest extends BaseClientTest {
         StorePath storePath = fastDFS.initMultipartUpload(initRequest);
         LOGGER.info("初始化完毕StorePath={}", storePath);
 
-        ExecutorService service = Executors.newFixedThreadPool(3);
+        int threadCount = 3;
+        ExecutorService service = Executors.newFixedThreadPool(threadCount);
 
+        long start = System.currentTimeMillis();
+        List<Callable<Void>> taskList = new ArrayList<>();
         for (File file : chunks) {
-            service.submit(() -> {
-                int partNumber = Integer.parseInt(file.getName());
-                LOGGER.info("开始上传分片 partNumber={}", partNumber);
-                UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
-                        .file(file, partNumber)
-                        .group(storePath.getGroup())
-                        .path(storePath.getPath())
-                        .build();
-                fastDFS.uploadMultipart(multipartPartRequest);
-                LOGGER.info("上传分片完毕 partNumber={}", partNumber);
+            taskList.add(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    int partNumber = Integer.parseInt(file.getName());
+                    LOGGER.info("开始上传分片 partNumber={}", partNumber);
+                    UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
+                            .file(file, partNumber)
+                            .group(storePath.getGroup())
+                            .path(storePath.getPath())
+                            .build();
+                    fastDFS.uploadMultipart(multipartPartRequest);
+                    LOGGER.info("上传分片完毕 partNumber={}", partNumber);
+                    return null;
+                }
             });
         }
-        service.awaitTermination(10, TimeUnit.SECONDS);
+        List<Future<Void>> futures = service.invokeAll(taskList);
+        for (Future<Void> future : futures) {
+            future.get();
+        }
         service.shutdown();
-
+        LOGGER.info("线程数={} 耗时==========={}", threadCount, System.currentTimeMillis() - start);
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
                 .group(storePath.getGroup())
                 .path(storePath.getPath())
@@ -146,7 +161,7 @@ public class MultipartTest extends BaseClientTest {
         ExecutorService abortService = Executors.newFixedThreadPool(1);
         abortService.submit(() -> {
             try {
-                TimeUnit.MILLISECONDS.sleep(1000);
+                TimeUnit.MILLISECONDS.sleep(300);
                 AbortMultipartRequest abortMultipartRequest = AbortMultipartRequest.builder()
                         .group(storePath.getGroup())
                         .path(storePath.getPath())

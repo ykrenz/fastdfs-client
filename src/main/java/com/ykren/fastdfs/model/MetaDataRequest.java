@@ -2,6 +2,7 @@ package com.ykren.fastdfs.model;
 
 import com.ykren.fastdfs.model.fdfs.MetaData;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -50,7 +51,7 @@ public class MetaDataRequest extends GroupPathArgs {
          * @return
          */
         public Builder metaData(Set<MetaData> metaData) {
-            operations.add(args -> args.metaData.addAll(metaData));
+            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
             return this;
         }
     }

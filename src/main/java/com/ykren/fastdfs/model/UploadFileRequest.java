@@ -4,6 +4,7 @@ import com.ykren.fastdfs.model.fdfs.MetaData;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -83,11 +84,11 @@ public class UploadFileRequest extends AbstractFileArgs {
         /**
          * 元数据信息
          *
-         * @param metaDataSet
+         * @param metaData
          * @return
          */
-        public Builder metaData(Set<MetaData> metaDataSet) {
-            operations.add(args -> args.metaData.addAll(metaDataSet));
+        public Builder metaData(Set<MetaData> metaData) {
+            operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
             return this;
         }
     }
