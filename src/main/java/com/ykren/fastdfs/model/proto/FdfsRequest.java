@@ -3,9 +3,6 @@ package com.ykren.fastdfs.model.proto;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import com.ykren.fastdfs.event.ProgressInputStream;
-import com.ykren.fastdfs.event.ProgressListener;
-import com.ykren.fastdfs.event.UploadProgressListener;
 import com.ykren.fastdfs.model.proto.mapper.FdfsParamMapper;
 import com.ykren.fastdfs.model.proto.mapper.ObjectMetaData;
 

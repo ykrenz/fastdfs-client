@@ -1,6 +1,5 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.model.AbortMultipartRequest;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
 import com.ykren.fastdfs.model.DownloadFileRequest;
