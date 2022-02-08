@@ -49,6 +49,7 @@ public class MultipartTest extends BaseClientTest {
             LOGGER.info("开始上传分片 partNumber={}", partNumber);
             UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
                     .file(file, partNumber)
+                    .partSize(partSize)
                     .group(storePath.getGroup())
                     .path(storePath.getPath())
                     .build();
