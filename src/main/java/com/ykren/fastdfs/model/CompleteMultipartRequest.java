@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -25,7 +26,7 @@ public class CompleteMultipartRequest extends GroupPathArgs {
     /**
      * 文件元数据
      */
-    protected Set<MetaData> metaData;
+    protected Set<MetaData> metaData = new HashSet<>();
 
     public boolean regenerate() {
         return regenerate;

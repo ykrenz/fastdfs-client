@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateFile;
-import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
 import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN;
 import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_NAME_LEN;
 import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_VALUE_LEN;
@@ -100,7 +100,7 @@ public abstract class AbstractFileArgs extends GroupArgs {
             if (args.file != null) {
                 validateFile(args.file);
             }
-            validateGreaterZero(args.fileSize, "fileSize");
+            validateNotLessZero(args.fileSize, "fileSize");
 
             if (args.fileExtName != null && args.fileExtName.length() > FDFS_FILE_EXT_NAME_MAX_LEN) {
                 String msg = String.format("fileExtName length > %d", FDFS_FILE_EXT_NAME_MAX_LEN);

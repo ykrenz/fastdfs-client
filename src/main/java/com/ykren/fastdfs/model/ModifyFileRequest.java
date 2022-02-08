@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
 import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
 import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
 
@@ -58,7 +58,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
         protected void validate(ModifyFileRequest args) {
             super.validate(args);
             validateNotBlankString(args.path, "path");
-            validateGreaterZero(args.fileOffset, "fileOffset");
+            validateNotLessZero(args.fileOffset, "fileOffset");
             if (args.metaData != null && !args.metaData.isEmpty()) {
                 validateNotNull(args.metaType, "metadata type");
             }

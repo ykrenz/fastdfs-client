@@ -1,13 +1,10 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.common.FastDFSUtils;
 import com.ykren.fastdfs.conn.FdfsConnectionPool;
 import com.ykren.fastdfs.conn.TrackerConnectionManager;
 import com.ykren.fastdfs.event.ProgressInputStream;
 import com.ykren.fastdfs.event.ProgressListener;
 import com.ykren.fastdfs.exception.FdfsIOException;
-import com.ykren.fastdfs.exception.FdfsUnavailableException;
-import com.ykren.fastdfs.model.AbortMultipartRequest;
 import com.ykren.fastdfs.model.AbstractFileArgs;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
@@ -28,8 +25,6 @@ import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorageNode;
 import com.ykren.fastdfs.model.fdfs.StorageNodeInfo;
 import com.ykren.fastdfs.model.fdfs.StorePath;
-import com.ykren.fastdfs.model.proto.OtherConstants;
-import com.ykren.fastdfs.model.proto.storage.CompleteMultipartRegenerateFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageAppendFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageDeleteFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageDownloadCommand;
@@ -47,12 +42,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -60,7 +55,7 @@ import java.util.Set;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
 import static com.ykren.fastdfs.common.FastDFSUtils.handlerFilename;
-import static com.ykren.fastdfs.model.proto.OtherConstants.GROUP;
+import static com.ykren.fastdfs.model.proto.OtherConstants.DEFAULT_STREAM_BUFFER_SIZE;
 
 /**
  * FastDFSClient默认客户端
@@ -75,12 +70,14 @@ public class FastDFSClient implements FastDFS {
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(FastDFSClient.class);
 
+    private static final String GROUP = "group";
+
     private final TrackerClient trackerClient;
 
     private final TrackerConnectionManager trackerConnectionManager;
 
     /**
-     * 分组group 优先级大于参数 ${@link FastDFSClient#getGroup(GroupArgs)}
+     * 分组group 优先级大于参数 ${@link #getGroup(GroupArgs)}
      * 优点是可以固定分组上传 不用每次都设置group
      */
     private String group;
@@ -98,7 +95,6 @@ public class FastDFSClient implements FastDFS {
         this.trackerClient = new DefaultTrackerClient(trackerConnectionManager);
         this.group = group;
     }
-
 
     public TrackerConnectionManager getConnectionManager() {
         return trackerConnectionManager;
@@ -373,16 +369,12 @@ public class FastDFSClient implements FastDFS {
 
     // region multipart
 
-    private static final String PART_UPLOAD_META = "partInfo";
-    private static final String UNDERLINE = "-";
-
     @Override
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
         String groupName = getGroup(request);
         UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
                 .group(groupName)
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, handlerFilename(request.fileExtName()))
-                .metaData(PART_UPLOAD_META, request.fileSize() + UNDERLINE + request.partSize() + UNDERLINE + request.partCount())
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
         if (request.fileSize() > 0) {
@@ -403,36 +395,18 @@ public class FastDFSClient implements FastDFS {
         String groupName = getGroup(request);
         String path = request.path();
         validateNotBlankString(groupName, GROUP);
-        MetaDataInfoRequest metaDataInfoRequest = MetaDataInfoRequest.builder().group(groupName).path(path).build();
-        Set<MetaData> metadata = getMetadata(metaDataInfoRequest);
-        if (metadata.isEmpty()) {
-            throw new FdfsUnavailableException("File does not exist maybe abort upload or has been completed. ");
-        }
-        MetaData metaData = new ArrayList<>(metadata).get(0);
-        String partInfo = metaData.getValue();
-        String[] partInfoArr = StringUtils.split(partInfo, UNDERLINE);
-        long fileSize = Long.parseLong(partInfoArr[0]);
-        long partSize = Long.parseLong(partInfoArr[1]);
-        long partCount = Long.parseLong(partInfoArr[2]);
-
+        long fileSize = request.fileSize();
+        long partSize = request.partSize();
         int partNumber = request.partNumber();
-        if (partNumber > partCount) {
-            String msg = String.format("file partCount is %d your partNumber = %d > %d?. ", partCount, partNumber, partCount);
-            throw new FdfsUnavailableException(msg);
-        }
         // 计算offset
         long offset = 0;
-        if (partNumber != 1) {
+        if (partNumber > 1) {
             offset = (partNumber - 1) * partSize;
-        }
-        long currentSize = request.partSize();
-        if (offset + currentSize > fileSize) {
-            throw new FdfsUnavailableException("Sum of the part size is greater than the file size？ please check your part. ");
         }
         ModifyFileRequest modifyFileRequest = ModifyFileRequest.builder()
                 .group(groupName)
                 .path(path)
-                .stream(request.stream(), currentSize, offset)
+                .stream(request.stream(), fileSize, offset)
                 .file(request.file(), offset).build();
         modifyFile(modifyFileRequest);
     }
@@ -444,9 +418,11 @@ public class FastDFSClient implements FastDFS {
         validateNotBlankString(groupName, GROUP);
         StorePath storePath = new StorePath(groupName, path);
         if (request.regenerate()) {
-            StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-            CompleteMultipartRegenerateFileCommand command = new CompleteMultipartRegenerateFileCommand(path);
-            storePath = trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+            RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
+                    .group(storePath.getGroup())
+                    .path(storePath.getPath())
+                    .build();
+            storePath = regenerateAppenderFile(reRequest);
         }
         // 重置metadata
         MetaDataRequest metaDataRequest = MetaDataRequest.builder()
@@ -456,17 +432,6 @@ public class FastDFSClient implements FastDFS {
                 .build();
         overwriteMetadata(metaDataRequest);
         return storePath;
-    }
-
-    @Override
-    public void abortMultipartUpload(AbortMultipartRequest request) {
-        // 删除源文件
-        String groupName = getGroup(request);
-        FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                .group(groupName)
-                .path(request.path())
-                .build();
-        deleteFile(fileInfoRequest);
     }
 
     // endregion multipart
@@ -488,12 +453,15 @@ public class FastDFSClient implements FastDFS {
         Objects.requireNonNull(args);
         File file = args.file();
         InputStream is = args.stream();
+
         if (file != null) {
             try {
                 is = new AutoCloseInputStream(new FileInputStream(file));
             } catch (FileNotFoundException e) {
                 throw new FdfsIOException(e);
             }
+        } else {
+            is = new BufferedInputStream(is, DEFAULT_STREAM_BUFFER_SIZE);
         }
         ProgressListener listener = args.listener();
         return (listener == null || listener == ProgressListener.NOOP) ?

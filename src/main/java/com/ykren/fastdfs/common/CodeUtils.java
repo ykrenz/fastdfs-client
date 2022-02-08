@@ -57,9 +57,16 @@ public final class CodeUtils {
         }
     }
 
-    public static void validateGreaterZero(Number arg, String argName) {
+    public static void validateNotLessZero(Number arg, String argName) {
         if (arg == null || arg.longValue() < 0) {
             throw new IllegalArgumentException(argName + " must not be < 0 ");
+        }
+    }
+
+
+    public static void validateGreaterZero(Number arg, String argName) {
+        if (arg == null || arg.longValue() <= 0) {
+            throw new IllegalArgumentException(argName + " must be > 0 ");
         }
     }
 

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.ykren.fastdfs.exception.FdfsIOException;
 
 import static com.ykren.fastdfs.event.ProgressPublisher.publishProgress;
+import static com.ykren.fastdfs.model.proto.OtherConstants.DEFAULT_BUFFER_SIZE;
 
 /**
  * 交易命令抽象类
@@ -137,7 +138,7 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
      */
     protected void sendFileContent(InputStream ins, long size, OutputStream ous) throws IOException {
         long remainBytes = size;
-        byte[] buff = new byte[256 * 1024];
+        byte[] buff = new byte[DEFAULT_BUFFER_SIZE];
         int bytes;
         while ((bytes = ins.read(buff)) != -1) {
             ous.write(buff, 0, bytes);

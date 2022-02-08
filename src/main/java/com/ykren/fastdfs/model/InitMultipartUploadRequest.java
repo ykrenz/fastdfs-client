@@ -2,7 +2,7 @@ package com.ykren.fastdfs.model;
 
 import java.util.Objects;
 
-import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
 
 /**
  * 初始化分片上传
@@ -16,14 +16,6 @@ public class InitMultipartUploadRequest extends GroupArgs {
      */
     protected long fileSize;
     /**
-     * 分片大小
-     */
-    protected long partSize;
-    /**
-     * 分片个数
-     */
-    protected long partCount;
-    /**
      * 文件后缀
      */
     protected String fileExtName;
@@ -36,14 +28,6 @@ public class InitMultipartUploadRequest extends GroupArgs {
         return fileSize;
     }
 
-    public long partSize() {
-        return partSize;
-    }
-
-    public long partCount() {
-        return partCount;
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -54,22 +38,17 @@ public class InitMultipartUploadRequest extends GroupArgs {
     public static final class Builder extends GroupArgs.Builder<InitMultipartUploadRequest.Builder, InitMultipartUploadRequest> {
         @Override
         protected void validate(InitMultipartUploadRequest args) {
-            validateGreaterZero(args.fileSize, "fileSize");
-            validateGreaterZero(args.partSize, "partSize");
+            validateNotLessZero(args.fileSize, "fileSize");
         }
 
         /**
          * 文件大小
          *
          * @param fileSize 文件大小
-         * @param partSize 分片大小
          * @return
          */
-        public Builder fileSize(long fileSize, long partSize) {
+        public Builder fileSize(long fileSize) {
             operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.partSize = partSize);
-            long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
-            operations.add(arg -> arg.partCount = partCount);
             return this;
         }
 
@@ -91,14 +70,12 @@ public class InitMultipartUploadRequest extends GroupArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         InitMultipartUploadRequest that = (InitMultipartUploadRequest) o;
-        return partSize == that.partSize &&
-                fileSize == that.fileSize &&
-                partCount == that.partCount &&
+        return fileSize == that.fileSize &&
                 Objects.equals(fileExtName, that.fileExtName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), partSize, fileSize, partCount, fileExtName);
+        return Objects.hash(super.hashCode(), fileSize, fileExtName);
     }
 }

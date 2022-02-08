@@ -155,18 +155,11 @@ public interface FastDFS {
 
     /**
      * 完成分片上传
-     * V6.02 regenerate = false
+     * version<6.02 regenerate = false
      *
      * @param request
      * @return 最终文件路径
      */
     StorePath completeMultipartUpload(CompleteMultipartRequest request);
-
-    /**
-     * 终止分片上传
-     *
-     * @param request
-     */
-    void abortMultipartUpload(AbortMultipartRequest request);
 
 }

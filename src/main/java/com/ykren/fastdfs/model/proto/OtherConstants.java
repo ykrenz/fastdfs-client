@@ -1,7 +1,5 @@
 package com.ykren.fastdfs.model.proto;
 
-import java.util.regex.Pattern;
-
 /**
  * fastdfs协议暂时未分类的常量
  *
@@ -60,7 +58,8 @@ public final class OtherConstants {
     public static final long TRUNK_LOGIC_FILENAME_LENGTH = NORMAL_LOGIC_FILENAME_LENGTH + FDFS_TRUNK_FILE_INFO_LEN;
 
 
+    public static final int KB = 1024;
+    public static final int DEFAULT_BUFFER_SIZE = 8 * KB;
+    public static final int DEFAULT_STREAM_BUFFER_SIZE = 512 * KB;
 
-    public static final String GROUP = "group";
-    public static final String PATH = "path";
 }

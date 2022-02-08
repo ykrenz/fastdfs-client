@@ -5,7 +5,7 @@ import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
 
 import java.util.Objects;
 
-import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
 
 /**
  * 下载文件信息参数
@@ -51,8 +51,8 @@ public class DownloadFileRequest<T> extends GroupPathArgs {
         @Override
         protected void validate(DownloadFileRequest<T> args) {
             super.validate(args);
-            validateGreaterZero(args.fileOffset, "fileOffset");
-            validateGreaterZero(args.fileSize, "fileSize");
+            validateNotLessZero(args.fileOffset, "fileOffset");
+            validateNotLessZero(args.fileSize, "fileSize");
         }
 
         @SuppressWarnings("unchecked")

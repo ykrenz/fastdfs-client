@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.Objects;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
 import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
 
 /**
@@ -17,7 +18,7 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
      */
     protected int partNumber;
     /**
-     * 当前分片的大小
+     * 分片大小
      */
     protected long partSize;
 
@@ -48,8 +49,9 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
         @Override
         protected void validate(UploadMultipartPartRequest args) {
             super.validate(args);
-            validateGreaterZero(args.partNumber, "partNumber");
+            validateNotLessZero(args.partNumber, "partNumber");
             validateGreaterZero(args.partSize, "partSize");
+            validateNotLessZero(args.fileSize, "fileSize");
             validateNotBlankString(args.path, "path");
         }
 
@@ -83,7 +85,7 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
          */
         public Builder file(File file, int partNumber) {
             operations.add(args -> args.file = file);
-            operations.add(args -> args.partSize = file.length());
+            operations.add(args -> args.fileSize = file.length());
             operations.add(args -> args.partNumber = partNumber);
             return this;
         }
@@ -95,9 +97,20 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
          * @param inputStream
          * @return
          */
-        public Builder stream(InputStream inputStream, int partNumber, long partSize) {
+        public Builder stream(InputStream inputStream, int partNumber, long fileSize) {
             operations.add(args -> args.stream = inputStream);
             operations.add(args -> args.partNumber = partNumber);
+            operations.add(args -> args.fileSize = fileSize);
+            return this;
+        }
+
+        /**
+         * 分片大小
+         *
+         * @param partSize
+         * @return
+         */
+        public Builder partSize(long partSize) {
             operations.add(args -> args.partSize = partSize);
             return this;
         }

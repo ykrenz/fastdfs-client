@@ -35,7 +35,7 @@ public class BaseClientTest {
     public static final List<String> TRACKER_LIST = new ArrayList<>();
 
     static {
-        TRACKER_LIST.add("192.168.24.129:22122");
+        TRACKER_LIST.add("192.168.24.130:22122");
     }
 
     @Before
@@ -44,8 +44,6 @@ public class BaseClientTest {
         trackerClient = fastDFS.trackerClient();
         LOGGER.info("初始化tracker={}", trackerClient.getTrackerList());
         LOGGER.info("fastDFSClient={}", fastDFS);
-
-
     }
 
     @After

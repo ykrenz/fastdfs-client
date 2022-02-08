@@ -24,28 +24,23 @@ public class ProgressTest extends BaseClientTest {
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .listener(new UploadProgressListener() {
                     @Override
-                    public void start(long totalBytes) {
-                        LOGGER.info("开始上传...");
+                    public void start() {
+                        LOGGER.info("开始上传...文件总大小={}", totalBytes);
                     }
 
                     @Override
-                    public void uploading(long totalBytes, long bytesWritten) {
-                        if (totalBytes > 0) {
-                            int percent = (int) (bytesWritten * 100.0 / totalBytes);
-                            LOGGER.info("上传中 上传进度为" + percent);
-                        } else {
-                            LOGGER.info("上传中 已经上传字节数为" + bytesWritten);
-                        }
+                    public void uploading() {
+                        LOGGER.info("上传中 上传进度为" + percent());
                     }
 
                     @Override
-                    public void completed(long totalBytes, long bytesWritten) {
+                    public void completed() {
                         LOGGER.info("上传完成...");
                     }
 
                     @Override
-                    public void failed(long totalBytes, long bytesWritten) {
-                        LOGGER.info("开始失败...");
+                    public void failed() {
+                        LOGGER.info("上传失败...已经上传的字节数={}", bytesWritten);
                     }
                 })
                 .build();
