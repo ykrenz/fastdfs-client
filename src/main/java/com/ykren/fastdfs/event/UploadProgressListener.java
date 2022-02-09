@@ -18,6 +18,7 @@ public abstract class UploadProgressListener implements ProgressListener {
         switch (eventType) {
             case UPLOAD_STARTED:
                 this.totalBytes = bytes;
+                this.bytesWritten = 0;
                 start();
                 break;
             case UPLOADING:

@@ -11,9 +11,11 @@ import com.ykren.fastdfs.model.ModifyFileRequest;
 import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
 import com.ykren.fastdfs.model.TruncateFileRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
+import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.UploadMultipartPartRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
+import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 
@@ -53,6 +55,19 @@ public interface FastDFS {
      * @return
      */
     StorePath uploadSlaveFile(UploadSalveFileRequest request);
+
+    /**
+     * 上传图片
+     * <pre>
+     * thumbImage是否生成缩略图
+     *   1 根据指定尺寸生成缩略图
+     *   2 根据指定比例生成缩略图
+     * <pre/>
+     *
+     * @param request 上传文件配置
+     * @return
+     */
+    ImageStorePath uploadImage(UploadImageRequest request);
 
     /**
      * 获取文件元信息

@@ -5,6 +5,7 @@ import com.ykren.fastdfs.conn.TrackerConnectionManager;
 import com.ykren.fastdfs.event.ProgressInputStream;
 import com.ykren.fastdfs.event.ProgressListener;
 import com.ykren.fastdfs.exception.FdfsIOException;
+import com.ykren.fastdfs.exception.FdfsUploadImageException;
 import com.ykren.fastdfs.model.AbstractFileArgs;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
@@ -16,11 +17,14 @@ import com.ykren.fastdfs.model.MetaDataInfoRequest;
 import com.ykren.fastdfs.model.MetaDataRequest;
 import com.ykren.fastdfs.model.ModifyFileRequest;
 import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
+import com.ykren.fastdfs.model.ThumbImage;
 import com.ykren.fastdfs.model.TruncateFileRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
+import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.UploadMultipartPartRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
+import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorageNode;
 import com.ykren.fastdfs.model.fdfs.StorageNodeInfo;
@@ -37,16 +41,20 @@ import com.ykren.fastdfs.model.proto.storage.StorageTruncateCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageUploadFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageUploadSlaveFileCommand;
 import com.ykren.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
-import org.apache.commons.io.input.AutoCloseInputStream;
+import net.coobird.thumbnailator.Thumbnails;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
@@ -123,9 +131,10 @@ public class FastDFSClient implements FastDFS {
         //获取上传流
         InputStream is = wrapperStream(request);
         String groupName = getGroup(request);
-        LOGGER.debug("获取到上传的group={}", groupName);
+        // 获取存储节点
+        StorageNode client = trackerClient.getStoreStorage(groupName);
         // 上传文件
-        return uploadFileAndMetaData(groupName, is,
+        return uploadFileAndMetaData(client, is,
                 request.fileSize(), handlerFilename(request.fileExtName()), request.metaData(), false);
     }
 
@@ -143,20 +152,163 @@ public class FastDFSClient implements FastDFS {
                 is, request.fileSize(), prefix, handlerFilename(request.fileExtName()), request.metaData());
     }
 
+    @Override
+    public ImageStorePath uploadImage(UploadImageRequest request) {
+        if (request.onlyThumb()) {
+            LOGGER.debug("only upload thumb image imgPath return null");
+            StorePath storePath = uploadThumbImage(request);
+            return new ImageStorePath(null, storePath);
+        }
+        return uploadImageAndThumb(request);
+    }
+
+    private StorePath uploadThumbImage(UploadImageRequest request) {
+        ThumbImage thumbImage = request.thumbImage();
+        try (InputStream stream = getStream(request);
+             ByteArrayInputStream thumbImageStream = generateThumbImageStream(stream, thumbImage)) {
+            String groupName = getGroup(request);
+            // 获取存储节点
+            StorageNode client = trackerClient.getStoreStorage(groupName);
+            String fileExtName = handlerFilename(request.fileExtName());
+            Set<MetaData> metaDataSet = request.thumbMetaData();
+            return uploadFileAndMetaData(client, progressStream(request.listener(), thumbImageStream), thumbImageStream.available(),
+                    fileExtName, metaDataSet, false);
+        } catch (IOException e) {
+            throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
+        }
+    }
+
+    private ImageStorePath uploadImageAndThumb(UploadImageRequest request) {
+        //获取上传流
+        byte[] bytes = null;
+        try (InputStream is = getStream(request)) {
+            bytes = inputStreamToByte(is);
+            String groupName = getGroup(request);
+            // 上传文件
+            String fileExtName = handlerFilename(request.fileExtName());
+            // 获取存储节点
+            StorageNode client = trackerClient.getStoreStorage(groupName);
+            StorePath imgPath = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
+                    request.fileSize(), fileExtName, request.metaData(), false);
+            LOGGER.debug("upload image success");
+
+            //如果设置了需要上传缩略图
+            ThumbImage thumbImage = request.thumbImage();
+            StorePath thumbPath = null;
+            if (null != thumbImage) {
+                try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+                     ByteArrayInputStream thumbImageStream = generateThumbImageStream(inputStream, thumbImage)) {
+                    // 获取文件大小
+                    long fileSize = thumbImageStream.available();
+                    // 获取配置缩略图前缀
+                    String prefixName = thumbImage.getPrefixName();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("获取到缩略图前缀{}", prefixName);
+                    }
+                    StorageNodeInfo storageNodeInfo = new StorageNodeInfo(client.getIp(), client.getPort());
+                    thumbPath = uploadSalveFileAndMetaData(storageNodeInfo, imgPath.getPath(),
+                            progressStream(request.listener(), thumbImageStream), fileSize, prefixName, fileExtName, request.thumbMetaData());
+                    LOGGER.debug("upload thumb image success thumbImage={}", thumbImage);
+                }
+            }
+            return new ImageStorePath(imgPath, thumbPath);
+        } catch (IOException e) {
+            throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
+        } finally {
+            bytes = null;
+        }
+    }
+
+    /**
+     * 获取byte流
+     *
+     * @param inputStream
+     * @return
+     */
+    private byte[] inputStreamToByte(InputStream inputStream) {
+        try {
+            return IOUtils.toByteArray(inputStream);
+        } catch (IOException e) {
+            throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
+        }
+    }
+
+    /**
+     * 生成缩略图
+     *
+     * @param inputStream
+     * @param thumbImage
+     * @return
+     * @throws IOException
+     */
+    private ByteArrayInputStream generateThumbImageStream(InputStream inputStream,
+                                                          ThumbImage thumbImage) throws IOException {
+        //根据传入配置生成缩略图
+        if (thumbImage.getPercent() != 0) {
+            return generateThumbImageByPercent(inputStream, thumbImage);
+        } else {
+            return generateThumbImageBySize(inputStream, thumbImage);
+        }
+    }
+
+    /**
+     * 根据传入比例生成缩略图
+     *
+     * @param inputStream
+     * @param thumbImage
+     * @return
+     * @throws IOException
+     */
+    private ByteArrayInputStream generateThumbImageByPercent(InputStream inputStream,
+                                                             ThumbImage thumbImage) throws IOException {
+        LOGGER.debug("根据传入比例生成缩略图");
+        // 在内存当中生成缩略图
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        //@formatter:off
+        Thumbnails
+                .of(inputStream)
+                .scale(thumbImage.getPercent())
+                .imageType(BufferedImage.TYPE_INT_ARGB)
+                .toOutputStream(out);
+        //@formatter:on
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    /**
+     * 根据传入尺寸生成缩略图
+     *
+     * @param inputStream
+     * @param thumbImage
+     * @return
+     * @throws IOException
+     */
+    private ByteArrayInputStream generateThumbImageBySize(InputStream inputStream,
+                                                          ThumbImage thumbImage) throws IOException {
+        LOGGER.debug("根据传入尺寸生成缩略图");
+        // 在内存当中生成缩略图
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        //@formatter:off
+        Thumbnails
+                .of(inputStream)
+                .size(thumbImage.getWidth(), thumbImage.getHeight())
+                .imageType(BufferedImage.TYPE_INT_ARGB)
+                .toOutputStream(out);
+        //@formatter:on
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
     /**
      * 上传文件和元数据
      *
-     * @param groupName
+     * @param client
      * @param inputStream
      * @param fileSize
      * @param fileExtName
      * @param metaDataSet
      * @return
      */
-    protected StorePath uploadFileAndMetaData(String groupName, InputStream inputStream, long fileSize,
+    protected StorePath uploadFileAndMetaData(StorageNode client, InputStream inputStream, long fileSize,
                                               String fileExtName, Set<MetaData> metaDataSet, boolean isAppenderFile) {
-        // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(groupName);
         // 上传文件
         StorageUploadFileCommand command = new StorageUploadFileCommand(client.getStoreIndex(), inputStream,
                 fileExtName, fileSize, isAppenderFile);
@@ -274,7 +426,7 @@ public class FastDFSClient implements FastDFS {
         return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
-    // region appender com.ykren.fastdfs.file
+    // region appender
 
     @Override
     public StorePath uploadAppenderFile(UploadFileRequest request) {
@@ -282,8 +434,10 @@ public class FastDFSClient implements FastDFS {
         String groupName = getGroup(request);
         // 获取上传流
         InputStream inputStream = wrapperStream(request);
+        // 获取存储节点
+        StorageNode client = trackerClient.getStoreStorage(groupName);
         // 上传追加文件
-        return uploadFileAndMetaData(groupName, inputStream,
+        return uploadFileAndMetaData(client, inputStream,
                 request.fileSize(), handlerFilename(request.fileExtName()), request.metaData(), true);
     }
 
@@ -443,28 +597,44 @@ public class FastDFSClient implements FastDFS {
      * @return
      */
     private String getGroup(GroupArgs args) {
-        return StringUtils.isNotBlank(group) ? group : args.group();
+        String groupName = StringUtils.isNotBlank(group) ? group : args.group();
+        LOGGER.debug("获取到上传的group={}", groupName);
+        return groupName;
+    }
+
+    /**
+     * 装饰流
+     *
+     * @param args
+     * @return
+     */
+    private InputStream wrapperStream(AbstractFileArgs args) {
+        InputStream is = getStream(args);
+        return progressStream(args.listener(), is);
+    }
+
+    private InputStream progressStream(ProgressListener listener, InputStream is) {
+        return (listener == null || listener == ProgressListener.NOOP) ?
+                is : ProgressInputStream.inputStreamForRequest(is, listener);
     }
 
     /**
      * 获取上传流
      */
-    private InputStream wrapperStream(AbstractFileArgs args) {
+    private InputStream getStream(AbstractFileArgs args) {
         Objects.requireNonNull(args);
         File file = args.file();
         InputStream is = args.stream();
-
         if (file != null) {
             try {
-                is = new AutoCloseInputStream(new FileInputStream(file));
+                is = new FileInputStream(file);
             } catch (FileNotFoundException e) {
                 throw new FdfsIOException(e);
             }
         } else {
             is = new BufferedInputStream(is, DEFAULT_STREAM_BUFFER_SIZE);
         }
-        ProgressListener listener = args.listener();
-        return (listener == null || listener == ProgressListener.NOOP) ?
-                is : ProgressInputStream.inputStreamForRequest(is, listener);
+        return is;
     }
+
 }

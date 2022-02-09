@@ -94,16 +94,19 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
         // 输出文件流
         ProgressListener listener = ProgressListener.NOOP;
         if (null != inputFile) {
-            if (inputFile instanceof ProgressInputStream) {
-                listener = ((ProgressInputStream) inputFile).getListener();
-            }
             try {
+                if (inputFile instanceof ProgressInputStream) {
+                    listener = ((ProgressInputStream) inputFile).getListener();
+                }
                 publishProgress(listener, ProgressEventType.UPLOAD_STARTED, fileSize);
                 sendFileContent(inputFile, fileSize, out);
                 publishProgress(listener, ProgressEventType.UPLOAD_COMPLETED);
             } catch (RuntimeException e) {
                 publishProgress(listener, ProgressEventType.UPLOAD_FAILED);
                 throw e;
+            } finally {
+                // Close the request stream as well after the request is completed.
+                inputFile.close();
             }
         }
     }

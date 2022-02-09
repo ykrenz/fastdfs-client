@@ -1,11 +1,15 @@
 package com.ykren.fastdfs;
 
 
+import com.ykren.fastdfs.event.UploadProgressListener;
 import com.ykren.fastdfs.model.DownloadFileRequest;
 import com.ykren.fastdfs.model.MetaDataRequest;
+import com.ykren.fastdfs.model.ThumbImage;
 import com.ykren.fastdfs.model.UploadFileRequest;
+import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
+import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.junit.Test;
@@ -218,5 +222,66 @@ public class StorageClientBasicTest extends BaseClientTest {
         fastDFS.downloadFile(request);
 
         delete(storePath);
+    }
+
+    @Test
+    public void uploadImageTest() {
+        File file = getFile();
+        UploadImageRequest request = UploadImageRequest.builder()
+                .file(file)
+                .thumbImage(new ThumbImage(150, 150))
+                .metaData("a", "a")
+                .thumbMetaData("b", "b")
+                .listener(new UploadProgressListener() {
+                    @Override
+                    public void start() {
+
+                    }
+
+                    @Override
+                    public void uploading() {
+                        System.out.println(percent());
+                    }
+
+                    @Override
+                    public void completed() {
+
+                    }
+
+                    @Override
+                    public void failed() {
+
+                    }
+                })
+                .build();
+        ImageStorePath imageStorePath = fastDFS.uploadImage(request);
+        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
+        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+
+        request = UploadImageRequest.builder()
+                .file(file)
+                .onlyThumbImage(new ThumbImage(150, 150))
+                .build();
+        imageStorePath = fastDFS.uploadImage(request);
+        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
+        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+
+        request = UploadImageRequest.builder()
+                .file(file)
+                .onlyThumbImage(new ThumbImage(0.5))
+                .build();
+        imageStorePath = fastDFS.uploadImage(request);
+        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
+        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+
+        ThumbImage thumbImage = new ThumbImage(0.5);
+        thumbImage.setPrefixName("xxx");
+        request = UploadImageRequest.builder()
+                .file(file)
+                .thumbImage(thumbImage)
+                .build();
+        imageStorePath = fastDFS.uploadImage(request);
+        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
+        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
     }
 }
