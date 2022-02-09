@@ -8,8 +8,14 @@ package com.ykren.fastdfs.model.fdfs;
  */
 public class ImageStorePath {
 
+    /**
+     * 原始图片path
+     */
     private StorePath imgPath;
 
+    /**
+     * 缩略图path
+     */
     private StorePath thumbPath;
 
     public ImageStorePath(StorePath imgPath) {
