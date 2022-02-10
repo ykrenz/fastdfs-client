@@ -12,6 +12,7 @@ import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
+import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,13 +214,12 @@ public class StorageClientBasicTest extends BaseClientTest {
     @Test
     public void downLoadTest() {
         StorePath storePath = uploadRandomFile();
-        DownloadFileRequest<String> request = DownloadFileRequest.builder()
+        DownloadFileRequest request = DownloadFileRequest.builder()
                 .group(storePath.getGroup())
                 .path(storePath.getPath())
                 .fileSize(2)
-                .file("tmp/tmp1.txt")
                 .build();
-        fastDFS.downloadFile(request);
+        fastDFS.downloadFile(request, new DownloadFileWriter("tmp/tmp1.txt"));
 
         delete(storePath);
     }

@@ -70,13 +70,13 @@ public class FastDFSConfiguration {
          */
         private static final int MAX_TOTAL_PER_KEY = 500;
         /**
-         * 每个key最小空闲连接数 10
-         */
-        private static final int MIN_IDLE_PER_KEY = 10;
-        /**
          * 每个key最大空闲连接数 100
          */
         private static final int MAX_IDLE_PER_KEY = 100;
+        /**
+         * 每个key最小空闲连接数 10
+         */
+        private static final int MIN_IDLE_PER_KEY = 10;
         /**
          * 空闲连接存活时长 30min
          */
@@ -89,8 +89,8 @@ public class FastDFSConfiguration {
         public Pool() {
             setMaxWaitMillis(MAX_WAIT_MILLIS);
             setMaxTotalPerKey(MAX_TOTAL_PER_KEY);
-            setMaxIdlePerKey(MIN_IDLE_PER_KEY);
-            setMinIdlePerKey(MAX_IDLE_PER_KEY);
+            setMaxIdlePerKey(MAX_IDLE_PER_KEY);
+            setMinIdlePerKey(MIN_IDLE_PER_KEY);
             setMinEvictableIdleTimeMillis(IDLE_TIME_MILLIS);
             setTimeBetweenEvictionRunsMillis(EVICT_IDLE_SCHEDULE_TIME_MILLIS);
         }

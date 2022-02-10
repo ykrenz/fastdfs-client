@@ -18,6 +18,7 @@ import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
+import com.ykren.fastdfs.model.proto.storage.DownloadCallback;
 
 import java.util.Set;
 
@@ -110,9 +111,10 @@ public interface FastDFS {
      * 下载文件
      *
      * @param request
+     * @param callback
      * @return
      */
-    <T> T downloadFile(DownloadFileRequest<T> request);
+    <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback);
 
     /**
      * 上传支持断点续传的文件

@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * param对象与byte映射器
@@ -24,7 +24,7 @@ public class FdfsParamMapper {
     /**
      * 对象映射缓存
      */
-    private static Map<String, ObjectMetaData> mapCache = new HashMap<String, ObjectMetaData>();
+    private static Map<String, ObjectMetaData> mapCache = new ConcurrentHashMap<>();
 
     /**
      * 日志

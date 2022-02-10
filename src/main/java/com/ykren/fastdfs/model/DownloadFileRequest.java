@@ -1,8 +1,5 @@
 package com.ykren.fastdfs.model;
 
-import com.ykren.fastdfs.model.proto.storage.DownloadCallback;
-import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
-
 import java.util.Objects;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
@@ -13,7 +10,7 @@ import static com.ykren.fastdfs.common.CodeUtils.validateNotLessZero;
  * @author ykren
  * @date 2022/1/22
  */
-public class DownloadFileRequest<T> extends GroupPathArgs {
+public class DownloadFileRequest extends GroupPathArgs {
     /**
      * 下载部分文件起始值
      */
@@ -22,10 +19,6 @@ public class DownloadFileRequest<T> extends GroupPathArgs {
      * 下载文件大小
      */
     protected long fileSize;
-    /**
-     * 下载callback
-     */
-    protected DownloadCallback<T> callback;
 
     public long offset() {
         return fileOffset < 0 ? 0 : fileOffset;
@@ -35,44 +28,28 @@ public class DownloadFileRequest<T> extends GroupPathArgs {
         return fileSize;
     }
 
-    public DownloadCallback<T> callback() {
-        return callback;
-    }
-
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
      * 参数构建类
      */
-    public static final class Builder<T> extends GroupPathArgs.Builder<Builder<T>, DownloadFileRequest<T>> {
+    public static final class Builder extends GroupPathArgs.Builder<Builder, DownloadFileRequest> {
 
         @Override
-        protected void validate(DownloadFileRequest<T> args) {
+        protected void validate(DownloadFileRequest args) {
             super.validate(args);
             validateNotLessZero(args.fileOffset, "fileOffset");
             validateNotLessZero(args.fileSize, "fileSize");
         }
 
-        @SuppressWarnings("unchecked")
-        public Builder<String> file(String filePath) {
-            DownloadFileWriter fileRequest = new DownloadFileWriter(filePath);
-            operations.add(args -> args.callback = (DownloadCallback<T>) fileRequest);
-            return (Builder<String>) this;
-        }
-
-        public Builder<T> callback(DownloadCallback<T> callback) {
-            operations.add(args -> args.callback = callback);
-            return this;
-        }
-
-        public Builder<T> offset(long fileOffset) {
+        public Builder offset(long fileOffset) {
             operations.add(args -> args.fileOffset = fileOffset);
             return this;
         }
 
-        public Builder<T> fileSize(long fileSize) {
+        public Builder fileSize(long fileSize) {
             operations.add(args -> args.fileSize = fileSize);
             return this;
         }
@@ -83,14 +60,13 @@ public class DownloadFileRequest<T> extends GroupPathArgs {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        DownloadFileRequest<?> that = (DownloadFileRequest<?>) o;
+        DownloadFileRequest that = (DownloadFileRequest) o;
         return fileOffset == that.fileOffset &&
-                fileSize == that.fileSize &&
-                Objects.equals(callback, that.callback);
+                fileSize == that.fileSize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fileOffset, fileSize, callback);
+        return Objects.hash(super.hashCode(), fileOffset, fileSize);
     }
 }

@@ -29,6 +29,7 @@ import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorageNode;
 import com.ykren.fastdfs.model.fdfs.StorageNodeInfo;
 import com.ykren.fastdfs.model.fdfs.StorePath;
+import com.ykren.fastdfs.model.proto.storage.DownloadCallback;
 import com.ykren.fastdfs.model.proto.storage.StorageAppendFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageDeleteFileCommand;
 import com.ykren.fastdfs.model.proto.storage.StorageDownloadCommand;
@@ -62,6 +63,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
 import static com.ykren.fastdfs.common.FastDFSUtils.handlerFilename;
 import static com.ykren.fastdfs.model.proto.OtherConstants.DEFAULT_STREAM_BUFFER_SIZE;
 
@@ -416,13 +418,14 @@ public class FastDFSClient implements FastDFS {
     }
 
     @Override
-    public <T> T downloadFile(DownloadFileRequest<T> request) {
+    public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
         String groupName = getGroup(request);
         String path = request.path();
         validateNotBlankString(groupName, GROUP);
+        validateNotNull(callback, "callback");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageDownloadCommand<T> command = new StorageDownloadCommand<>(groupName, path,
-                request.offset(), request.fileSize(), request.callback());
+                request.offset(), request.fileSize(), callback);
         return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
