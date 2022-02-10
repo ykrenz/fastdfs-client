@@ -20,10 +20,18 @@ public class StorePath {
     private String path;
 
     /**
+     * web路径
+     */
+    private String webUrl;
+
+    /**
      * 解析路径
      */
     private static final String SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR = "/";
 
+    private static final String DOWNLOAD_FILENAME_SEPERATOR = "?";
+
+    private static final String DEFAULT_DOWNLOAD_FILENAME_PREFIX = DOWNLOAD_FILENAME_SEPERATOR + "filename=";
     /**
      * group
      */
@@ -76,6 +84,14 @@ public class StorePath {
         this.path = path;
     }
 
+    public String getWebUrl() {
+        return webUrl;
+    }
+
+    public void setWebUrl(String webUrl) {
+        this.webUrl = webUrl;
+    }
+
     /**
      * 获取文件全路径
      *
@@ -85,14 +101,43 @@ public class StorePath {
         return this.group.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(this.path);
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * 获取Web访问路径
      *
-     * @see java.lang.Object#toString()
+     * @return
      */
+    public String getWebPath() {
+        return this.webUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath());
+    }
+
+    /**
+     * 获取文件下载地址
+     *
+     * @param filename
+     * @return
+     */
+    public String getDownLoadPath(String filename) {
+        return getWebPath().concat(DEFAULT_DOWNLOAD_FILENAME_PREFIX).concat(filename);
+    }
+
+    /**
+     * 获取文件下载地址
+     *
+     * @param attachmentArgName attachment参数名称
+     * @param filename
+     * @return
+     */
+    public String getDownLoadPath(String attachmentArgName, String filename) {
+        return getWebPath().concat(DOWNLOAD_FILENAME_SEPERATOR + attachmentArgName).concat(filename);
+    }
+
     @Override
     public String toString() {
-        return "StorePath [group=" + group + ", path=" + path + "]";
+        return "StorePath{" +
+                "group='" + group + '\'' +
+                ", path='" + path + '\'' +
+                ", webUrl='" + webUrl + '\'' +
+                '}';
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.ykren.fastdfs;
 
+import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 
 /**
@@ -9,6 +10,34 @@ import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
  * @date 2022/1/24
  */
 public class FastDFSConfiguration {
+
+    /**
+     * 上传到固定分组 优先级大于参数
+     */
+    private String group;
+
+    /**
+     * web访问路径 eg: nginx地址
+     * <p>
+     * 配合fastdfs-nginx-module使用
+     * <p>
+     * 预览地址{@link StorePath#getWebPath()}
+     * 下载地址{@link StorePath#getDownLoadPath(String)} ()}
+     *
+     * nginx参考配置
+     *          # 只预览不下载 例如txt log文件
+     *          if ($request_filename ~* ^.*?\.(txt|log)$){
+     *
+     *                     add_header Content-Type 'text/plain;charset=utf-8';
+     *          }
+     *
+     *          # 只下载不预览 例如rar gz zip exe等
+     *         if ($request_filename ~* ^.*?\.(rar|gz|zip|exe)$){
+     *                       add_header Content-Disposition attachment;
+     *          }
+     *
+     */
+    private String webUrl;
 
     /**
      * 读取时间 30s
@@ -27,6 +56,22 @@ public class FastDFSConfiguration {
      * 连接池配置
      */
     private Pool pool = new Pool();
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getWebUrl() {
+        return webUrl;
+    }
+
+    public void setWebUrl(String webUrl) {
+        this.webUrl = webUrl;
+    }
 
     public int getSocketTimeout() {
         return socketTimeout;

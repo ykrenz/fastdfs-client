@@ -19,21 +19,11 @@ public interface FastDFSBuilder {
     FastDFS build(List<String> trackerServers);
 
     /**
-     * 根据trackerServers构建指定的Group客户端
-     *
-     * @param trackerServers
-     * @param group
-     * @return
-     */
-    FastDFS build(List<String> trackerServers, String group);
-
-    /**
      * 根据配置构建
      *
      * @param trackerServers
-     * @param group
      * @param configuration
      * @return
      */
-    FastDFS build(List<String> trackerServers, String group, FastDFSConfiguration configuration);
+    FastDFS build(List<String> trackerServers, FastDFSConfiguration configuration);
 }

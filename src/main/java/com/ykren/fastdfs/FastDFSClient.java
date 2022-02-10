@@ -94,18 +94,13 @@ public class FastDFSClient implements FastDFS {
      */
     private String group;
 
-    public FastDFSClient(final List<String> trackerServers) {
-        this(trackerServers, null);
-    }
+    private String webUrl;
 
-    public FastDFSClient(final List<String> trackerServers, String group) {
-        this(trackerServers, group, new FastDFSConfiguration());
-    }
-
-    public FastDFSClient(final List<String> trackerServers, String group, final FastDFSConfiguration configuration) {
+    public FastDFSClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
         this.trackerConnectionManager = new TrackerConnectionManager(trackerServers, new FdfsConnectionPool(configuration));
         this.trackerClient = new DefaultTrackerClient(trackerConnectionManager);
-        this.group = group;
+        this.group = configuration.getGroup();
+        this.webUrl = configuration.getWebUrl();
     }
 
     public TrackerConnectionManager getConnectionManager() {
@@ -118,6 +113,14 @@ public class FastDFSClient implements FastDFS {
 
     public void setGroup(String group) {
         this.group = group;
+    }
+
+    public String getWebUrl() {
+        return webUrl;
+    }
+
+    public void setWebUrl(String webUrl) {
+        this.webUrl = webUrl;
     }
 
     @Override
@@ -331,6 +334,7 @@ public class FastDFSClient implements FastDFS {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
+        path.setWebUrl(webUrl);
         return path;
     }
 
@@ -356,6 +360,7 @@ public class FastDFSClient implements FastDFS {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
+        path.setWebUrl(webUrl);
         return path;
     }
 
@@ -529,7 +534,9 @@ public class FastDFSClient implements FastDFS {
         validateNotBlankString(groupName, GROUP);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
-        return trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        StorePath storePath = trackerConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        storePath.setWebUrl(webUrl);
+        return storePath;
     }
 
     // endregion appender
@@ -598,6 +605,7 @@ public class FastDFSClient implements FastDFS {
                 .metaData(request.metaData())
                 .build();
         overwriteMetadata(metaDataRequest);
+        storePath.setWebUrl(webUrl);
         return storePath;
     }
 

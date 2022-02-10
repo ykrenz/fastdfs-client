@@ -40,7 +40,10 @@ public class BaseClientTest {
 
     @Before
     public void initClient() {
-        fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST);
+        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        configuration.setGroup("group1");
+        configuration.setWebUrl("http://192.168.24.130");
+        fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST, configuration);
         trackerClient = fastDFS.trackerClient();
         LOGGER.info("初始化tracker={}", trackerClient.getTrackerList());
         LOGGER.info("fastDFSClient={}", fastDFS);

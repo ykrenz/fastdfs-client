@@ -20,12 +20,7 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      */
     @Override
     public FastDFS build(List<String> trackerServers) {
-        return build(trackerServers, null, getFastDFSConfiguration());
-    }
-
-    @Override
-    public FastDFS build(List<String> trackerServers, String group) {
-        return build(trackerServers, group, getFastDFSConfiguration());
+        return build(trackerServers, getFastDFSConfiguration());
     }
 
     /**
@@ -35,10 +30,10 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      * @return
      */
     @Override
-    public FastDFS build(List<String> trackerServers, String group, FastDFSConfiguration configuration) {
+    public FastDFS build(List<String> trackerServers, FastDFSConfiguration configuration) {
         validateCollectionNotEmpty(trackerServers, "trackerServers");
         validateNotNull(configuration, "configuration");
-        return new FastDFSClient(trackerServers, group, configuration);
+        return new FastDFSClient(trackerServers, configuration);
     }
 
     /**
