@@ -11,9 +11,9 @@ import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 public class FastDFSConfiguration {
 
     /**
-     * 读取时间 5s
+     * 读取时间 30s
      */
-    private int socketTimeout = 5000;
+    private int socketTimeout = 30000;
     /**
      * 连接超时时间 5s
      */
