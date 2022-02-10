@@ -59,7 +59,7 @@ public interface FastDFS {
     StorePath uploadSlaveFile(UploadSalveFileRequest request);
 
     /**
-     * 上传图片
+     * 上传图片并生成对应规格的缩略图
      * <pre>
      * thumbImage是否生成缩略图
      *   1 根据指定尺寸生成缩略图
@@ -72,7 +72,7 @@ public interface FastDFS {
     ImageStorePath uploadImage(UploadImageRequest request);
 
     /**
-     * 生成缩略图片
+     * 生成缩略图片 不上传原图
      * <pre>
      * thumbImage是否生成缩略图
      *   1 根据指定尺寸生成缩略图
@@ -85,7 +85,7 @@ public interface FastDFS {
     StorePath createThumbImage(UploadImageRequest request);
 
     /**
-     * 批量生成缩略图片
+     * 批量生成缩略图片 不上传原图
      * <pre>
      * thumbImage是否生成缩略图
      *   1 根据指定尺寸生成缩略图
