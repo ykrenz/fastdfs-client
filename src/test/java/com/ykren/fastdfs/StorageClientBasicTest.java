@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -227,11 +228,14 @@ public class StorageClientBasicTest extends BaseClientTest {
     @Test
     public void uploadImageTest() {
         File file = getFile();
+        Set<MetaData> metaData = new HashSet<>();
+        metaData.add(new MetaData("a", "a"));
         UploadImageRequest request = UploadImageRequest.builder()
                 .file(file)
-                .thumbImage(new ThumbImage(150, 150))
-                .metaData("a", "a")
-                .thumbMetaData("b", "b")
+                .metaData("test","test")
+                .thumbImage(new ThumbImage(150, 150), metaData)
+                .thumbImage(new ThumbImage(100, 100), metaData)
+                .thumbImage(new ThumbImage(0.5), metaData)
                 .listener(new UploadProgressListener() {
                     @Override
                     public void start() {
@@ -255,33 +259,37 @@ public class StorageClientBasicTest extends BaseClientTest {
                 })
                 .build();
         ImageStorePath imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
-        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+        LOGGER.info("imgPath={}", imageStorePath.getImg());
+        LOGGER.info("thumbPath={}", imageStorePath.getThumbs());
+        delete(imageStorePath.getImg());
+        for (StorePath path : imageStorePath.getThumbs()) {
+            delete(path);
+        }
+    }
 
-        request = UploadImageRequest.builder()
+    @Test
+    public void createThumbImageTest() {
+        File file = getFile();
+        Set<MetaData> metaData = new HashSet<>();
+        metaData.add(new MetaData("a", "a"));
+        UploadImageRequest request = UploadImageRequest.builder()
                 .file(file)
-                .onlyThumbImage(new ThumbImage(150, 150))
+                .thumbImage(new ThumbImage(150, 150), metaData)
                 .build();
-        imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
-        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+        StorePath thumbImage = fastDFS.createThumbImage(request);
+        LOGGER.info("thumbImage={}", thumbImage);
+        delete(thumbImage);
 
-        request = UploadImageRequest.builder()
+        UploadImageRequest request2 = UploadImageRequest.builder()
                 .file(file)
-                .onlyThumbImage(new ThumbImage(0.5))
+                .thumbImage(new ThumbImage(150, 150), metaData)
+                .thumbImage(new ThumbImage(100, 100), metaData)
+                .thumbImage(new ThumbImage(0.5), metaData)
                 .build();
-        imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
-        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
-
-        ThumbImage thumbImage = new ThumbImage(0.5);
-        thumbImage.setPrefixName("xxx");
-        request = UploadImageRequest.builder()
-                .file(file)
-                .thumbImage(thumbImage)
-                .build();
-        imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImgPath());
-        LOGGER.info("thumbPath={}", imageStorePath.getThumbPath());
+        List<StorePath> thumbImages = fastDFS.createThumbImages(request2);
+        LOGGER.info("thumbImages={}", thumbImages);
+        for (StorePath path : thumbImages) {
+            delete(path);
+        }
     }
 }

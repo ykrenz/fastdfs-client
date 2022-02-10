@@ -1,5 +1,7 @@
 package com.ykren.fastdfs.model.fdfs;
 
+import java.util.List;
+
 /**
  * 图片path
  *
@@ -11,35 +13,26 @@ public class ImageStorePath {
     /**
      * 原始图片path
      */
-    private StorePath imgPath;
+    private StorePath img;
 
     /**
      * 缩略图path
      */
-    private StorePath thumbPath;
+    private List<StorePath> thumbs;
 
-    public ImageStorePath(StorePath imgPath) {
-        this.imgPath = imgPath;
+    public StorePath getImg() {
+        return img;
     }
 
-    public ImageStorePath(StorePath imgPath, StorePath thumbPath) {
-        this.imgPath = imgPath;
-        this.thumbPath = thumbPath;
+    public void setImg(StorePath img) {
+        this.img = img;
     }
 
-    public StorePath getImgPath() {
-        return imgPath;
+    public List<StorePath> getThumbs() {
+        return thumbs;
     }
 
-    public void setImgPath(StorePath imgPath) {
-        this.imgPath = imgPath;
-    }
-
-    public StorePath getThumbPath() {
-        return thumbPath;
-    }
-
-    public void setThumbPath(StorePath thumbPath) {
-        this.thumbPath = thumbPath;
+    public void setThumbs(List<StorePath> thumbs) {
+        this.thumbs = thumbs;
     }
 }

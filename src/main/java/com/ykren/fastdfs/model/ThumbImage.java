@@ -2,6 +2,8 @@ package com.ykren.fastdfs.model;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
+
 /**
  * 缩略图配置
  * <pre>
@@ -105,5 +107,21 @@ public class ThumbImage {
         StringBuilder buffer = new StringBuilder();
         buffer.append("_").append(Math.round(100 * percent)).append("p_");
         return new String(buffer);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ThumbImage that = (ThumbImage) o;
+        return width == that.width &&
+                height == that.height &&
+                Double.compare(that.percent, percent) == 0 &&
+                Objects.equals(prefixName, that.prefixName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(width, height, percent, prefixName);
     }
 }

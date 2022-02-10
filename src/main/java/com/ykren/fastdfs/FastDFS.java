@@ -2,6 +2,7 @@ package com.ykren.fastdfs;
 
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
+import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.DownloadFileRequest;
 import com.ykren.fastdfs.model.FileInfoRequest;
 import com.ykren.fastdfs.model.InitMultipartUploadRequest;
@@ -11,7 +12,6 @@ import com.ykren.fastdfs.model.ModifyFileRequest;
 import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
 import com.ykren.fastdfs.model.TruncateFileRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
-import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.UploadMultipartPartRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
@@ -20,6 +20,7 @@ import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import com.ykren.fastdfs.model.proto.storage.DownloadCallback;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -69,6 +70,32 @@ public interface FastDFS {
      * @return
      */
     ImageStorePath uploadImage(UploadImageRequest request);
+
+    /**
+     * 生成缩略图片
+     * <pre>
+     * thumbImage是否生成缩略图
+     *   1 根据指定尺寸生成缩略图
+     *   2 根据指定比例生成缩略图
+     * <pre/>
+     *
+     * @param request 上传文件配置
+     * @return
+     */
+    StorePath createThumbImage(UploadImageRequest request);
+
+    /**
+     * 批量生成缩略图片
+     * <pre>
+     * thumbImage是否生成缩略图
+     *   1 根据指定尺寸生成缩略图
+     *   2 根据指定比例生成缩略图
+     * <pre/>
+     *
+     * @param request 上传文件配置
+     * @return
+     */
+    List<StorePath> createThumbImages(UploadImageRequest request);
 
     /**
      * 获取文件元信息

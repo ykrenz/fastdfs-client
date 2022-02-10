@@ -9,6 +9,7 @@ import com.ykren.fastdfs.exception.FdfsUploadImageException;
 import com.ykren.fastdfs.model.AbstractFileArgs;
 import com.ykren.fastdfs.model.AppendFileRequest;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
+import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.DownloadFileRequest;
 import com.ykren.fastdfs.model.FileInfoRequest;
 import com.ykren.fastdfs.model.GroupArgs;
@@ -20,7 +21,6 @@ import com.ykren.fastdfs.model.RegenerateAppenderFileRequest;
 import com.ykren.fastdfs.model.ThumbImage;
 import com.ykren.fastdfs.model.TruncateFileRequest;
 import com.ykren.fastdfs.model.UploadFileRequest;
-import com.ykren.fastdfs.model.UploadImageRequest;
 import com.ykren.fastdfs.model.UploadMultipartPartRequest;
 import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
@@ -57,11 +57,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.ykren.fastdfs.common.CodeUtils.validateCollectionNotEmpty;
 import static com.ykren.fastdfs.common.CodeUtils.validateNotBlankString;
 import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
 import static com.ykren.fastdfs.common.FastDFSUtils.handlerFilename;
@@ -156,31 +158,7 @@ public class FastDFSClient implements FastDFS {
 
     @Override
     public ImageStorePath uploadImage(UploadImageRequest request) {
-        if (request.onlyThumb()) {
-            LOGGER.debug("only upload thumb image imgPath return null");
-            StorePath storePath = uploadThumbImage(request);
-            return new ImageStorePath(null, storePath);
-        }
-        return uploadImageAndThumb(request);
-    }
-
-    private StorePath uploadThumbImage(UploadImageRequest request) {
-        ThumbImage thumbImage = request.thumbImage();
-        try (InputStream stream = getStream(request);
-             ByteArrayInputStream thumbImageStream = generateThumbImageStream(stream, thumbImage)) {
-            String groupName = getGroup(request);
-            // 获取存储节点
-            StorageNode client = trackerClient.getStoreStorage(groupName);
-            String fileExtName = handlerFilename(request.fileExtName());
-            Set<MetaData> metaDataSet = request.thumbMetaData();
-            return uploadFileAndMetaData(client, progressStream(request.listener(), thumbImageStream), thumbImageStream.available(),
-                    fileExtName, metaDataSet, false);
-        } catch (IOException e) {
-            throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
-        }
-    }
-
-    private ImageStorePath uploadImageAndThumb(UploadImageRequest request) {
+        ImageStorePath imageStorePath = new ImageStorePath();
         //获取上传流
         byte[] bytes = null;
         try (InputStream is = getStream(request)) {
@@ -192,12 +170,14 @@ public class FastDFSClient implements FastDFS {
             StorageNode client = trackerClient.getStoreStorage(groupName);
             StorePath imgPath = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
                     request.fileSize(), fileExtName, request.metaData(), false);
+            imageStorePath.setImg(imgPath);
             LOGGER.debug("upload image success");
 
-            //如果设置了需要上传缩略图
-            ThumbImage thumbImage = request.thumbImage();
-            StorePath thumbPath = null;
-            if (null != thumbImage) {
+            Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
+            List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
+            for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
+                ThumbImage thumbImage = thumbImageRequest.thumbImage();
+                Set<MetaData> metaData = thumbImageRequest.thumbMetaData();
                 try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
                      ByteArrayInputStream thumbImageStream = generateThumbImageStream(inputStream, thumbImage)) {
                     // 获取文件大小
@@ -208,17 +188,47 @@ public class FastDFSClient implements FastDFS {
                         LOGGER.debug("获取到缩略图前缀{}", prefixName);
                     }
                     StorageNodeInfo storageNodeInfo = new StorageNodeInfo(client.getIp(), client.getPort());
-                    thumbPath = uploadSalveFileAndMetaData(storageNodeInfo, imgPath.getPath(),
-                            progressStream(request.listener(), thumbImageStream), fileSize, prefixName, fileExtName, request.thumbMetaData());
+                    StorePath storePath = uploadSalveFileAndMetaData(storageNodeInfo, imgPath.getPath(),
+                            progressStream(request.listener(), thumbImageStream), fileSize, prefixName, fileExtName, metaData);
                     LOGGER.debug("upload thumb image success thumbImage={}", thumbImage);
+                    paths.add(storePath);
                 }
             }
-            return new ImageStorePath(imgPath, thumbPath);
+            imageStorePath.setThumbs(paths);
+            return imageStorePath;
         } catch (IOException e) {
             throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
-        } finally {
-            bytes = null;
         }
+    }
+
+    @Override
+    public StorePath createThumbImage(UploadImageRequest request) {
+        return createThumbImages(request).get(0);
+    }
+
+    @Override
+    public List<StorePath> createThumbImages(UploadImageRequest request) {
+        Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
+        validateCollectionNotEmpty(thumbImageRequests, "thumbImage");
+        List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
+        String groupName = getGroup(request);
+        // 获取存储节点
+        StorageNode client = trackerClient.getStoreStorage(groupName);
+        String fileExtName = handlerFilename(request.fileExtName());
+
+        for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
+            ThumbImage thumbImage = thumbImageRequest.thumbImage();
+            try (InputStream stream = getStream(request);
+                 ByteArrayInputStream thumbImageStream = generateThumbImageStream(stream, thumbImage)) {
+                Set<MetaData> metaDataSet = thumbImageRequest.thumbMetaData();
+                StorePath storePath = uploadFileAndMetaData(client, progressStream(request.listener(), thumbImageStream), thumbImageStream.available(),
+                        fileExtName, metaDataSet, false);
+                paths.add(storePath);
+            } catch (IOException e) {
+                throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
+            }
+        }
+        return paths;
     }
 
     /**
