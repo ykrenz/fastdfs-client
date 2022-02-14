@@ -57,9 +57,4 @@ public final class OtherConstants {
             + FDFS_FILE_EXT_NAME_MAX_LEN + 1;
     public static final long TRUNK_LOGIC_FILENAME_LENGTH = NORMAL_LOGIC_FILENAME_LENGTH + FDFS_TRUNK_FILE_INFO_LEN;
 
-
-    public static final int KB = 1024;
-    public static final int DEFAULT_BUFFER_SIZE = 8 * KB;
-    public static final int DEFAULT_STREAM_BUFFER_SIZE = 512 * KB;
-
 }

@@ -60,7 +60,7 @@ public class FdfsConnectionManager {
      * @param command
      * @return
      */
-    protected <T> T execute(InetSocketAddress address, Connection conn, FdfsCommand<T> command) {
+    protected <T> T execute(InetSocketAddress address, Connection conn, FdfsCommand<T> command) throws FdfsException {
         boolean isException = false;
         try {
             // 执行交易
@@ -70,10 +70,6 @@ public class FdfsConnectionManager {
             LOGGER.error("execute fdfs command error", e);
             isException = true;
             throw e;
-        } catch (Exception e) {
-            LOGGER.error("execute fdfs command exception", e);
-            isException = true;
-            throw new RuntimeException("execute fdfs command error", e);
         } finally {
             if (isException) {
                 //移除连接
@@ -84,7 +80,6 @@ public class FdfsConnectionManager {
                 LOGGER.debug("return connect {}", conn);
                 returnConnect(address, conn);
             }
-
         }
     }
 

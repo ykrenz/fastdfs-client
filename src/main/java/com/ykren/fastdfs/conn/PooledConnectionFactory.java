@@ -6,6 +6,7 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * pooled FdfsSocket factory
@@ -17,7 +18,6 @@ import java.nio.charset.Charset;
  * @author tobato
  */
 public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSocketAddress, Connection> {
-
     /**
      * 读取时间
      */
@@ -30,19 +30,11 @@ public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSo
      * 字符集
      */
     private Charset charset;
-    /**
-     * 默认字符集
-     */
-    private static final String DEFAULT_CHARSET_NAME = "UTF-8";
-    /**
-     * 设置默认字符集
-     */
-    private String charsetName = DEFAULT_CHARSET_NAME;
 
-    public PooledConnectionFactory(int soTimeout, int connectTimeout, String charset) {
-        this.soTimeout = soTimeout;
-        this.connectTimeout = connectTimeout;
-        this.charsetName = charset;
+    public PooledConnectionFactory(ConnectionConfig connection) {
+        this.soTimeout = connection.getSocketTimeout();
+        this.connectTimeout = connection.getConnectTimeout();
+        this.charset = connection.getCharset() == null ? StandardCharsets.UTF_8 : Charset.forName(connection.getCharset());
     }
 
     /**
@@ -50,10 +42,6 @@ public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSo
      */
     @Override
     public Connection create(InetSocketAddress address) {
-        // 初始化字符集
-        if (null == charset) {
-            charset = Charset.forName(charsetName);
-        }
         return new DefaultConnection(address, soTimeout, connectTimeout, charset);
     }
 
@@ -85,6 +73,10 @@ public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSo
         return charset;
     }
 
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
     /**
      * 从池中移出
      *
@@ -105,10 +97,6 @@ public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSo
     @Override
     public boolean validateObject(InetSocketAddress key, PooledObject<Connection> p) {
         return p.getObject().isValid();
-    }
-
-    public void setCharsetName(String charsetName) {
-        this.charsetName = charsetName;
     }
 
 }

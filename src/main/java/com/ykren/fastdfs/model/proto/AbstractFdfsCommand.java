@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.ykren.fastdfs.exception.FdfsIOException;
 
 import static com.ykren.fastdfs.event.ProgressPublisher.publishProgress;
-import static com.ykren.fastdfs.model.proto.OtherConstants.DEFAULT_BUFFER_SIZE;
+import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_BUFFER_SIZE;
 
 /**
  * 交易命令抽象类
