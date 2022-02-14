@@ -4,16 +4,7 @@ import com.ykren.fastdfs.conn.ConnectionConfig;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_CHARSET;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_CONNECT_TIMEOUT;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_RETRY;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_SOCKET_TIMEOUT;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.EVICT_IDLE_SCHEDULE_TIME_MILLIS;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.IDLE_TIME_MILLIS;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.MAX_IDLE_PER_KEY;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.MAX_TOTAL_PER_KEY;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.MAX_WAIT_MILLIS;
-import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.MIN_IDLE_PER_KEY;
+import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.*;
 
 /**
  * FastDfs配置类
@@ -69,7 +60,9 @@ public class FastDFSConfiguration {
         connection.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT);
         connection.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
         connection.setCharset(DEFAULT_CHARSET);
-        connection.setRetry(DEFAULT_RETRY);
+        connection.setRetryTimeMills(DEFAULT_RETRY_TIME_MILLIS);
+        connection.setCullAfterCount(DEFAULT_CULL_AFTER_COUNT);
+        connection.setRetryAfterSecond(DEFAULT_RETRY_AFTER_SECOND);
 
         pool = new GenericKeyedObjectPoolConfig();
         pool.setMaxWaitMillis(MAX_WAIT_MILLIS);

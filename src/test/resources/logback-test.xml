@@ -12,7 +12,7 @@
     <logger name="com.github.tobato.fastdfs.domain.proto" level="WARN"/>
     <logger name="org.springframework" level="WARN"/>
 
-    <logger name="com.ykren" level="INFO"/>
+    <logger name="com.ykren" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="console"/>

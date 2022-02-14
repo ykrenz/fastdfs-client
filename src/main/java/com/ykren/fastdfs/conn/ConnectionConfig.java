@@ -13,11 +13,18 @@ public class ConnectionConfig {
      * 字符集
      */
     private String charset;
-
     /**
-     * 重试次数
+     * 经过多长时间后重试
      */
-    private int retry;
+    private int retryTimeMills;
+    /**
+     * tracker不可用多少次被踢出
+     */
+    private int cullAfterCount;
+    /**
+     * tracker被踢出后多少秒后重试
+     */
+    private int cullRetryAfterSecond;
 
     public int getSocketTimeout() {
         return socketTimeout;
@@ -43,11 +50,27 @@ public class ConnectionConfig {
         this.charset = charset;
     }
 
-    public int getRetry() {
-        return retry;
+    public int getRetryTimeMills() {
+        return retryTimeMills;
     }
 
-    public void setRetry(int retry) {
-        this.retry = retry;
+    public void setRetryTimeMills(int retryTimeMills) {
+        this.retryTimeMills = retryTimeMills;
+    }
+
+    public int getCullAfterCount() {
+        return cullAfterCount;
+    }
+
+    public void setCullAfterCount(int cullAfterCount) {
+        this.cullAfterCount = cullAfterCount;
+    }
+
+    public int getRetryAfterSecond() {
+        return cullRetryAfterSecond;
+    }
+
+    public void setRetryAfterSecond(int retryAfterSecond) {
+        this.cullRetryAfterSecond = retryAfterSecond;
     }
 }

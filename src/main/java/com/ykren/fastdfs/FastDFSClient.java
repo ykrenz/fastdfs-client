@@ -126,6 +126,14 @@ public class FastDFSClient implements FastDFS {
         this.webServerUrl = webServerUrl;
     }
 
+    public boolean isWebServerUrlHasGroup() {
+        return webServerUrlHasGroup;
+    }
+
+    public void setWebServerUrlHasGroup(boolean webServerUrlHasGroup) {
+        this.webServerUrlHasGroup = webServerUrlHasGroup;
+    }
+
     @Override
     public TrackerClient trackerClient() {
         return trackerClient;

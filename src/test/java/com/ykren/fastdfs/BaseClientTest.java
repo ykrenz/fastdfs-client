@@ -46,7 +46,7 @@ public class BaseClientTest {
 //        configuration.setWebServerUrlHasGroup(true);
         fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST, configuration);
         trackerClient = fastDFS.trackerClient();
-        LOGGER.info("初始化tracker={}", trackerClient.getTrackerList());
+        LOGGER.info("初始化tracker={}", trackerClient.getTrackerServers());
         LOGGER.info("fastDFSClient={}", fastDFS);
     }
 

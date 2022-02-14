@@ -20,7 +20,23 @@ public interface TrackerClient {
      *
      * @return
      */
-    List<String> getTrackerList();
+    List<String> getTrackerServers();
+
+    /**
+     * 添加tracker
+     *
+     * @param trackerServer
+     * @return
+     */
+    boolean addTrackerServer(String trackerServer);
+
+    /**
+     * 移除tracker
+     *
+     * @param trackerServer
+     * @return
+     */
+    boolean removeTrackerServer(String trackerServer);
 
     /**
      * 获取存储节点 get the StoreStorage Client

@@ -1,7 +1,8 @@
 package com.ykren.fastdfs.conn;
 
-import com.ykren.fastdfs.model.proto.FdfsCommand;
+import com.ykren.fastdfs.exception.FdfsClientException;
 import com.ykren.fastdfs.exception.FdfsException;
+import com.ykren.fastdfs.model.proto.FdfsCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +48,18 @@ public class FdfsConnectionManager {
      * @return
      */
     public <T> T executeFdfsCmd(InetSocketAddress address, FdfsCommand<T> command) {
-        // 获取连接
-        Connection conn = getConnection(address);
-        // 执行交易
-        return execute(address, conn, command);
+        try {
+            // 获取连接
+            Connection conn = getConnection(address);
+            // 执行交易
+            return execute(address, conn, command);
+        } catch (FdfsException e) {
+            LOGGER.error("execute cmd error", e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("client error", e);
+            throw new FdfsClientException(e);
+        }
     }
 
     /**
@@ -123,19 +132,8 @@ public class FdfsConnectionManager {
      * @param address
      * @return
      */
-    protected Connection getConnection(InetSocketAddress address) {
-        Connection conn = null;
-        try {
-            // 获取连接
-            conn = pool.borrowObject(address);
-            //dumpPoolInfo(address);
-        } catch (FdfsException e) {
-            throw e;
-        } catch (Exception e) {
-            LOGGER.error("Unable to borrow buffer from pool", e);
-            throw new RuntimeException("Unable to borrow buffer from pool", e);
-        }
-        return conn;
+    protected Connection getConnection(InetSocketAddress address) throws Exception {
+        return pool.borrowObject(address);
     }
 
     public FdfsConnectionPool getPool() {

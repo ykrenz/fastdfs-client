@@ -21,15 +21,33 @@ import java.util.List;
  */
 public class DefaultTrackerClient implements TrackerClient {
 
-    private final TrackerConnectionManager trackerConnectionManager;
+    private TrackerConnectionManager trackerConnectionManager;
 
     public DefaultTrackerClient(TrackerConnectionManager trackerConnectionManager) {
         this.trackerConnectionManager = trackerConnectionManager;
     }
 
+    public TrackerConnectionManager getTrackerConnectionManager() {
+        return trackerConnectionManager;
+    }
+
+    public void setTrackerConnectionManager(TrackerConnectionManager trackerConnectionManager) {
+        this.trackerConnectionManager = trackerConnectionManager;
+    }
+
     @Override
-    public List<String> getTrackerList() {
-        return this.trackerConnectionManager.getTrackerList();
+    public List<String> getTrackerServers() {
+        return trackerConnectionManager.getTrackerLocator().getTrackerServers();
+    }
+
+    @Override
+    public boolean addTrackerServer(String trackerServer) {
+        return trackerConnectionManager.getTrackerLocator().addTracker(trackerServer);
+    }
+
+    @Override
+    public boolean removeTrackerServer(String trackerServer) {
+        return trackerConnectionManager.getTrackerLocator().removeTracker(trackerServer);
     }
 
     /**

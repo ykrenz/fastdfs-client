@@ -53,7 +53,7 @@ public class DefaultConnection implements Connection {
             this.charset = charset;
             socket.connect(address, connectTimeout);
         } catch (IOException e) {
-            throw new FdfsConnectException("can't create connection to" + address, e);
+            throw new FdfsConnectException("连接服务器失败 can't create connection to" + address, e);
         }
     }
 
