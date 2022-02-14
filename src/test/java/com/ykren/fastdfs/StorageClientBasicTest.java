@@ -232,10 +232,6 @@ public class StorageClientBasicTest extends BaseClientTest {
         metaData.add(new MetaData("a", "a"));
         UploadImageRequest request = UploadImageRequest.builder()
                 .file(file)
-                .metaData("test","test")
-                .thumbImage(new ThumbImage(150, 150), metaData)
-                .thumbImage(new ThumbImage(100, 100), metaData)
-                .thumbImage(new ThumbImage(0.5), metaData)
                 .listener(new UploadProgressListener() {
                     @Override
                     public void start() {
@@ -259,12 +255,13 @@ public class StorageClientBasicTest extends BaseClientTest {
                 })
                 .build();
         ImageStorePath imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImg());
+        LOGGER.info("imgPath={}", imageStorePath.getImg().getWebPath());
+        LOGGER.info("imgPath={}", imageStorePath.getImg().getDownLoadPath("1.jpg"));
         LOGGER.info("thumbPath={}", imageStorePath.getThumbs());
-        delete(imageStorePath.getImg());
-        for (StorePath path : imageStorePath.getThumbs()) {
-            delete(path);
-        }
+//        delete(imageStorePath.getImg());
+//        for (StorePath path : imageStorePath.getThumbs()) {
+//            delete(path);
+//        }
     }
 
     @Test

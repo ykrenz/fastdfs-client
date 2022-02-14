@@ -42,7 +42,8 @@ public class BaseClientTest {
     public void initClient() {
         FastDFSConfiguration configuration = new FastDFSConfiguration();
         configuration.setGroup("group1");
-        configuration.setWebUrl("http://192.168.24.130");
+        configuration.setWebServerUrl("http://192.168.24.130:8888");
+//        configuration.setWebServerUrlHasGroup(true);
         fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST, configuration);
         trackerClient = fastDFS.trackerClient();
         LOGGER.info("初始化tracker={}", trackerClient.getTrackerList());

@@ -37,19 +37,24 @@ public class FastDFSConfiguration {
      * 下载地址{@link StorePath#getDownLoadPath(String)} ()}
      * <p>
      * nginx参考配置
-     * # 只预览不下载 例如txt log文件
-     * if ($request_filename ~* ^.*?\.(txt|log)$){
-     * <p>
-     * add_header Content-Type 'text/plain;charset=utf-8';
-     * }
-     * <p>
-     * # 只下载不预览 例如rar gz zip exe等
-     * if ($request_filename ~* ^.*?\.(rar|gz|zip|exe)$){
-     * add_header Content-Disposition attachment;
-     * }
      */
-    private String webUrl;
-
+//    server {
+//        listen 8888;
+//        server_name localhost;
+//        #location ~/group([0-9])/M00 {
+//            location ~/M00 {
+//                root /home/data/fastdfs/storage;
+//                if ($arg_attname ~ "^(.+)") {
+//                    add_header Content-Disposition "attachment;filename=$arg_attname";
+//                }
+//                ngx_fastdfs_module;
+//            }
+//        }
+    private String webServerUrl;
+    /**
+     * web路径是否包含Group
+     */
+    private boolean webServerUrlHasGroup;
     /**
      * 连接配置
      */
@@ -84,12 +89,20 @@ public class FastDFSConfiguration {
         this.group = group;
     }
 
-    public String getWebUrl() {
-        return webUrl;
+    public String getWebServerUrl() {
+        return webServerUrl;
     }
 
-    public void setWebUrl(String webUrl) {
-        this.webUrl = webUrl;
+    public void setWebServerUrl(String webServerUrl) {
+        this.webServerUrl = webServerUrl;
+    }
+
+    public boolean isWebServerUrlHasGroup() {
+        return webServerUrlHasGroup;
+    }
+
+    public void setWebServerUrlHasGroup(boolean webServerUrlHasGroup) {
+        this.webServerUrlHasGroup = webServerUrlHasGroup;
     }
 
     public ConnectionConfig getConnection() {

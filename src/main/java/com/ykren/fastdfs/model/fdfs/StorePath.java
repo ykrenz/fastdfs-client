@@ -20,9 +20,14 @@ public class StorePath {
     private String path;
 
     /**
-     * web路径
+     * web服务器url
      */
-    private String webUrl;
+    private String webServerUrl;
+
+    /**
+     * web服务器路径是否包含Group
+     */
+    private boolean webServerUrlHasGroup;
 
     /**
      * 解析路径
@@ -84,12 +89,9 @@ public class StorePath {
         this.path = path;
     }
 
-    public String getWebUrl() {
-        return webUrl;
-    }
-
-    public void setWebUrl(String webUrl) {
-        this.webUrl = webUrl;
+    public void setWebServerUrl(String webServerUrl, boolean webServerUrlHasGroup) {
+        this.webServerUrl = webServerUrl;
+        this.webServerUrlHasGroup = webServerUrlHasGroup;
     }
 
     /**
@@ -107,7 +109,15 @@ public class StorePath {
      * @return
      */
     public String getWebPath() {
-        return this.webUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath());
+        return webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup();
+    }
+
+    private String getWebPathNoGroup() {
+        return this.webServerUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getPath());
+    }
+
+    private String getWebPathHasGroup() {
+        return this.webServerUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath());
     }
 
     /**
@@ -117,7 +127,7 @@ public class StorePath {
      * @return
      */
     public String getDownLoadPath(String filename) {
-        return getWebPath().concat(DEFAULT_DOWNLOAD_FILENAME_PREFIX).concat(filename);
+        return (webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup()).concat(DEFAULT_DOWNLOAD_FILENAME_PREFIX).concat(filename);
     }
 
     /**
@@ -128,7 +138,7 @@ public class StorePath {
      * @return
      */
     public String getDownLoadPath(String attachmentArgName, String filename) {
-        return getWebPath().concat(DOWNLOAD_FILENAME_SEPERATOR + attachmentArgName).concat(filename);
+        return (webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup()).concat(DOWNLOAD_FILENAME_SEPERATOR + attachmentArgName).concat(filename);
     }
 
     @Override
@@ -136,7 +146,8 @@ public class StorePath {
         return "StorePath{" +
                 "group='" + group + '\'' +
                 ", path='" + path + '\'' +
-                ", webUrl='" + webUrl + '\'' +
+                ", webServerUrl='" + webServerUrl + '\'' +
+                ", webServerUrlHasGroup=" + webServerUrlHasGroup +
                 '}';
     }
 

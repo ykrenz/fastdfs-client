@@ -94,15 +94,16 @@ public class FastDFSClient implements FastDFS {
      * 优点是可以固定分组上传 不用每次都设置group
      */
     private String group;
-
-    private String webUrl;
+    private String webServerUrl;
+    private boolean webServerUrlHasGroup;
 
     public FastDFSClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection(), configuration.getPool());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
         this.group = configuration.getGroup();
-        this.webUrl = configuration.getWebUrl();
+        this.webServerUrl = configuration.getWebServerUrl();
+        this.webServerUrlHasGroup = configuration.isWebServerUrlHasGroup();
     }
 
     public FdfsConnectionManager getConnectionManager() {
@@ -117,12 +118,12 @@ public class FastDFSClient implements FastDFS {
         this.group = group;
     }
 
-    public String getWebUrl() {
-        return webUrl;
+    public String getWebServerUrl() {
+        return webServerUrl;
     }
 
-    public void setWebUrl(String webUrl) {
-        this.webUrl = webUrl;
+    public void setWebServerUrl(String webServerUrl) {
+        this.webServerUrl = webServerUrl;
     }
 
     @Override
@@ -336,7 +337,7 @@ public class FastDFSClient implements FastDFS {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setWebUrl(webUrl);
+        path.setWebServerUrl(webServerUrl, webServerUrlHasGroup);
         return path;
     }
 
@@ -362,7 +363,7 @@ public class FastDFSClient implements FastDFS {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setWebUrl(webUrl);
+        path.setWebServerUrl(webServerUrl, webServerUrlHasGroup);
         return path;
     }
 
@@ -537,7 +538,7 @@ public class FastDFSClient implements FastDFS {
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        storePath.setWebUrl(webUrl);
+        storePath.setWebServerUrl(webServerUrl, webServerUrlHasGroup);
         return storePath;
     }
 
@@ -607,7 +608,7 @@ public class FastDFSClient implements FastDFS {
                 .metaData(request.metaData())
                 .build();
         overwriteMetadata(metaDataRequest);
-        storePath.setWebUrl(webUrl);
+        storePath.setWebServerUrl(webServerUrl, webServerUrlHasGroup);
         return storePath;
     }
 

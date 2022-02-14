@@ -46,6 +46,7 @@ public class TrackerConnectionManager extends FdfsConnectionManager {
         InetSocketAddress address = null;
         // 获取连接
         try {
+            // TODO tracker高可用
             address = trackerLocator.getTrackerAddress();
             LOGGER.debug("获取到Tracker连接地址{}", address);
             conn = getConnection(address);
