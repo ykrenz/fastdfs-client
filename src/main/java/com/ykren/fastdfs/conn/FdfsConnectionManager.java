@@ -48,18 +48,10 @@ public class FdfsConnectionManager {
      * @return
      */
     public <T> T executeFdfsCmd(InetSocketAddress address, FdfsCommand<T> command) {
-        try {
-            // 获取连接
-            Connection conn = getConnection(address);
-            // 执行交易
-            return execute(address, conn, command);
-        } catch (FdfsException e) {
-            LOGGER.error("execute cmd error", e);
-            throw e;
-        } catch (Exception e) {
-            LOGGER.error("client error", e);
-            throw new FdfsClientException(e);
-        }
+        // 获取连接
+        Connection conn = getConnection(address);
+        // 执行交易
+        return execute(address, conn, command);
     }
 
     /**
@@ -132,8 +124,19 @@ public class FdfsConnectionManager {
      * @param address
      * @return
      */
-    protected Connection getConnection(InetSocketAddress address) throws Exception {
-        return pool.borrowObject(address);
+    protected Connection getConnection(InetSocketAddress address) {
+        Connection conn = null;
+        try {
+            // 获取连接
+            conn = pool.borrowObject(address);
+            //dumpPoolInfo(address);
+        } catch (FdfsException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Unable to borrow buffer from pool", e);
+            throw new FdfsClientException("Unable to borrow buffer from pool", e);
+        }
+        return conn;
     }
 
     public FdfsConnectionPool getPool() {

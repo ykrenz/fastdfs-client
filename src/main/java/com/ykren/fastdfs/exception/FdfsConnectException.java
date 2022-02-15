@@ -7,7 +7,7 @@ package com.ykren.fastdfs.exception;
  * @author tobato
  * 
  */
-public class FdfsConnectException extends FdfsException {
+public class FdfsConnectException extends FdfsUnavailableException {
 
     /**
      * serialVersionUID

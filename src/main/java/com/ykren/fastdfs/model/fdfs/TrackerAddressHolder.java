@@ -59,16 +59,16 @@ public class TrackerAddressHolder {
     /**
      * 是否可以尝试连接
      *
-     * @param retryAfterSecend 在n秒后重试
+     * @param retryAfterSecond 在n秒后重试
      * @return
      */
-    public boolean canTryToConnect(int retryAfterSecend) {
+    public boolean canTryToConnect(int retryAfterSecond) {
         // 如果是有效连接
         if (this.available) {
             return true;
         }
         // 如果连接无效，并且达到重试时间
-        return (System.currentTimeMillis() - lastUnavailableTime) > retryAfterSecend * 1000;
+        return (System.currentTimeMillis() - lastUnavailableTime) > retryAfterSecond * 1000;
     }
 
     public InetSocketAddress getAddress() {

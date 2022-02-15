@@ -1,14 +1,15 @@
 package com.ykren.fastdfs.model.fdfs;
 
-import com.ykren.fastdfs.conn.TrackerCullExecutor;
 import com.ykren.fastdfs.exception.FdfsUnavailableException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,18 +37,9 @@ public class TrackerLocator {
      */
     private final CircularList<TrackerAddressHolder> trackerAddressCircular = new CircularList<>();
     /**
-     * 剔除圈
-     */
-    private final List<TrackerAddressHolder> cullTrackerAddressCircular = new ArrayList<>();
-    /**
      * 连接中断以后经过N秒重试
-     * -1不重试
      */
     private int retryAfterSecond;
-    /**
-     * tracker剔除
-     */
-    private TrackerCullExecutor<InetSocketAddress> cullExecutor;
 
     /**
      * 初始化Tracker服务器地址
@@ -55,27 +47,19 @@ public class TrackerLocator {
      *
      * @param trackerServers
      */
-    public TrackerLocator(List<String> trackerServers, TrackerCullExecutor<InetSocketAddress> cullExecutor) {
+    public TrackerLocator(List<String> trackerServers) {
         super();
         this.trackerServers = trackerServers;
-        this.cullExecutor = cullExecutor;
         buildTrackerAddresses();
-    }
-
-    public TrackerCullExecutor<InetSocketAddress> getCullExecutor() {
-        return cullExecutor;
-    }
-
-    public void setCullExecutor(TrackerCullExecutor<InetSocketAddress> cullExecutor) {
-        this.cullExecutor = cullExecutor;
     }
 
     /**
      * 分析TrackerAddress
      */
-    private void buildTrackerAddresses() {
-        for (String item : trackerServers) {
-            initTrackerServer(item);
+    private synchronized void buildTrackerAddresses() {
+        Set<String> addressSet = new HashSet<>(trackerServers);
+        for (String server : addressSet) {
+            initTrackerServer(server);
         }
     }
 
@@ -85,16 +69,15 @@ public class TrackerLocator {
      * @param trackerServer
      * @return
      */
-    private void initTrackerServer(String trackerServer) {
+    private boolean initTrackerServer(String trackerServer) {
         if (StringUtils.isBlank(trackerServer)) {
-            return;
+            return false;
         }
         InetSocketAddress address = getInetSocketAddress(trackerServer);
         // 放到轮询圈
         TrackerAddressHolder holder = new TrackerAddressHolder(address);
-        trackerAddressCircular.add(holder);
         trackerAddressMap.put(address, holder);
-        cullExecutor.addTracker(address);
+        return trackerAddressCircular.add(holder);
     }
 
     private InetSocketAddress getInetSocketAddress(String trackerServer) {
@@ -108,15 +91,11 @@ public class TrackerLocator {
 
 
     public List<String> getTrackerServers() {
-        return trackerServers;
+        return Collections.unmodifiableList(trackerServers);
     }
 
     public void setTrackerServers(List<String> trackerServers) {
         this.trackerServers = trackerServers;
-    }
-
-    public int getRetryAfterSecond() {
-        return retryAfterSecond;
     }
 
     public void setRetryAfterSecond(int retryAfterSecond) {
@@ -129,29 +108,15 @@ public class TrackerLocator {
      * @return trackerAddress
      */
     public InetSocketAddress getTrackerAddress() {
-        // 剔除圈重新加入轮询圈 保证高可用
-        checkCullTracker();
-        if (!trackerAddressCircular.isEmpty()) {
-            return trackerAddressCircular.next().getAddress();
+        TrackerAddressHolder holder;
+        // 遍历连接地址,抓取当前有效的地址
+        for (int i = 0; i < trackerAddressCircular.size(); i++) {
+            holder = trackerAddressCircular.next();
+            if (holder.canTryToConnect(retryAfterSecond)) {
+                return holder.getAddress();
+            }
         }
         throw new FdfsUnavailableException("找不到可用的tracker " + getTrackerAddressConfigString());
-    }
-
-    private void checkCullTracker() {
-        if (cullTrackerAddressCircular.isEmpty()) {
-            return;
-        }
-        if (retryAfterSecond > 0) {
-            List<TrackerAddressHolder> removeList = new ArrayList<>();
-            for (TrackerAddressHolder holder : cullTrackerAddressCircular) {
-                if (holder.canTryToConnect(retryAfterSecond)) {
-                    removeList.add(holder);
-                }
-            }
-            for (TrackerAddressHolder holder : removeList) {
-                recoveryTracker(holder.getAddress());
-            }
-        }
     }
 
     /**
@@ -160,26 +125,33 @@ public class TrackerLocator {
      * @return trackerAddressConfig
      */
     private String getTrackerAddressConfigString() {
-        return StringUtils.join(trackerServers, ",");
+        StringBuilder config = new StringBuilder();
+        for (int i = 0; i < trackerAddressCircular.size(); i++) {
+            TrackerAddressHolder holder = trackerAddressCircular.next();
+            InetSocketAddress address = holder.getAddress();
+            config.append(address.toString()).append(",");
+        }
+        return new String(config);
     }
 
     /**
-     * 尝试获取其他可用tracker
+     * 设置连接有效
      *
      * @param address
-     * @return
      */
-    public InetSocketAddress tryOtherTrackerAddress(InetSocketAddress address) {
-        TrackerAddressHolder holder;
-        // 遍历连接地址,抓取当前有效的地址
-        for (int i = 0; i < trackerAddressCircular.size(); i++) {
-            holder = trackerAddressCircular.next();
-            InetSocketAddress holderAddress = holder.getAddress();
-            if (!holderAddress.equals(address)) {
-                return holderAddress;
-            }
-        }
-        return address;
+    public void setActive(InetSocketAddress address) {
+        TrackerAddressHolder holder = trackerAddressMap.get(address);
+        holder.setActive();
+    }
+
+    /**
+     * 设置连接无效
+     *
+     * @param address
+     */
+    public void setInActive(InetSocketAddress address) {
+        TrackerAddressHolder holder = trackerAddressMap.get(address);
+        holder.setInActive();
     }
 
     /**
@@ -203,9 +175,7 @@ public class TrackerLocator {
                     return true;
                 }
 
-                initTrackerServer(trackerServer);
-                trackerServers.add(trackerServer);
-                return true;
+                return initTrackerServer(trackerServer) && trackerServers.add(trackerServer);
             }
             return false;
         } finally {
@@ -232,11 +202,7 @@ public class TrackerLocator {
 
                 InetSocketAddress address = getInetSocketAddress(trackerServer);
                 TrackerAddressHolder holder = trackerAddressMap.remove(address);
-                trackerAddressCircular.remove(holder);
-                cullTrackerAddressCircular.remove(holder);
-                cullExecutor.removeTracker(address);
-                trackerServers.remove(trackerServer);
-                return true;
+                return trackerAddressCircular.remove(holder) && trackerServers.remove(trackerServer);
             }
             return false;
         } finally {
@@ -244,62 +210,4 @@ public class TrackerLocator {
         }
     }
 
-    /**
-     * 剔除tracker
-     *
-     * @param address
-     */
-    public boolean cullTracker(InetSocketAddress address) {
-        try {
-            if (TRACKER_LOCK.tryLock()) {
-                TrackerAddressHolder holder = trackerAddressMap.get(address);
-                // is remove
-                if (holder == null) {
-                    return true;
-                }
-                // is cull
-                if (cullTrackerAddressCircular.contains(holder)) {
-                    return true;
-                }
-                if (cullExecutor.cullTracker(address)) {
-                    holder.setInActive();
-                    trackerAddressCircular.remove(holder);
-                    cullTrackerAddressCircular.add(holder);
-                    cullExecutor.recoveryTracker(address);
-                    return true;
-                }
-            }
-            return false;
-        } finally {
-            TRACKER_LOCK.unlock();
-        }
-    }
-
-    /**
-     * 恢复tracker
-     *
-     * @param address
-     */
-    public boolean recoveryTracker(InetSocketAddress address) {
-        try {
-            if (TRACKER_LOCK.tryLock()) {
-                TrackerAddressHolder holder = trackerAddressMap.get(address);
-                // is remove
-                if (holder == null) {
-                    return false;
-                }
-                cullExecutor.recoveryTracker(address);
-                // is recovery
-                if (!cullTrackerAddressCircular.contains(holder)) {
-                    return true;
-                }
-                trackerAddressCircular.add(holder);
-                cullTrackerAddressCircular.remove(holder);
-                return true;
-            }
-            return false;
-        } finally {
-            TRACKER_LOCK.unlock();
-        }
-    }
 }

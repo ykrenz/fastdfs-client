@@ -1,8 +1,6 @@
 package com.ykren.fastdfs;
 
-import com.ykren.fastdfs.conn.DefaultTrackerCullExecutor;
 import com.ykren.fastdfs.model.fdfs.TrackerLocator;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,8 +29,7 @@ public class TrackerLocatorTest {
     @Test
     public void initTest() {
         List<String> trackerServers = init();
-        int retry = 3;
-        TrackerLocator trackerLocator = new TrackerLocator(trackerServers, new DefaultTrackerCullExecutor(retry));
+        TrackerLocator trackerLocator = new TrackerLocator(trackerServers);
         int size = trackerLocator.getTrackerServers().size();
         Assert.assertEquals(size, trackerServers.size());
 
@@ -47,8 +44,7 @@ public class TrackerLocatorTest {
     @Test
     public void addTest() {
         List<String> trackerServers = init();
-        int retry = 3;
-        TrackerLocator trackerLocator = new TrackerLocator(trackerServers, new DefaultTrackerCullExecutor(retry));
+        TrackerLocator trackerLocator = new TrackerLocator(trackerServers);
         int size = trackerLocator.getTrackerServers().size();
         Assert.assertEquals(size, trackerServers.size());
 
@@ -67,8 +63,7 @@ public class TrackerLocatorTest {
     @Test
     public void removeTest() {
         List<String> trackerServers = init();
-        int retry = 3;
-        TrackerLocator trackerLocator = new TrackerLocator(trackerServers, new DefaultTrackerCullExecutor(retry));
+        TrackerLocator trackerLocator = new TrackerLocator(trackerServers);
         int size = trackerLocator.getTrackerServers().size();
         Assert.assertEquals(size, trackerServers.size());
 
@@ -84,85 +79,9 @@ public class TrackerLocatorTest {
 
 
     @Test
-    public void cullTest() {
-        List<String> trackerServers = init();
-        int retry = 3;
-        TrackerLocator trackerLocator = new TrackerLocator(trackerServers, new DefaultTrackerCullExecutor(retry));
-        int size = trackerLocator.getTrackerServers().size();
-        Assert.assertEquals(size, trackerServers.size());
-
-
-        InetSocketAddress cull = trackerLocator.getTrackerAddress();
-        for (int i = 0; i < retry; i++) {
-            boolean isCull = trackerLocator.cullTracker(cull);
-            if (i == retry - 1) {
-                Assert.assertTrue(isCull);
-            } else {
-                Assert.assertFalse(isCull);
-            }
-        }
-
-        Set<InetSocketAddress> result = new HashSet<>();
-        for (int i = 0; i < size; i++) {
-            InetSocketAddress trackerAddress = trackerLocator.getTrackerAddress();
-            result.add(trackerAddress);
-        }
-        Assert.assertEquals(size - 1, result.size());
-        Assert.assertEquals(size, trackerLocator.getTrackerServers().size());
-
-        trackerLocator.setRetryAfterSecond(3);
-        try {
-            TimeUnit.MILLISECONDS.sleep(trackerLocator.getRetryAfterSecond() * 1000L + 1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        Set<InetSocketAddress> result2 = new HashSet<>();
-        for (int i = 0; i < size; i++) {
-            InetSocketAddress trackerAddress = trackerLocator.getTrackerAddress();
-            result2.add(trackerAddress);
-        }
-        Assert.assertEquals(size, result2.size());
-        Assert.assertEquals(size, trackerLocator.getTrackerServers().size());
-
-
-        InetSocketAddress recovery = trackerLocator.getTrackerAddress();
-        trackerLocator.cullTracker(recovery);
-        Assert.assertTrue(trackerLocator.recoveryTracker(recovery));
-        for (int i = 0; i < retry; i++) {
-            boolean isCull = trackerLocator.cullTracker(recovery);
-            if (i == retry - 1) {
-                Assert.assertTrue(isCull);
-            } else {
-                Assert.assertFalse(isCull);
-            }
-        }
-        Assert.assertTrue(trackerLocator.recoveryTracker(recovery));
-
-        Set<InetSocketAddress> result3 = new HashSet<>();
-        for (int i = 0; i < size; i++) {
-            InetSocketAddress trackerAddress = trackerLocator.getTrackerAddress();
-            result3.add(trackerAddress);
-        }
-        Assert.assertEquals(size, result3.size());
-        Assert.assertEquals(size, trackerLocator.getTrackerServers().size());
-    }
-
-    private InetSocketAddress getInetSocketAddress(String trackerServer) {
-        String[] parts = StringUtils.split(trackerServer, ":", 2);
-        if (parts.length != 2) {
-            throw new IllegalArgumentException(
-                    "the value of item \"tracker_server\" is invalid, the correct format is host:port");
-        }
-        return new InetSocketAddress(parts[0].trim(), Integer.parseInt(parts[1].trim()));
-    }
-
-
-    @Test
     public void threadTest() throws InterruptedException {
         List<String> trackerServers = init();
-        int retry = 3;
-        TrackerLocator trackerLocator = new TrackerLocator(trackerServers, new DefaultTrackerCullExecutor(retry));
+        TrackerLocator trackerLocator = new TrackerLocator(trackerServers);
         int size = trackerLocator.getTrackerServers().size();
         Assert.assertEquals(size, trackerServers.size());
 
