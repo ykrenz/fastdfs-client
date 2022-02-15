@@ -3,7 +3,9 @@ package com.ykren.fastdfs.common;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.DigestUtils;
 
+import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
 /**
@@ -60,4 +62,25 @@ public final class FastDFSUtils {
         return filename;
     }
 
+    /**
+     * 防盗链获取token
+     *
+     * @param path      文件path 不加group
+     * @param ts        时间戳
+     * @param secretKey 密钥
+     * @param charset   字符集
+     * @return
+     */
+    public static String getToken(String path, int ts, String secretKey, Charset charset) {
+        byte[] bsFilename = path.getBytes(charset);
+        byte[] bsKey = secretKey.getBytes(charset);
+        byte[] bsTimestamp = Integer.toString(ts).getBytes(charset);
+
+        byte[] buff = new byte[bsFilename.length + bsKey.length + bsTimestamp.length];
+        System.arraycopy(bsFilename, 0, buff, 0, bsFilename.length);
+        System.arraycopy(bsKey, 0, buff, bsFilename.length, bsKey.length);
+        System.arraycopy(bsTimestamp, 0, buff, bsFilename.length + bsKey.length, bsTimestamp.length);
+
+        return DigestUtils.md5DigestAsHex(buff);
+    }
 }

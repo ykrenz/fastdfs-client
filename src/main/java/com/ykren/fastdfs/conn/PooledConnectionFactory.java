@@ -1,5 +1,6 @@
 package com.ykren.fastdfs.conn;
 
+import com.ykren.fastdfs.config.ConnectionConfiguration;
 import org.apache.commons.pool2.BaseKeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -31,7 +32,7 @@ public class PooledConnectionFactory extends BaseKeyedPooledObjectFactory<InetSo
      */
     private Charset charset;
 
-    public PooledConnectionFactory(ConnectionConfig connection) {
+    public PooledConnectionFactory(ConnectionConfiguration connection) {
         this.soTimeout = connection.getSocketTimeout();
         this.connectTimeout = connection.getConnectTimeout();
         this.charset = connection.getCharset() == null ? StandardCharsets.UTF_8 : Charset.forName(connection.getCharset());

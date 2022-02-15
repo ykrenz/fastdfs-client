@@ -1,10 +1,15 @@
 package com.ykren.fastdfs.model.fdfs;
 
+import com.ykren.fastdfs.common.FastDFSUtils;
+import com.ykren.fastdfs.config.HttpConfiguration;
 import com.ykren.fastdfs.model.proto.OtherConstants;
 import com.ykren.fastdfs.model.proto.mapper.DynamicFieldType;
 import com.ykren.fastdfs.model.proto.mapper.FdfsColumn;
 import com.ykren.fastdfs.exception.FdfsUnsupportStorePathException;
 import org.apache.commons.lang3.Validate;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 存储文件的路径信息
@@ -20,23 +25,15 @@ public class StorePath {
     private String path;
 
     /**
-     * web服务器url
+     * http相关配置
      */
-    private String webServerUrl;
-
-    /**
-     * web服务器路径是否包含Group
-     */
-    private boolean webServerUrlHasGroup;
+    private HttpConfiguration http;
 
     /**
      * 解析路径
      */
     private static final String SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR = "/";
 
-    private static final String DOWNLOAD_FILENAME_SEPERATOR = "?";
-
-    private static final String DEFAULT_DOWNLOAD_FILENAME_PREFIX = DOWNLOAD_FILENAME_SEPERATOR + "filename=";
     /**
      * group
      */
@@ -59,6 +56,12 @@ public class StorePath {
         super();
         this.group = group;
         this.path = path;
+    }
+
+    public StorePath(String group, String path, HttpConfiguration http) {
+        this.group = group;
+        this.path = path;
+        this.http = http;
     }
 
     /**
@@ -89,9 +92,12 @@ public class StorePath {
         this.path = path;
     }
 
-    public void setWebServerUrl(String webServerUrl, boolean webServerUrlHasGroup) {
-        this.webServerUrl = webServerUrl;
-        this.webServerUrlHasGroup = webServerUrlHasGroup;
+    public HttpConfiguration getHttp() {
+        return http;
+    }
+
+    public void setHttp(HttpConfiguration http) {
+        this.http = http;
     }
 
     /**
@@ -109,15 +115,7 @@ public class StorePath {
      * @return
      */
     public String getWebPath() {
-        return webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup();
-    }
-
-    private String getWebPathNoGroup() {
-        return this.webServerUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getPath());
-    }
-
-    private String getWebPathHasGroup() {
-        return this.webServerUrl.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath());
+        return getBaseWebPath().concat(getTokenPath());
     }
 
     /**
@@ -127,7 +125,11 @@ public class StorePath {
      * @return
      */
     public String getDownLoadPath(String filename) {
-        return (webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup()).concat(DEFAULT_DOWNLOAD_FILENAME_PREFIX).concat(filename);
+        String tokenPath = getTokenPath();
+        String webPath = getBaseWebPath();
+        return tokenPath.isEmpty() ?
+                webPath.concat("?filename=").concat(filename) :
+                webPath.concat(tokenPath).concat("&").concat("filename=").concat(filename);
     }
 
     /**
@@ -138,17 +140,32 @@ public class StorePath {
      * @return
      */
     public String getDownLoadPath(String attachmentArgName, String filename) {
-        return (webServerUrlHasGroup ? getWebPathHasGroup() : getWebPathNoGroup()).concat(DOWNLOAD_FILENAME_SEPERATOR + attachmentArgName).concat(filename);
+        String tokenPath = getTokenPath();
+        String webPath = getBaseWebPath();
+        return tokenPath.isEmpty() ?
+                webPath.concat("?").concat(attachmentArgName).concat("=").concat(filename) :
+                webPath.concat(tokenPath).concat("&").concat(attachmentArgName).concat("=").concat(filename);
+    }
+
+    private String getBaseWebPath() {
+        return http.isWebServerUrlHasGroup() ?
+                http.getWebServerUrl().concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath()) :
+                http.getWebServerUrl().concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getPath());
+    }
+
+    private String getTokenPath() {
+        if (!http.isHttpAntiStealToken()) {
+            return "";
+        }
+        Charset charset = http.getCharset() == null ? StandardCharsets.UTF_8 : Charset.forName(http.getCharset());
+        int ts = (int) (System.currentTimeMillis() / 1000);
+        String token = FastDFSUtils.getToken(getPath(), ts, http.getSecretKey(), charset);
+        return "?token=" + token + "&ts=" + ts;
     }
 
     @Override
     public String toString() {
-        return "StorePath{" +
-                "group='" + group + '\'' +
-                ", path='" + path + '\'' +
-                ", webServerUrl='" + webServerUrl + '\'' +
-                ", webServerUrlHasGroup=" + webServerUrlHasGroup +
-                '}';
+        return "StorePath [group=" + group + ", path=" + path + "]";
     }
 
     /**
@@ -167,6 +184,20 @@ public class StorePath {
         int pathStartPos = filePath.indexOf(group) + group.length() + 1;
         String path = filePath.substring(pathStartPos, filePath.length());
         return new StorePath(group, path);
+    }
+
+
+    /**
+     * 从url解析 配置http配置
+     *
+     * @param filePath
+     * @param http
+     * @return
+     */
+    public static StorePath parseFromUrl(String filePath, HttpConfiguration http) {
+        StorePath storePath = parseFromUrl(filePath);
+        storePath.setHttp(http);
+        return storePath;
     }
 
     /**

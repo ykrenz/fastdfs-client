@@ -47,28 +47,31 @@ public class FastDFSClientTest extends BaseClientTest {
                 .listener(new UploadProgressListener() {
                     @Override
                     public void start() {
-                        LOGGER.info("开始上传...文件总大小={}", totalBytes);
+                        LOGGER.debug("开始上传...文件总大小={}", totalBytes);
                     }
 
                     @Override
                     public void uploading() {
-                        LOGGER.info("上传中 上传进度为" + percent());
+                        LOGGER.debug("上传中 上传进度为" + percent());
                     }
 
                     @Override
                     public void completed() {
-                        LOGGER.info("上传完成...");
+                        LOGGER.debug("上传完成...");
                     }
 
                     @Override
                     public void failed() {
-                        LOGGER.info("上传失败...已经上传的字节数={}", bytesWritten);
+                        LOGGER.debug("上传失败...已经上传的字节数={}", bytesWritten);
                     }
                 })
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
-        LOGGER.debug("上传文件 result={}", storePath);
+        LOGGER.info("上传文件 result={}", storePath);
+        LOGGER.info("上传文件 webPath={}", storePath.getWebPath());
+        LOGGER.info("上传文件 downLoadPath={}", storePath.getDownLoadPath("1.txt"));
+        LOGGER.info("上传文件 downLoadPath2={}", storePath.getDownLoadPath("name", "1.txt"));
         delete(storePath);
         assertNull(queryFile(storePath));
     }

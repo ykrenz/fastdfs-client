@@ -1,5 +1,7 @@
 package com.ykren.fastdfs;
 
+import com.ykren.fastdfs.config.FastDFSConfiguration;
+
 import java.util.List;
 
 import static com.ykren.fastdfs.common.CodeUtils.validateCollectionNotEmpty;

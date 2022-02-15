@@ -1,5 +1,6 @@
 package com.ykren.fastdfs.conn;
 
+import com.ykren.fastdfs.config.ConnectionConfiguration;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 
@@ -16,7 +17,7 @@ import java.net.InetSocketAddress;
  */
 public class FdfsConnectionPool extends GenericKeyedObjectPool<InetSocketAddress, Connection> {
 
-    private ConnectionConfig connection;
+    private ConnectionConfiguration connection;
 
     private GenericKeyedObjectPoolConfig pool;
 
@@ -26,17 +27,17 @@ public class FdfsConnectionPool extends GenericKeyedObjectPool<InetSocketAddress
      * @param connection
      * @param pool
      */
-    public FdfsConnectionPool(ConnectionConfig connection, GenericKeyedObjectPoolConfig pool) {
+    public FdfsConnectionPool(ConnectionConfiguration connection, GenericKeyedObjectPoolConfig pool) {
         super(new PooledConnectionFactory(connection), pool);
         this.connection = connection;
         this.pool = pool;
     }
 
-    public ConnectionConfig getConnection() {
+    public ConnectionConfiguration getConnection() {
         return connection;
     }
 
-    public void setConnection(ConnectionConfig connection) {
+    public void setConnection(ConnectionConfiguration connection) {
         this.connection = connection;
     }
 

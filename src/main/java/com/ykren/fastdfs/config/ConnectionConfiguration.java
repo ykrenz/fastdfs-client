@@ -1,6 +1,9 @@
-package com.ykren.fastdfs.conn;
+package com.ykren.fastdfs.config;
 
-public class ConnectionConfig {
+/**
+ * 连接配置
+ */
+public class ConnectionConfiguration {
     /**
      * 读取时间
      */

@@ -50,4 +50,9 @@ public final class FastDFSConstants {
      * 清理空闲连接任务时长 1min
      */
     public static final long EVICT_IDLE_SCHEDULE_TIME_MILLIS = 1000L * 60L;
+
+    /**
+     * http SECRET_KEY
+     */
+    public static final String DEFAULT_HTTP_SECRET_KEY = "FastDFS1234567890";
 }

@@ -1,7 +1,5 @@
-package com.ykren.fastdfs;
+package com.ykren.fastdfs.config;
 
-import com.ykren.fastdfs.conn.ConnectionConfig;
-import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 
 import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.*;
@@ -18,45 +16,27 @@ public class FastDFSConfiguration {
      * 上传到固定分组 优先级大于参数
      */
     private String group;
-
     /**
-     * web访问路径 eg: nginx地址
-     * <p>
-     * 配合fastdfs-nginx-module使用
-     * <p>
-     * 预览地址{@link StorePath#getWebPath()}
-     * 下载地址{@link StorePath#getDownLoadPath(String)} ()}
-     * <p>
-     * nginx参考配置
+     * http相关配置
      */
-//    server {
-//        listen 8888;
-//        server_name localhost;
-//        #location ~/group([0-9])/M00 {
-//            location ~/M00 {
-//                root /home/data/fastdfs/storage;
-//                if ($arg_attname ~ "^(.+)") {
-//                    add_header Content-Disposition "attachment;filename=$arg_attname";
-//                }
-//                ngx_fastdfs_module;
-//            }
-//        }
-    private String webServerUrl;
-    /**
-     * web路径是否包含Group
-     */
-    private boolean webServerUrlHasGroup;
+    private HttpConfiguration http;
     /**
      * 连接配置
      */
-    private ConnectionConfig connection;
+    private ConnectionConfiguration connection;
     /**
      * 连接池配置
      */
     private GenericKeyedObjectPoolConfig pool;
 
     public FastDFSConfiguration() {
-        connection = new ConnectionConfig();
+        http = new HttpConfiguration();
+        http.setHttpAntiStealToken(false);
+        http.setWebServerUrlHasGroup(false);
+        http.setSecretKey(DEFAULT_HTTP_SECRET_KEY);
+        http.setCharset(DEFAULT_CHARSET);
+
+        connection = new ConnectionConfiguration();
         connection.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT);
         connection.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
         connection.setCharset(DEFAULT_CHARSET);
@@ -69,6 +49,8 @@ public class FastDFSConfiguration {
         pool.setMinIdlePerKey(MIN_IDLE_PER_KEY);
         pool.setMinEvictableIdleTimeMillis(IDLE_TIME_MILLIS);
         pool.setTimeBetweenEvictionRunsMillis(EVICT_IDLE_SCHEDULE_TIME_MILLIS);
+        pool.setTestOnCreate(true);
+        pool.setTestOnBorrow(true);
     }
 
 
@@ -80,27 +62,19 @@ public class FastDFSConfiguration {
         this.group = group;
     }
 
-    public String getWebServerUrl() {
-        return webServerUrl;
+    public HttpConfiguration getHttp() {
+        return http;
     }
 
-    public void setWebServerUrl(String webServerUrl) {
-        this.webServerUrl = webServerUrl;
+    public void setHttp(HttpConfiguration http) {
+        this.http = http;
     }
 
-    public boolean isWebServerUrlHasGroup() {
-        return webServerUrlHasGroup;
-    }
-
-    public void setWebServerUrlHasGroup(boolean webServerUrlHasGroup) {
-        this.webServerUrlHasGroup = webServerUrlHasGroup;
-    }
-
-    public ConnectionConfig getConnection() {
+    public ConnectionConfiguration getConnection() {
         return connection;
     }
 
-    public void setConnection(ConnectionConfig connection) {
+    public void setConnection(ConnectionConfiguration connection) {
         this.connection = connection;
     }
 
