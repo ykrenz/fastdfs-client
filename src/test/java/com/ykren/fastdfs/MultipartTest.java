@@ -76,8 +76,8 @@ public class MultipartTest extends BaseClientTest {
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
-        LOGGER.info("上传完毕StorePath={} 源文件md5={} 可查看服务器md5进行对比 耗时={}", finalPath, md5, System.currentTimeMillis() - start);
-//        delete(finalPath);
+        LOGGER.info("上传完毕StorePath={} 源文件md5={} 耗时={}", finalPath, md5, System.currentTimeMillis() - start);
+        delete(finalPath);
         FileUtils.deleteDirectory(new File(chunkPath));
     }
 
@@ -142,7 +142,7 @@ public class MultipartTest extends BaseClientTest {
             LOGGER.error(e.getMessage());
         }
         LOGGER.info("上传完毕StorePath={} 源文件md5={} 可查看服务器md5进行对比", finalPath, md5);
-//        delete(finalPath);
+        delete(finalPath);
         FileUtils.deleteDirectory(new File(chunkPath));
     }
 
