@@ -85,10 +85,14 @@ public class FastDFSClient implements FastDFS {
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(FastDFSClient.class);
 
-    private static final String GROUP = "group";
-
+    /**
+     * TrackerClient
+     */
     private final TrackerClient trackerClient;
 
+    /**
+     * 连接管理器
+     */
     private final FdfsConnectionManager fdfsConnectionManager;
 
     /**
@@ -154,7 +158,7 @@ public class FastDFSClient implements FastDFS {
     @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
         String groupName = getGroup(request);
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         //获取上传流
         InputStream is = wrapperStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
@@ -385,7 +389,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -396,7 +400,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
     }
@@ -406,7 +410,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         Set<MetaData> metaDataSet = (request.metaData() == null ? Collections.emptySet() : request.metaData());
         if (metaDataSet.isEmpty()) {
             LOGGER.warn("metadata is empty not merge");
@@ -421,7 +425,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -432,7 +436,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -442,7 +446,7 @@ public class FastDFSClient implements FastDFS {
     public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         validateNotNull(callback, "callback");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageDownloadCommand<T> command = new StorageDownloadCommand<>(groupName, path,
@@ -470,7 +474,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         // 获取上传流
         InputStream inputStream = wrapperStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
@@ -508,7 +512,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         // 获取上传流
         InputStream inputStream = wrapperStream(request);
         // 获取存储节点
@@ -524,7 +528,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
@@ -537,7 +541,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -574,7 +578,7 @@ public class FastDFSClient implements FastDFS {
         // 获取分组
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         long fileSize = request.fileSize();
         long partSize = request.partSize();
         int partNumber = request.partNumber();
@@ -595,7 +599,7 @@ public class FastDFSClient implements FastDFS {
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
         String groupName = getGroup(request);
         String path = request.path();
-        validateNotBlankString(groupName, GROUP);
+        validateNotBlankString(groupName, "group");
         StorePath storePath = new StorePath(groupName, path);
         if (request.regenerate()) {
             RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
