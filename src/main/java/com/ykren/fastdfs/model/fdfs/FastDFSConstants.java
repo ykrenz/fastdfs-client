@@ -23,15 +23,7 @@ public final class FastDFSConstants {
      */
     public static final String DEFAULT_CHARSET = "UTF-8";
     /**
-     * 多长时间后重试
-     */
-    public static final int DEFAULT_RETRY_TIME_MILLIS = 300;
-    /**
-     * tracker不可用几次被踢出
-     */
-    public static final int DEFAULT_CULL_AFTER_COUNT = 5;
-    /**
-     * 被踢出后默认重试连接时长 30s
+     * tracker不可用后默认重试连接时长 30s
      */
     public static final int DEFAULT_RETRY_AFTER_SECOND = 30;
     /**

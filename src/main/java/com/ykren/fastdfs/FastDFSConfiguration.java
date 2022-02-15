@@ -60,8 +60,6 @@ public class FastDFSConfiguration {
         connection.setSocketTimeout(DEFAULT_SOCKET_TIMEOUT);
         connection.setConnectTimeout(DEFAULT_CONNECT_TIMEOUT);
         connection.setCharset(DEFAULT_CHARSET);
-        connection.setRetryTimeMills(DEFAULT_RETRY_TIME_MILLIS);
-        connection.setCullAfterCount(DEFAULT_CULL_AFTER_COUNT);
         connection.setRetryAfterSecond(DEFAULT_RETRY_AFTER_SECOND);
 
         pool = new GenericKeyedObjectPoolConfig();
