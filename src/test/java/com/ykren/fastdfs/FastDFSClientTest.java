@@ -3,12 +3,9 @@ package com.ykren.fastdfs;
 
 import com.ykren.fastdfs.event.UploadProgressListener;
 import com.ykren.fastdfs.model.DownloadFileRequest;
-import com.ykren.fastdfs.model.MetaDataRequest;
 import com.ykren.fastdfs.model.ThumbImage;
 import com.ykren.fastdfs.model.UploadFileRequest;
 import com.ykren.fastdfs.model.UploadImageRequest;
-import com.ykren.fastdfs.model.UploadSalveFileRequest;
-import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
@@ -30,9 +27,9 @@ import static org.junit.Assert.*;
  *
  * @author tobato
  */
-public class StorageClientBasicTest extends BaseClientTest {
+public class FastDFSClientTest extends BaseClientTest {
 
-    protected static Logger LOGGER = LoggerFactory.getLogger(StorageClientBasicTest.class);
+    protected static Logger LOGGER = LoggerFactory.getLogger(FastDFSClientTest.class);
 
     /**
      * 基本文件上传操作测试
@@ -45,6 +42,29 @@ public class StorageClientBasicTest extends BaseClientTest {
         RandomTextFile file = new RandomTextFile();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .metaData("key1", "value1")
+                .metaData("key2", "value2")
+                .listener(new UploadProgressListener() {
+                    @Override
+                    public void start() {
+                        LOGGER.info("开始上传...文件总大小={}", totalBytes);
+                    }
+
+                    @Override
+                    public void uploading() {
+                        LOGGER.info("上传中 上传进度为" + percent());
+                    }
+
+                    @Override
+                    public void completed() {
+                        LOGGER.info("上传完成...");
+                    }
+
+                    @Override
+                    public void failed() {
+                        LOGGER.info("上传失败...已经上传的字节数={}", bytesWritten);
+                    }
+                })
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
@@ -85,36 +105,15 @@ public class StorageClientBasicTest extends BaseClientTest {
         metaData.add(new MetaData("a", "a"));
         UploadImageRequest request = UploadImageRequest.builder()
                 .file(file)
-                .listener(new UploadProgressListener() {
-                    @Override
-                    public void start() {
-
-                    }
-
-                    @Override
-                    public void uploading() {
-                        System.out.println(percent());
-                    }
-
-                    @Override
-                    public void completed() {
-
-                    }
-
-                    @Override
-                    public void failed() {
-
-                    }
-                })
+                .thumbImage(new ThumbImage(150, 150))
                 .build();
         ImageStorePath imageStorePath = fastDFS.uploadImage(request);
-        LOGGER.info("imgPath={}", imageStorePath.getImg().getWebPath());
-        LOGGER.info("imgPath={}", imageStorePath.getImg().getDownLoadPath("1.jpg"));
-        LOGGER.info("thumbPath={}", imageStorePath.getThumbs());
-//        delete(imageStorePath.getImg());
-//        for (StorePath path : imageStorePath.getThumbs()) {
-//            delete(path);
-//        }
+        LOGGER.info("img={}", imageStorePath.getImg());
+        LOGGER.info("thumbs={}", imageStorePath.getThumbs());
+        delete(imageStorePath.getImg());
+        for (StorePath path : imageStorePath.getThumbs()) {
+            delete(path);
+        }
     }
 
     @Test

@@ -36,8 +36,8 @@ public class BaseClientTest {
 
     static {
         TRACKER_LIST.add("192.168.24.130:22122");
-        TRACKER_LIST.add("192.168.24.131:22122");
-        TRACKER_LIST.add("192.168.24.132:22122");
+//        TRACKER_LIST.add("192.168.24.131:22122");
+//        TRACKER_LIST.add("192.168.24.132:22122");
     }
 
     @Before
