@@ -15,9 +15,9 @@ public final class FastDFSConstants {
      */
     public static final int DEFAULT_SOCKET_TIMEOUT = 30 * 1000;
     /**
-     * 连接超时时间 5s
+     * 连接超时时间 2s
      */
-    public static final int DEFAULT_CONNECT_TIMEOUT = 5000;
+    public static final int DEFAULT_CONNECT_TIMEOUT = 2000;
     /**
      * 字符集
      */
