@@ -74,7 +74,7 @@ public class DefaultConnection implements Connection {
             socket.getOutputStream().write(header);
             socket.close();
         } catch (IOException e) {
-            LOGGER.error("close connection error", e);
+            LOGGER.debug("close connection error", e);
         } finally {
             IOUtils.closeQuietly(socket);
         }
@@ -110,7 +110,7 @@ public class DefaultConnection implements Connection {
 
             return header[OtherConstants.PROTO_HEADER_STATUS_INDEX] == 0;
         } catch (IOException e) {
-            LOGGER.error("valid connection error", e);
+            LOGGER.debug("valid connection error", e);
             return false;
         }
     }
