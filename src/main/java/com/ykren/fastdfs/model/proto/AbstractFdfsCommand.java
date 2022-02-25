@@ -140,14 +140,22 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
      * @throws IOException
      */
     protected void sendFileContent(InputStream ins, long size, OutputStream ous) throws IOException {
-        long remainBytes = size;
-        byte[] buff = new byte[DEFAULT_BUFFER_SIZE];
-        int bytes;
-        while ((bytes = ins.read(buff)) != -1) {
-            ous.write(buff, 0, bytes);
-            remainBytes -= bytes;
-            if (remainBytes < 0) {
-                throw new IOException("the end of the stream has been reached. not match the expected size ");
+        int l;
+        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+        if (size < 0) {
+            // consume until EOF
+            while ((l = ins.read(buffer)) != -1) {
+                ous.write(buffer, 0, l);
+            }
+        } else {
+            long remaining = size;
+            while (remaining > 0) {
+                l = ins.read(buffer, 0, (int) Math.min(DEFAULT_BUFFER_SIZE, remaining));
+                if (l == -1) {
+                    break;
+                }
+                ous.write(buffer, 0, l);
+                remaining -= l;
             }
         }
     }

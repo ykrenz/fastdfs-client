@@ -87,7 +87,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
         }
 
         /**
-         * 上传文件
+         * 修改文件
          *
          * @param file
          * @param fileOffset
@@ -102,7 +102,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
 
 
         /**
-         * 追加文件流
+         * 修改文件流
          *
          * @param stream
          * @param fileSize

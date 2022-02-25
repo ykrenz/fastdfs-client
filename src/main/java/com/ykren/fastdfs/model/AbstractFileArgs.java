@@ -38,7 +38,7 @@ public abstract class AbstractFileArgs extends GroupArgs {
      */
     protected InputStream stream;
     /**
-     * 文件大小
+     * 上传内容长度
      */
     protected long fileSize;
     /**

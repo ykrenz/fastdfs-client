@@ -622,11 +622,19 @@ public class FastDFSClient implements FastDFS {
         if (partNumber > 1) {
             offset = (partNumber - 1) * partSize;
         }
-        ModifyFileRequest modifyFileRequest = ModifyFileRequest.builder()
-                .group(groupName)
-                .path(path)
-                .stream(request.stream(), fileSize, offset)
-                .file(request.file(), offset).build();
+        ModifyFileRequest modifyFileRequest;
+        if (request.file() != null) {
+            modifyFileRequest = ModifyFileRequest.builder()
+                    .group(groupName)
+                    .path(path)
+                    .file(request.file(), offset).build();
+            modifyFile(modifyFileRequest);
+        } else {
+            modifyFileRequest = ModifyFileRequest.builder()
+                    .group(groupName)
+                    .path(path)
+                    .stream(request.stream(), fileSize, offset).build();
+        }
         modifyFile(modifyFileRequest);
     }
 
