@@ -30,9 +30,9 @@ import static org.junit.Assert.*;
  *
  * @author tobato
  */
-public class StorageAppendClientBasicTest extends BaseClientTest {
+public class StorageAppendTest extends BaseClientTest {
 
-    protected static Logger LOGGER = LoggerFactory.getLogger(StorageAppendClientBasicTest.class);
+    protected static Logger LOGGER = LoggerFactory.getLogger(StorageAppendTest.class);
 
     /**
      * appender文件上传操作测试
@@ -202,6 +202,7 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
             e.printStackTrace();
         }
         executorService.shutdown();
+        LOGGER.info("上传完成storePath={}", storePath);
         delete(storePath);
     }
 
@@ -262,5 +263,6 @@ public class StorageAppendClientBasicTest extends BaseClientTest {
         assertNotNull(reStorePath);
         assertNull(queryFile(storePath));
         delete(reStorePath);
+
     }
 }

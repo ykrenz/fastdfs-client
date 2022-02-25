@@ -1,6 +1,6 @@
 package com.ykren.fastdfs.conn;
 
-import com.ykren.fastdfs.exception.FdfsConnectException;
+import com.ykren.fastdfs.exception.FdfsClientException;
 import com.ykren.fastdfs.exception.FdfsException;
 import com.ykren.fastdfs.exception.FdfsUnavailableException;
 import com.ykren.fastdfs.model.fdfs.TrackerLocator;
@@ -55,15 +55,13 @@ public class TrackerConnectionManager extends FdfsConnectionManager {
                 trackerLocator.setActive(address);
                 // 执行交易
                 return execute(address, conn, command);
-            } catch (FdfsConnectException e) {
-                LOGGER.error("connect tracker error", e);
-                trackerLocator.setInActive(address);
             } catch (FdfsUnavailableException e) {
-                LOGGER.error("no usable tracker error", e);
                 throw e;
             } catch (FdfsException e) {
-                LOGGER.error("execute cmd error", e);
+                LOGGER.error("execute tracker cmd error", e);
                 trackerLocator.setInActive(address);
+            } catch (Exception e) {
+                throw new FdfsClientException("execute cmd error", e);
             }
         }
     }

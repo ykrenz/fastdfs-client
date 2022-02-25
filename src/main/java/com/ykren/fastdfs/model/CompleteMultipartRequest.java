@@ -24,6 +24,10 @@ public class CompleteMultipartRequest extends GroupPathArgs {
      */
     protected boolean regenerate = true;
     /**
+     * crc32校验码
+     */
+    protected long crc32;
+    /**
      * 文件元数据
      */
     protected Set<MetaData> metaData = new HashSet<>();
@@ -34,6 +38,10 @@ public class CompleteMultipartRequest extends GroupPathArgs {
 
     public Set<MetaData> metaData() {
         return metaData;
+    }
+
+    public long crc32() {
+        return crc32;
     }
 
     public static Builder builder() {
@@ -94,6 +102,17 @@ public class CompleteMultipartRequest extends GroupPathArgs {
             operations.add(args -> args.regenerate = regenerate);
             return this;
         }
+
+        /**
+         * cr32校验
+         *
+         * @param crc32
+         * @return
+         */
+        public Builder crc32(long crc32) {
+            operations.add(args -> args.crc32 = crc32);
+            return this;
+        }
     }
 
     @Override
@@ -103,11 +122,12 @@ public class CompleteMultipartRequest extends GroupPathArgs {
         if (!super.equals(o)) return false;
         CompleteMultipartRequest that = (CompleteMultipartRequest) o;
         return regenerate == that.regenerate &&
+                crc32 == that.crc32 &&
                 Objects.equals(metaData, that.metaData);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), regenerate, metaData);
+        return Objects.hash(super.hashCode(), regenerate, crc32, metaData);
     }
 }

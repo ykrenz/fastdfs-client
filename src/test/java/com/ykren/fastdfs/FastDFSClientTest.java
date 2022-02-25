@@ -6,15 +6,18 @@ import com.ykren.fastdfs.model.DownloadFileRequest;
 import com.ykren.fastdfs.model.ThumbImage;
 import com.ykren.fastdfs.model.UploadFileRequest;
 import com.ykren.fastdfs.model.UploadImageRequest;
+import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +33,7 @@ import static org.junit.Assert.*;
 public class FastDFSClientTest extends BaseClientTest {
 
     protected static Logger LOGGER = LoggerFactory.getLogger(FastDFSClientTest.class);
+    String testFilePath = "D:\\Users\\ykren\\Downloads\\Git-2.34.1-64-bit.exe";
 
     /**
      * 基本文件上传操作测试
@@ -40,8 +44,13 @@ public class FastDFSClientTest extends BaseClientTest {
     public void uploadFile() throws IOException {
         LOGGER.debug("##上传文件..##");
         RandomTextFile file = new RandomTextFile();
+//        File file = new File(testFilePath);
+//        FileInputStream stream = new FileInputStream(file);
+//        long crc32 = FileUtils.checksumCRC32(file);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+//                .stream(stream, file.length(), "exe")
+//                .crc32(crc32)
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
                 .listener(new UploadProgressListener() {
@@ -74,6 +83,43 @@ public class FastDFSClientTest extends BaseClientTest {
         LOGGER.info("上传文件 downLoadPath2={}", storePath.getDownLoadPath("name", "1.txt"));
         delete(storePath);
         assertNull(queryFile(storePath));
+    }
+
+    @Test
+    public void uploadSalveFile() throws IOException {
+        LOGGER.debug("##上传文件..##");
+        RandomTextFile file = new RandomTextFile();
+//        File file = new File(testFilePath);
+//        long crc32 = FileUtils.checksumCRC32(file);
+        UploadFileRequest fileRequest = UploadFileRequest.builder()
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+//                .file(file)
+//                .crc32(crc32)
+                .metaData("key1", "value1")
+                .build();
+        StorePath storePath = fastDFS.uploadFile(fileRequest);
+
+        UploadSalveFileRequest salveFileRequest = UploadSalveFileRequest.builder()
+                .masterPath(storePath.getPath())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+//                .file(file)
+                .prefix("aaa")
+//                .crc32(crc32)
+                .metaData("salvekey", "salvevalue")
+                .build();
+        StorePath slaveFile = fastDFS.uploadSlaveFile(salveFileRequest);
+        assertNotNull(storePath);
+        assertNotNull(slaveFile);
+        LOGGER.info("上传文件 result={} slaveFile={}", storePath, slaveFile);
+        LOGGER.info("上传文件 webPath={} webPath={}", storePath.getWebPath(), slaveFile.getWebPath());
+        LOGGER.info("上传文件 downLoadPath={} downLoadPath={}", storePath.getDownLoadPath("1.txt"),slaveFile.getDownLoadPath("1.txt"));
+        LOGGER.info("上传文件 downLoadPath2={} downLoadPath2={}",
+                storePath.getDownLoadPath("name", "1.txt"),
+                slaveFile.getDownLoadPath("name", "1.txt"));
+        delete(storePath);
+        delete(slaveFile);
+        assertNull(queryFile(storePath));
+        assertNull(queryFile(slaveFile));
     }
 
     @Test

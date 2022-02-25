@@ -3,6 +3,7 @@ package com.ykren.fastdfs;
 import com.ykren.fastdfs.model.CompleteMultipartRequest;
 import com.ykren.fastdfs.model.InitMultipartUploadRequest;
 import com.ykren.fastdfs.model.UploadMultipartPartRequest;
+import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -77,8 +78,13 @@ public class MultipartTest extends BaseClientTest {
             LOGGER.error(e.getMessage());
         }
         LOGGER.info("上传完毕StorePath={} 源文件md5={} 耗时={}", finalPath, md5, System.currentTimeMillis() - start);
+        FileInfo fileInfo = queryFile(finalPath);
+        System.out.println(fileInfo.getCrc32());
         delete(finalPath);
         FileUtils.deleteDirectory(new File(chunkPath));
+
+        long l = FileUtils.checksumCRC32(new File(testFilePath));
+        System.out.println(l);
     }
 
 
@@ -122,9 +128,12 @@ public class MultipartTest extends BaseClientTest {
         }
         service.shutdown();
         LOGGER.info("线程数={} 耗时==========={}", threadCount, System.currentTimeMillis() - start);
+
+        long crc32 = FileUtils.checksumCRC32(new File(testFilePath));
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
                 .group(storePath.getGroup())
                 .path(storePath.getPath())
+                .crc32(crc32)
                 .build();
         StorePath finalPath = fastDFS.completeMultipartUpload(completeRequest);
 

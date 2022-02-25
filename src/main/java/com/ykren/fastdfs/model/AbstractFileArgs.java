@@ -53,6 +53,10 @@ public abstract class AbstractFileArgs extends GroupArgs {
      * 文件路径 path
      */
     protected String path;
+    /**
+     * crc32校验码
+     */
+    protected long crc32;
 
     public File file() {
         return file;
@@ -130,6 +134,7 @@ public abstract class AbstractFileArgs extends GroupArgs {
         if (!super.equals(o)) return false;
         AbstractFileArgs that = (AbstractFileArgs) o;
         return fileSize == that.fileSize &&
+                crc32 == that.crc32 &&
                 Objects.equals(listener, that.listener) &&
                 Objects.equals(file, that.file) &&
                 Objects.equals(stream, that.stream) &&
@@ -140,6 +145,6 @@ public abstract class AbstractFileArgs extends GroupArgs {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), listener, file, stream, fileSize, fileExtName, metaData, path);
+        return Objects.hash(super.hashCode(), listener, file, stream, fileSize, fileExtName, metaData, path, crc32);
     }
 }

@@ -35,9 +35,14 @@ public class UploadImageRequest extends AbstractFileArgs {
         return metaData;
     }
 
+    public long crc32() {
+        return crc32;
+    }
+
     public Set<ThumbImageRequest> thumbImages() {
         return thumbImages;
     }
+
     public static Builder builder() {
         return new Builder();
     }

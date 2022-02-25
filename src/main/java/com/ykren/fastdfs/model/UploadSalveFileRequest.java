@@ -44,6 +44,10 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         return metaData;
     }
 
+    public long crc32() {
+        return crc32;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -126,6 +130,17 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
          */
         public Builder metaData(Set<MetaData> metaData) {
             operations.add(args -> args.metaData.addAll(metaData == null ? Collections.emptySet() : metaData));
+            return this;
+        }
+
+        /**
+         * cr32校验
+         *
+         * @param crc32
+         * @return
+         */
+        public Builder crc32(long crc32) {
+            operations.add(args -> args.crc32 = crc32);
             return this;
         }
     }

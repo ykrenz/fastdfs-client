@@ -7,6 +7,7 @@ import com.ykren.fastdfs.conn.FdfsConnectionPool;
 import com.ykren.fastdfs.conn.TrackerConnectionManager;
 import com.ykren.fastdfs.event.ProgressInputStream;
 import com.ykren.fastdfs.event.ProgressListener;
+import com.ykren.fastdfs.exception.FdfsClientException;
 import com.ykren.fastdfs.exception.FdfsIOException;
 import com.ykren.fastdfs.exception.FdfsUploadImageException;
 import com.ykren.fastdfs.model.AbstractFileArgs;
@@ -99,11 +100,11 @@ public class FastDFSClient implements FastDFS {
      * 分组group 优先级大于参数 ${@link #getGroup(GroupArgs)}
      * 优点是可以固定分组上传 不用每次都设置group
      */
-    private String group;
+    private final String group;
     /**
      * http相关配置
      */
-    private HttpConfiguration http;
+    private final HttpConfiguration http;
 
     public FastDFSClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection(), configuration.getPool());
@@ -121,16 +122,8 @@ public class FastDFSClient implements FastDFS {
         return group;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
-    }
-
     public HttpConfiguration getHttp() {
         return http;
-    }
-
-    public void setHttp(HttpConfiguration http) {
-        this.http = http;
     }
 
     @Override
@@ -151,8 +144,11 @@ public class FastDFSClient implements FastDFS {
         // 获取存储节点
         StorageNode client = trackerClient.getStoreStorage(groupName);
         // 上传文件
-        return uploadFileAndMetaData(client, is,
+        StorePath storePath = uploadFileAndMetaData(client, is,
                 request.fileSize(), handlerFilename(request.fileExtName()), request.metaData(), false);
+        // checkCrc32
+        uploadCheckCrc32(storePath, request.crc32());
+        return storePath;
     }
 
     @Override
@@ -165,8 +161,11 @@ public class FastDFSClient implements FastDFS {
         //上传从文件
         String handlerPrefix = handlerFilename(request.prefix());
         String prefix = handlerPrefix.isEmpty() ? "." : handlerPrefix;
-        return uploadSalveFileAndMetaData(client, request.masterPath(),
+        StorePath storePath = uploadSalveFileAndMetaData(client, request.masterPath(),
                 is, request.fileSize(), prefix, handlerFilename(request.fileExtName()), request.metaData());
+        // checkCrc32
+        uploadCheckCrc32(storePath, request.crc32());
+        return storePath;
     }
 
     @Override
@@ -183,8 +182,10 @@ public class FastDFSClient implements FastDFS {
             StorageNode client = trackerClient.getStoreStorage(groupName);
             StorePath imgPath = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
                     request.fileSize(), fileExtName, request.metaData(), false);
+            // checkCrc32
+            uploadCheckCrc32(imgPath, request.crc32());
             imageStorePath.setImg(imgPath);
-            LOGGER.debug("upload image success");
+            LOGGER.debug("upload image success img path{}", imgPath);
 
             Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
             List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
@@ -546,7 +547,41 @@ public class FastDFSClient implements FastDFS {
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         storePath.setHttp(http);
+        // checkCrc32
+        uploadCheckCrc32(storePath, request.crc32());
         return storePath;
+    }
+
+    /**
+     * 上传校验crc32
+     *
+     * @param path
+     * @param crc32
+     */
+    protected void uploadCheckCrc32(StorePath path, long crc32) {
+        if (crc32 > 0 && !checkCrc32(path, crc32)) {
+            FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
+                    .group(path.getGroup())
+                    .path(path.getPath())
+                    .build();
+            deleteFile(fileInfoRequest);
+            throw new FdfsClientException("upload error crc32 validate error ");
+        }
+    }
+
+    /**
+     * 校验crc32
+     *
+     * @param path
+     * @param crc32
+     * @return
+     */
+    protected boolean checkCrc32(StorePath path, long crc32) {
+        FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
+                .group(path.getGroup())
+                .path(path.getPath())
+                .build();
+        return queryFileInfo(fileInfoRequest).getCrc32() == crc32;
     }
 
     // endregion appender
@@ -608,6 +643,8 @@ public class FastDFSClient implements FastDFS {
                     .build();
             storePath = regenerateAppenderFile(reRequest);
         }
+        // checkCrc32
+        uploadCheckCrc32(storePath, request.crc32());
         // 重置metadata
         MetaDataRequest metaDataRequest = MetaDataRequest.builder()
                 .group(storePath.getGroup())

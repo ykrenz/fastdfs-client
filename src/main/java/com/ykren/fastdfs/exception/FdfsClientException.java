@@ -26,13 +26,4 @@ public class FdfsClientException extends RuntimeException {
     public FdfsClientException(String message, Throwable t) {
         super(message, t);
     }
-
-    /**
-     * @param t
-     */
-    public FdfsClientException(Throwable t) {
-        super("客户端出现异常", t);
-    }
-
-
 }

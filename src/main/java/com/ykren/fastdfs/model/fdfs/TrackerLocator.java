@@ -131,7 +131,7 @@ public class TrackerLocator {
             InetSocketAddress address = holder.getAddress();
             config.append(address.toString()).append(",");
         }
-        return new String(config);
+        return config.substring(0, config.length() - 1);
     }
 
     /**
@@ -175,7 +175,11 @@ public class TrackerLocator {
                     return true;
                 }
 
-                return initTrackerServer(trackerServer) && trackerServers.add(trackerServer);
+                if (!initTrackerServer(trackerServer)) {
+                    return false;
+                }
+                trackerServers.add(trackerServer);
+                return true;
             }
             return false;
         } finally {
@@ -185,7 +189,6 @@ public class TrackerLocator {
 
     /**
      * 移除tracker
-     * 如果remove一个被剔除正在恢复的tracker可能会不成功
      *
      * @param trackerServer
      */

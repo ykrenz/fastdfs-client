@@ -50,7 +50,6 @@ public final class FastDFSConstants {
      * 清理空闲连接任务时长 1min
      */
     public static final long EVICT_IDLE_SCHEDULE_TIME_MILLIS = 1000L * 60L;
-
     /**
      * http SECRET_KEY
      */
