@@ -1,5 +1,5 @@
 # FastDFS客户端
-
+`jdk:1.8`
 ***基于tobato 1.2.72开发 https://github.com/tobato/FastDFS_Client***
 
 ## 新特性:
