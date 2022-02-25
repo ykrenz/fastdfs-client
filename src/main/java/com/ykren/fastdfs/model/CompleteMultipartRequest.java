@@ -20,9 +20,9 @@ import static com.ykren.fastdfs.model.proto.OtherConstants.FDFS_MAX_META_VALUE_L
  */
 public class CompleteMultipartRequest extends GroupPathArgs {
     /**
-     * 是否改为普通文件 默认为true V6.02版本以下请设置为false
+     * 是否改为普通文件 默认为true V6.02版本以上可设置为true
      */
-    protected boolean regenerate = true;
+    protected boolean regenerate;
     /**
      * crc32校验码
      */
