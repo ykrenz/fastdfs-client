@@ -11,13 +11,11 @@ import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
 import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -138,7 +136,7 @@ public class FastDFSClientTest extends BaseClientTest {
     public void downLoadTest() {
         StorePath storePath = uploadRandomFile();
         DownloadFileRequest request = DownloadFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .fileSize(2)
                 .build();

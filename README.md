@@ -9,6 +9,7 @@
 - token防盗链功能
 - 新增regenerateAppenderFile接口 支持appender文件改为普通文件 仅支持6.0.2以上版本
 - 上传进度功能 可获取上传的进度
+- crc32校验 保证文件传输正确性 可结合断点续传和分片上传保证传输可靠性
 - 缩略图批量生成、单独上传缩略图功能
 - 动态添加和移除tracker服务
 - 集成nginx 可获取web访问的路径和下载文件的路径 配合前端更方便预览图片和下载文件
@@ -18,7 +19,6 @@
 - tracker高可用 tracker集群下 一台宕机出错可无缝切换到另一台正常工作
 - tracker宕机重试优化 默认为30s重试 可配置
 - 查询文件、 获取metadata、 删除文件接口文件不存在返回空值 不会抛出异常
-- crc32校验 保证文件传输正确性 可结合断点续传和分片上传保证传输可靠性
 - 流上传优化 根据需要的size传输相应流 不是必须传输所有流
 - 其他细节优化处理
 
@@ -71,7 +71,7 @@ FastDFS fastDFS = new FastDFSClientBuilder().build(trackerServers, configuration
 try {
 	// 上传文件
 }finally {
-    fastDFS.close();
+    fastDFS.shutdown();
 }
 ```
 
@@ -114,7 +114,7 @@ List<String> trackerServers = new ArrayList<>();
         .filePath("test.txt")
         .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
-        fastDFS.close();
+        fastDFS.shutdown();
         System.out.println("上传文件成功" + storePath);
 ```
 
@@ -130,7 +130,7 @@ List<String> trackerServers = new ArrayList<>();
         .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```
 
 上传文件带元数据
@@ -145,7 +145,7 @@ List<String> trackerServers = new ArrayList<>();
         .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```
 
 上传文件带进度条
@@ -179,7 +179,7 @@ public void failed() {
         })
         .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```
 
 上传带crc32校验
@@ -196,7 +196,7 @@ List<String> trackerServers = new ArrayList<>();
         .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```
 
 断点续传示例：
@@ -229,7 +229,7 @@ List<String> trackerServers = new ArrayList<>();
         .build();
         StorePath reStorePath = fastDFS.regenerateAppenderFile(request);
         System.out.println("上传文件成功" + reStorePath);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```
 
 分片上传：
@@ -288,5 +288,5 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
         .build();
         StorePath path = fastDFS.completeMultipartUpload(completeRequest);
         System.out.println("上传文件成功" + path);
-        fastDFS.close();
+        fastDFS.shutdown();
 ```

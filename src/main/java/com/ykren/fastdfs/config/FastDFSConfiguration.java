@@ -15,7 +15,7 @@ public class FastDFSConfiguration {
     /**
      * 上传到固定分组 优先级大于参数
      */
-    private String group;
+    private String groupName;
     /**
      * http相关配置
      */
@@ -54,12 +54,12 @@ public class FastDFSConfiguration {
     }
 
 
-    public String getGroup() {
-        return group;
+    public String getGroupName() {
+        return groupName;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public HttpConfiguration getHttp() {

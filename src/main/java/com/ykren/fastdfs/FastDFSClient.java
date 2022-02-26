@@ -100,7 +100,7 @@ public class FastDFSClient implements FastDFS {
      * 分组group 优先级大于参数 ${@link #getGroup(GroupArgs)}
      * 优点是可以固定分组上传 不用每次都设置group
      */
-    private final String group;
+    private final String groupName;
     /**
      * http相关配置
      */
@@ -110,16 +110,16 @@ public class FastDFSClient implements FastDFS {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection(), configuration.getPool());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
-        this.group = configuration.getGroup();
-        this.http = configuration.getHttp() == null ? new HttpConfiguration() : configuration.getHttp();
+        this.groupName = configuration.getGroupName();
+        this.http = configuration.getHttp();
     }
 
     public FdfsConnectionManager getConnectionManager() {
         return fdfsConnectionManager;
     }
 
-    public String getGroup() {
-        return group;
+    public String getGroupName() {
+        return groupName;
     }
 
     public HttpConfiguration getHttp() {
@@ -132,7 +132,7 @@ public class FastDFSClient implements FastDFS {
     }
 
     @Override
-    public void close() {
+    public void shutdown() {
         fdfsConnectionManager.getPool().close();
     }
 
@@ -559,9 +559,9 @@ public class FastDFSClient implements FastDFS {
      * @param crc32
      */
     protected void uploadCheckCrc32(StorePath path, long crc32) {
-        if (crc32 > 0 && !checkCrc32(path, crc32)) {
+        if (crc32 != 0 && !checkCrc32(path, crc32)) {
             FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                    .group(path.getGroup())
+                    .groupName(path.getGroup())
                     .path(path.getPath())
                     .build();
             deleteFile(fileInfoRequest);
@@ -578,7 +578,7 @@ public class FastDFSClient implements FastDFS {
      */
     protected boolean checkCrc32(StorePath path, long crc32) {
         FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                .group(path.getGroup())
+                .groupName(path.getGroup())
                 .path(path.getPath())
                 .build();
         return queryFileInfo(fileInfoRequest).getCrc32() == crc32;
@@ -592,13 +592,13 @@ public class FastDFSClient implements FastDFS {
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
         String groupName = getGroup(request);
         UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
-                .group(groupName)
+                .groupName(groupName)
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, handlerFilename(request.fileExtName()))
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
         if (request.fileSize() > 0) {
             TruncateFileRequest truncateFileRequest = TruncateFileRequest.builder()
-                    .group(storePath.getGroup())
+                    .groupName(storePath.getGroup())
                     .path(storePath.getPath())
                     .fileSize(request.fileSize())
                     .build();
@@ -625,13 +625,13 @@ public class FastDFSClient implements FastDFS {
         ModifyFileRequest modifyFileRequest;
         if (request.file() != null) {
             modifyFileRequest = ModifyFileRequest.builder()
-                    .group(groupName)
+                    .groupName(groupName)
                     .path(path)
                     .file(request.file(), offset).build();
             modifyFile(modifyFileRequest);
         } else {
             modifyFileRequest = ModifyFileRequest.builder()
-                    .group(groupName)
+                    .groupName(groupName)
                     .path(path)
                     .stream(request.stream(), fileSize, offset).build();
         }
@@ -646,7 +646,7 @@ public class FastDFSClient implements FastDFS {
         StorePath storePath = new StorePath(groupName, path);
         if (request.regenerate()) {
             RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
-                    .group(storePath.getGroup())
+                    .groupName(storePath.getGroup())
                     .path(storePath.getPath())
                     .build();
             storePath = regenerateAppenderFile(reRequest);
@@ -655,7 +655,7 @@ public class FastDFSClient implements FastDFS {
         uploadCheckCrc32(storePath, request.crc32());
         // 重置metadata
         MetaDataRequest metaDataRequest = MetaDataRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .metaData(request.metaData())
                 .build();
@@ -673,7 +673,7 @@ public class FastDFSClient implements FastDFS {
      * @return
      */
     private String getGroup(GroupArgs args) {
-        String groupName = StringUtils.isNotBlank(group) ? group : args.group();
+        String groupName = StringUtils.isNotBlank(this.groupName) ? this.groupName : args.groupName();
         LOGGER.debug("获取到上传的group={}", groupName);
         return groupName;
     }

@@ -9,7 +9,7 @@ import java.util.Objects;
 public class GroupArgs extends BaseArgs {
     protected String groupName;
 
-    public String group() {
+    public String groupName() {
         return groupName;
     }
 
@@ -20,8 +20,8 @@ public class GroupArgs extends BaseArgs {
             extends BaseArgs.Builder<B, A> {
 
         @SuppressWarnings("unchecked")
-        public B group(String name) {
-            operations.add(args -> args.groupName = name);
+        public B groupName(String groupName) {
+            operations.add(args -> args.groupName = groupName);
             return (B) this;
         }
     }

@@ -58,7 +58,7 @@ public class StorageAppendTest extends BaseClientTest {
         AppendFileRequest appendFileRequest = AppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize())
                 .path(storePath.getPath())
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .metaData(metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)
                 .build();
         fastDFS.appendFile(appendFileRequest);
@@ -71,7 +71,7 @@ public class StorageAppendTest extends BaseClientTest {
         appendFileRequest = AppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize())
                 .path(storePath.getPath())
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .metaData(metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)
                 .build();
         fastDFS.appendFile(appendFileRequest);
@@ -85,7 +85,7 @@ public class StorageAppendTest extends BaseClientTest {
         appendFileRequest = AppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize())
                 .path(storePath.getPath())
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .metaData(metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE)
                 .build();
         fastDFS.appendFile(appendFileRequest);
@@ -95,7 +95,7 @@ public class StorageAppendTest extends BaseClientTest {
         appendFileRequest = AppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize())
                 .path(storePath.getPath())
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .metaData(new HashSet<>(), StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)
                 .build();
         fastDFS.appendFile(appendFileRequest);
@@ -129,7 +129,7 @@ public class StorageAppendTest extends BaseClientTest {
 
         RandomTextFile modifyFile = new RandomTextFile();
         ModifyFileRequest modifyFileRequest = ModifyFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .stream(modifyFile.getInputStream(), modifyFile.getFileSize(), 0)
                 .build();
@@ -139,7 +139,7 @@ public class StorageAppendTest extends BaseClientTest {
         String text = "123";
         InputStream inputStream = new ByteArrayInputStream(text.getBytes());
         modifyFileRequest = ModifyFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .stream(inputStream, text.length(), 0)
                 .build();
@@ -150,7 +150,7 @@ public class StorageAppendTest extends BaseClientTest {
         MetaData overMeta = new MetaData("newkey", "newvalue");
         metaData.add(overMeta);
         modifyFileRequest = ModifyFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .stream(modifyFile.getInputStream(), modifyFile.getFileSize(), 0)
                 .metaData(metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)
@@ -167,7 +167,7 @@ public class StorageAppendTest extends BaseClientTest {
         MetaData newdata = new MetaData("newkey", "newvalue1");
         metaData.add(newdata);
         modifyFileRequest = ModifyFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .stream(modifyFile.getInputStream(), modifyFile.getFileSize(), 0)
                 .metaData(metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE)
@@ -185,7 +185,7 @@ public class StorageAppendTest extends BaseClientTest {
             executorService.submit(() -> {
                 RandomTextFile modifyFile2 = new RandomTextFile();
                 ModifyFileRequest modifyFileRequest2 = ModifyFileRequest.builder()
-                        .group(storePath.getGroup())
+                        .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .stream(modifyFile2.getInputStream(), modifyFile2.getFileSize(), 0)
                         .build();
@@ -220,7 +220,7 @@ public class StorageAppendTest extends BaseClientTest {
         LOGGER.debug("append上传文件 result={} text={}", storePath, file.getText());
 
         TruncateFileRequest request = TruncateFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .build();
         fastDFS.truncateFile(request);
@@ -230,7 +230,7 @@ public class StorageAppendTest extends BaseClientTest {
 
         long size = 100;
         request = TruncateFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .fileSize(size)
                 .build();
@@ -255,7 +255,7 @@ public class StorageAppendTest extends BaseClientTest {
         LOGGER.debug("append上传文件 result={} text={}", storePath, file.getText());
 
         RegenerateAppenderFileRequest request = RegenerateAppenderFileRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .build();
         StorePath reStorePath = fastDFS.regenerateAppenderFile(request);

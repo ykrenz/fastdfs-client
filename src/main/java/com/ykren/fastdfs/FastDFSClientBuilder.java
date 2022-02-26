@@ -4,9 +4,6 @@ import com.ykren.fastdfs.config.FastDFSConfiguration;
 
 import java.util.List;
 
-import static com.ykren.fastdfs.common.CodeUtils.validateCollectionNotEmpty;
-import static com.ykren.fastdfs.common.CodeUtils.validateNotNull;
-
 /**
  * FastDFS构建类
  *
@@ -33,9 +30,7 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      */
     @Override
     public FastDFS build(List<String> trackerServers, FastDFSConfiguration configuration) {
-        validateCollectionNotEmpty(trackerServers, "trackerServers");
-        validateNotNull(configuration, "configuration");
-        return new FastDFSClient(trackerServers, configuration);
+        return new FastDFSClient(trackerServers, getFastDFSConfiguration(configuration));
     }
 
     /**
@@ -43,7 +38,14 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      *
      * @return
      */
-    private FastDFSConfiguration getFastDFSConfiguration() {
+    private static FastDFSConfiguration getFastDFSConfiguration() {
         return new FastDFSConfiguration();
+    }
+
+    private static FastDFSConfiguration getFastDFSConfiguration(FastDFSConfiguration config) {
+        if (config == null) {
+            config = new FastDFSConfiguration();
+        }
+        return config;
     }
 }

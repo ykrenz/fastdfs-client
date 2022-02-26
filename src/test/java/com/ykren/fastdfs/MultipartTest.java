@@ -46,7 +46,7 @@ public class MultipartTest extends BaseClientTest {
                 UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
                         .stream(ins, partNumber, curPartSize)
                         .partSize(partSize)
-                        .group(storePath.getGroup())
+                        .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .build();
                 fastDFS.uploadMultipart(multipartPartRequest);
@@ -66,7 +66,7 @@ public class MultipartTest extends BaseClientTest {
 
         long crc32 = Crc32.file(sampleFile);
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .crc32(crc32)
                 .build();

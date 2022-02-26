@@ -49,21 +49,21 @@ public class ArgsTest {
         Assert.assertEquals(3, request.fileSize());
 
         request = UploadFileRequest.builder()
-                .group("group1")
+                .groupName("group1")
 //                .file(new File("notExist.txt"))
                 .stream(new ByteArrayInputStream(s.getBytes()), s.length(), "txt")
                 .metaData("key", "value")
                 .build();
 
         Assert.assertNotNull(request);
-        Assert.assertEquals("group1", request.group());
+        Assert.assertEquals("group1", request.groupName());
         Assert.assertNotNull(request.stream());
         Assert.assertNotNull(request.fileExtName());
         Assert.assertEquals(3, request.fileSize());
         Assert.assertTrue(request.metaData().contains(new MetaData("key", "value")));
 
         UploadFileRequest.builder()
-                .group("group1")
+                .groupName("group1")
                 .stream(new ByteArrayInputStream(s.getBytes()), s.length(), "1234567890")
                 .metaData("12345678901234567890123456789012345678901234567890123456789012345",
                         "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890" +

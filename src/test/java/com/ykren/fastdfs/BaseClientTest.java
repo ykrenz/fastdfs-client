@@ -1,7 +1,6 @@
 package com.ykren.fastdfs;
 
 import com.ykren.fastdfs.config.FastDFSConfiguration;
-import com.ykren.fastdfs.config.HttpConfiguration;
 import com.ykren.fastdfs.model.UploadFileRequest;
 import com.ykren.fastdfs.model.fdfs.FileInfo;
 import com.ykren.fastdfs.model.fdfs.MetaData;
@@ -44,7 +43,7 @@ public class BaseClientTest {
     @Before
     public void initClient() {
         FastDFSConfiguration configuration = new FastDFSConfiguration();
-        configuration.setGroup("group1");
+        configuration.setGroupName("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
@@ -57,7 +56,7 @@ public class BaseClientTest {
 
     @After
     public void closeClient() {
-        fastDFS.close();
+        fastDFS.shutdown();
     }
 
     public StorePath uploadRandomFile() {
@@ -74,13 +73,13 @@ public class BaseClientTest {
 
     protected Set<MetaData> getMetaData(StorePath storePath) {
         MetaDataInfoRequest metaDataInfoRequest = MetaDataInfoRequest.builder()
-                .group(storePath.getGroup()).path(storePath.getPath()).build();
+                .groupName(storePath.getGroup()).path(storePath.getPath()).build();
         return fastDFS.getMetadata(metaDataInfoRequest);
     }
 
     protected void delete(StorePath storePath) {
         FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .build();
         fastDFS.deleteFile(fileInfoRequest);
@@ -88,7 +87,7 @@ public class BaseClientTest {
 
     protected FileInfo queryFile(StorePath storePath) {
         FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                .group(storePath.getGroup())
+                .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .build();
         return fastDFS.queryFileInfo(fileInfoRequest);

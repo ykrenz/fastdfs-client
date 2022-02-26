@@ -40,7 +40,7 @@ public interface FastDFS {
     /**
      * 关闭客户端
      */
-    void close();
+    void shutdown();
 
     /**
      * 上传一般文件

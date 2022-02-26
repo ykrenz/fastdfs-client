@@ -38,7 +38,7 @@ public class ThreadTest extends BaseClientTest {
                 f.get();
             }
             TimeUnit.SECONDS.sleep(10);
-            fastDFS.close();
+            fastDFS.shutdown();
         }
     }
 
@@ -69,7 +69,7 @@ public class ThreadTest extends BaseClientTest {
             } finally {
                 if (storePath != null) {
                     FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                            .group(storePath.getGroup())
+                            .groupName(storePath.getGroup())
                             .path(storePath.getPath())
                             .build();
                     fastDFS.deleteFile(fileInfoRequest);
