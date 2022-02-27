@@ -39,10 +39,9 @@ public class ConnectionConfiguration {
             this.setMinIdlePerKey(MIN_IDLE_PER_KEY);
             this.setMinEvictableIdleTimeMillis(IDLE_TIME_MILLIS);
             this.setTimeBetweenEvictionRunsMillis(EVICT_IDLE_SCHEDULE_TIME_MILLIS);
-            this.setJmxNameBase("com.ykren.fastdfs.conn:type=FdfsConnectionPool");
-            this.setJmxNamePrefix("fdfsPool");
-            this.setTestOnCreate(false);
-            this.setTestOnBorrow(true);
+            this.setJmxNameBase(JMX_NAME_BASE);
+            this.setJmxNamePrefix(JMX_NAME_PREFIX);
+            this.setTestOnBorrow(TEST_ON_BORROW);
         }
     }
 

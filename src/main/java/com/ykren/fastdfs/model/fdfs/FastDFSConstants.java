@@ -51,6 +51,18 @@ public final class FastDFSConstants {
      */
     public static final long EVICT_IDLE_SCHEDULE_TIME_MILLIS = 1000L * 60L;
     /**
+     * JMX_NAME_BASE
+     */
+    public static final String JMX_NAME_BASE = "com.ykren.fastdfs.conn:type=FdfsConnectionPool";
+    /**
+     * JMX_NAME_PREFIX
+     */
+    public static final String JMX_NAME_PREFIX = "fdfsPool";
+    /**
+     * TEST_ON_BORROW
+     */
+    public static final boolean TEST_ON_BORROW = true;
+    /**
      * http SECRET_KEY
      */
     public static final String DEFAULT_HTTP_SECRET_KEY = "FastDFS1234567890";
