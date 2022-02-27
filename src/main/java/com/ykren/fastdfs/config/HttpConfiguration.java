@@ -2,6 +2,9 @@ package com.ykren.fastdfs.config;
 
 import com.ykren.fastdfs.model.fdfs.StorePath;
 
+import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_CHARSET;
+import static com.ykren.fastdfs.model.fdfs.FastDFSConstants.DEFAULT_HTTP_SECRET_KEY;
+
 /**
  * http相关配置
  *
@@ -46,11 +49,11 @@ public class HttpConfiguration {
      * http防盗链 secretKey
      * 关联http.config http.anti_steal.secret_key
      */
-    private String secretKey;
+    private String secretKey = DEFAULT_HTTP_SECRET_KEY;
     /**
      * 字符集
      */
-    private String charset;
+    private String charset = DEFAULT_CHARSET;
 
     public String getWebServerUrl() {
         return webServerUrl;

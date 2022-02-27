@@ -107,7 +107,7 @@ public class FastDFSClient implements FastDFS {
     private final HttpConfiguration http;
 
     public FastDFSClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
-        FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection(), configuration.getPool());
+        FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
         this.groupName = configuration.getGroupName();
