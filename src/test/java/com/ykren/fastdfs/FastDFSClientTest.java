@@ -10,13 +10,20 @@ import com.ykren.fastdfs.model.UploadSalveFileRequest;
 import com.ykren.fastdfs.model.fdfs.ImageStorePath;
 import com.ykren.fastdfs.model.fdfs.MetaData;
 import com.ykren.fastdfs.model.fdfs.StorePath;
+import com.ykren.fastdfs.model.proto.storage.DownloadByteArray;
 import com.ykren.fastdfs.model.proto.storage.DownloadFileWriter;
+import com.ykren.fastdfs.model.proto.storage.DownloadOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -110,7 +117,7 @@ public class FastDFSClientTest extends BaseClientTest {
         assertNotNull(slaveFile);
         LOGGER.info("上传文件 result={} slaveFile={}", storePath, slaveFile);
         LOGGER.info("上传文件 webPath={} webPath={}", storePath.getWebPath(), slaveFile.getWebPath());
-        LOGGER.info("上传文件 downLoadPath={} downLoadPath={}", storePath.getDownLoadPath("1.txt"),slaveFile.getDownLoadPath("1.txt"));
+        LOGGER.info("上传文件 downLoadPath={} downLoadPath={}", storePath.getDownLoadPath("1.txt"), slaveFile.getDownLoadPath("1.txt"));
         LOGGER.info("上传文件 downLoadPath2={} downLoadPath2={}",
                 storePath.getDownLoadPath("name", "1.txt"),
                 slaveFile.getDownLoadPath("name", "1.txt"));
@@ -138,10 +145,21 @@ public class FastDFSClientTest extends BaseClientTest {
         DownloadFileRequest request = DownloadFileRequest.builder()
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())
-                .fileSize(2)
+//                .fileSize(2)
                 .build();
         fastDFS.downloadFile(request, new DownloadFileWriter("tmp/tmp1.txt"));
+        byte[] bytes = fastDFS.downloadFile(request, new DownloadByteArray());
+        try {
+            LOGGER.info(IOUtils.toString(bytes, "UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        try (OutputStream ous = FileUtils.openOutputStream(new File("tmp/test.txt"))) {
+            fastDFS.downloadFile(request, new DownloadOutputStream(ous));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         delete(storePath);
     }
 

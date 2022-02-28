@@ -4,7 +4,6 @@ import com.ykren.fastdfs.model.proto.CmdConstants;
 import com.ykren.fastdfs.model.proto.OtherConstants;
 import com.ykren.fastdfs.model.proto.mapper.BytesUtil;
 import com.ykren.fastdfs.exception.FdfsConnectException;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,13 +71,15 @@ public class DefaultConnection implements Connection {
         header[OtherConstants.PROTO_HEADER_STATUS_INDEX] = (byte) 0;
         try {
             socket.getOutputStream().write(header);
-            socket.close();
         } catch (IOException e) {
-            LOGGER.debug("close connection error", e);
+            LOGGER.error("close connection error", e);
         } finally {
-            IOUtils.closeQuietly(socket);
+            try {
+                socket.close();
+            } catch (IOException e) {
+                LOGGER.error("close connection error", e);
+            }
         }
-
     }
 
     /**
@@ -110,7 +111,7 @@ public class DefaultConnection implements Connection {
 
             return header[OtherConstants.PROTO_HEADER_STATUS_INDEX] == 0;
         } catch (IOException e) {
-            LOGGER.debug("valid connection error", e);
+            LOGGER.error("valid connection error", e);
             return false;
         }
     }

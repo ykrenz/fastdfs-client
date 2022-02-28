@@ -24,23 +24,25 @@ import java.io.OutputStream;
  *
  * @author xulb
  */
-public class DownloadFileStream implements DownloadCallback<BufferedInputStream> {
+public class DownloadOutputStream implements DownloadCallback<Void> {
 
     /**
      * 默认缓存长度
      */
     private static final int DEFAULT_BUFFER_SIZE = 4096;
-
     /**
      * 输出流
      * HttpServletResponse对象response.getOutputStream()
      */
     private OutputStream outputStream;
-
     /**
      * 默认缓存长度
      */
-    private int bufferLength = DEFAULT_BUFFER_SIZE;
+    private int bufferLength;
+    /**
+     * 关闭流
+     */
+    private boolean close;
 
 
     /**
@@ -48,8 +50,8 @@ public class DownloadFileStream implements DownloadCallback<BufferedInputStream>
      *
      * @param responseOutputStream 输出流
      */
-    public DownloadFileStream(OutputStream responseOutputStream) {
-        this.outputStream = responseOutputStream;
+    public DownloadOutputStream(OutputStream responseOutputStream) {
+        this(responseOutputStream, DEFAULT_BUFFER_SIZE, true);
     }
 
     /**
@@ -58,9 +60,18 @@ public class DownloadFileStream implements DownloadCallback<BufferedInputStream>
      * @param responseOutputStream 输出流
      * @param bufferLength         缓存长度
      */
-    public DownloadFileStream(OutputStream responseOutputStream, int bufferLength) {
-        this.outputStream = responseOutputStream;
+    public DownloadOutputStream(OutputStream responseOutputStream, int bufferLength) {
+        this(responseOutputStream, bufferLength, true);
+    }
+
+    public DownloadOutputStream(OutputStream responseOutputStream, boolean close) {
+        this(responseOutputStream, DEFAULT_BUFFER_SIZE, close);
+    }
+
+    public DownloadOutputStream(OutputStream outputStream, int bufferLength, boolean close) {
+        this.outputStream = outputStream;
         this.bufferLength = bufferLength;
+        this.close = close;
     }
 
     /**
@@ -69,18 +80,16 @@ public class DownloadFileStream implements DownloadCallback<BufferedInputStream>
      * @return
      */
     @Override
-    public BufferedInputStream recv(InputStream ins) throws IOException {
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(ins);
+    public Void recv(InputStream ins) throws IOException {
         // 实现文件下载
         byte[] buffer = new byte[bufferLength];
-        try {
-            IOUtils.copyLarge(ins, outputStream, buffer);
-        } catch (IOException e) {
-            throw new IOException("文件下载失败!", e);
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(ins);) {
+            IOUtils.copyLarge(bufferedInputStream, outputStream, buffer);
         } finally {
-            IOUtils.closeQuietly(bufferedInputStream);
+            if (close) {
+                outputStream.close();
+            }
         }
         return null;
     }
-
 }

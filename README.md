@@ -290,3 +290,20 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
         System.out.println("上传文件成功" + path);
         fastDFS.shutdown();
 ```
+
+下载文件
+
+```
+   DownloadFileRequest request = DownloadFileRequest.builder()
+                .groupName(path.getGroup())
+                .path(path.getPath())
+//                .fileSize(2)
+                .build();
+        //本地文件
+        fastDFS.downloadFile(request, new DownloadFileWriter("test.txt"));
+        //bytes
+        byte[] bytes = fastDFS.downloadFile(request, new DownloadByteArray());
+        //OutputStream 例如web下载 默认构造会自动关闭OutputStream
+        OutputStream ous = response.getOutputStream();
+        fastDFS.downloadFile(request, new DownloadOutputStream(ous));
+```

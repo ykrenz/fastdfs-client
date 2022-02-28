@@ -66,7 +66,7 @@ public class BaseClientTest {
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
-        LOGGER.debug("上传文件 result={}", storePath);
+        LOGGER.info("上传文件 text={} result={}", file.getText(), storePath);
         return storePath;
     }
 

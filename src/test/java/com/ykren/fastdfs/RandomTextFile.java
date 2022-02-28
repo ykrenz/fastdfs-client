@@ -20,7 +20,8 @@ public class RandomTextFile {
 
     private String fileExtName = "txt";
 
-    int l = 1024 * 1024 * 5;
+    //    int l = 1024 * 1024 * 5;
+    int l = 5;
 
     public RandomTextFile() {
         this.text = RandomStringUtils.random(l, "762830abdcefghijklmnopqrstuvwxyz0991822-");
