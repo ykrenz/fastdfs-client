@@ -1,7 +1,7 @@
 # FastDFS客户端
 `jdk:1.8`
-***基于tobato 1.2.72开发 https://github.com/tobato/FastDFS_Client***
-
+***基于tobato 1.2.72开发 https://github.com/tobato/FastDFS_Client*** <br>
+`springboot版本请移步` https://github.com/ynkren/fastdfs-client-spring-boot-starter
 ## 新特性:
 
 - 升级fastdfs为6.07最新版本
@@ -20,6 +20,7 @@
 - tracker宕机重试优化 默认为30s重试 可配置
 - 查询文件、 获取metadata、 删除文件接口文件不存在返回空值 不会抛出异常
 - 流上传优化 根据需要的size传输相应流 不是必须传输所有流
+- 文件名处理 处理fastdfs不合法字符 比如文件后缀带有%会失败 这里用空字符代替
 - 其他细节优化处理
 
 ## BUG修复
@@ -101,7 +102,6 @@ FastDFSConfiguration配置详解：
 | minIdlePerKey                 | 每个key最小空闲连接数       | 10                |                                                              |
 | minEvictableIdleTimeMillis    | 空闲连接存活时长            | 30min             |                                                              |
 | timeBetweenEvictionRunsMillis | 清理空闲连接任务时长        | 1min              |                                                              |
-| testOnCreate                  | 创建新连接检测              | true              |                                                              |
 | testOnBorrow                  | 连接池中获取连接检测        | true              |                                                              |
 
 上传本地文件

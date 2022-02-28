@@ -10,7 +10,7 @@
 
     <name>fastdfs-client</name>
     <description>基于tobato发布的代码与fastdfs-client 1.27.2版本的重构</description>
-    <url>https://github.com/yinkren/fastdfs-client</url>
+    <url>https://github.com/ynkren/fastdfs-client</url>
 
     <licenses>
         <license>
@@ -27,9 +27,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:yinkren/fastdfs-client.git</connection>
-        <developerConnection>scm:git:git@github.com:yinkren/fastdfs-client.git</developerConnection>
-        <url>https://github.com/yinkren/fastdfs-client</url>
+        <connection>scm:git:git@github.com:ynkren/fastdfs-client.git</connection>
+        <developerConnection>scm:git:git@github.com:ynkren/fastdfs-client.git</developerConnection>
+        <url>https://github.com/ynkren/fastdfs-client.git</url>
         <tag>HEAD</tag>
     </scm>
 
