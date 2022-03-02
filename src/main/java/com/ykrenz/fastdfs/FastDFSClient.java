@@ -611,26 +611,18 @@ public class FastDFSClient implements FastDFS {
         String groupName = getGroup(request);
         String path = request.path();
         CodeUtils.validateNotBlankString(groupName, "group");
-        long fileSize = request.fileSize();
-        long partSize = request.partSize();
-        int partNumber = request.partNumber();
-        // 计算offset
-        long offset = 0;
-        if (partNumber > 1) {
-            offset = (partNumber - 1) * partSize;
-        }
         ModifyFileRequest modifyFileRequest;
         if (request.file() != null) {
             modifyFileRequest = ModifyFileRequest.builder()
                     .groupName(groupName)
                     .path(path)
-                    .file(request.file(), offset).build();
+                    .file(request.file(), request.offset()).build();
             modifyFile(modifyFileRequest);
         } else {
             modifyFileRequest = ModifyFileRequest.builder()
                     .groupName(groupName)
                     .path(path)
-                    .stream(request.stream(), fileSize, offset).build();
+                    .stream(request.stream(), request.fileSize(), request.offset()).build();
         }
         modifyFile(modifyFileRequest);
     }

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Objects;
 
-import static com.ykrenz.fastdfs.common.CodeUtils.validateGreaterZero;
 import static com.ykrenz.fastdfs.common.CodeUtils.validateNotLessZero;
 import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
 
@@ -14,13 +13,9 @@ import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
  */
 public class UploadMultipartPartRequest extends AbstractFileArgs {
     /**
-     * 分片索引
+     * 分片起始位置
      */
-    protected int partNumber;
-    /**
-     * 分片大小
-     */
-    protected long partSize;
+    protected long offset;
 
     /**
      * 初始化文件path
@@ -29,12 +24,8 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
         return path;
     }
 
-    public int partNumber() {
-        return partNumber;
-    }
-
-    public long partSize() {
-        return partSize;
+    public long offset() {
+        return offset;
     }
 
     public static Builder builder() {
@@ -49,8 +40,7 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
         @Override
         protected void validate(UploadMultipartPartRequest args) {
             super.validate(args);
-            validateNotLessZero(args.partNumber, "partNumber");
-            validateGreaterZero(args.partSize, "partSize");
+            validateNotLessZero(args.offset, "offset");
             validateNotLessZero(args.fileSize, "fileSize");
             validateNotBlankString(args.path, "path");
         }
@@ -67,53 +57,60 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
         }
 
         /**
-         * 文件路径
+         * offset方式
          *
-         * @param filePath
-         * @param partNumber
+         * @param offset 文件起始值
          * @return
          */
-        public Builder file(String filePath, int partNumber) {
-            return file(new File(filePath), partNumber);
+        public Builder fileOffset(String filePath, long offset) {
+            return fileOffset(new File(filePath), offset);
         }
 
-        /**
-         * 上传文件
-         *
-         * @param file
-         * @return
-         */
-        public Builder file(File file, int partNumber) {
+        public Builder fileOffset(File file, long offset) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.partNumber = partNumber);
+            operations.add(args -> args.offset = offset);
             return this;
         }
 
-
-        /**
-         * 追加文件流
-         *
-         * @param inputStream
-         * @return
-         */
-        public Builder stream(InputStream inputStream, int partNumber, long fileSize) {
+        public Builder streamOffset(InputStream inputStream, long fileSize, long offset) {
             operations.add(args -> args.stream = inputStream);
-            operations.add(args -> args.partNumber = partNumber);
             operations.add(args -> args.fileSize = fileSize);
+            operations.add(args -> args.offset = offset);
             return this;
         }
 
         /**
-         * 分片大小
+         * partSize方式
          *
-         * @param partSize
+         * @param partNumber 分片索引 起始值为1
+         * @param partSize   分片大小
          * @return
          */
-        public Builder partSize(long partSize) {
-            operations.add(args -> args.partSize = partSize);
+        public Builder filePartSize(String filePath, int partNumber, long partSize) {
+            return filePartSize(new File(filePath), partNumber, partSize);
+        }
+
+        public Builder filePartSize(File file, int partNumber, long partSize) {
+            operations.add(args -> args.file = file);
+            operations.add(args -> args.fileSize = file.length());
+            // 计算offset
+            if (partNumber > 1) {
+                operations.add(args -> args.offset = (partNumber - 1) * partSize);
+            }
             return this;
         }
+
+        public Builder streamPartSize(InputStream inputStream, long fileSize, int partNumber, long partSize) {
+            operations.add(args -> args.stream = inputStream);
+            operations.add(args -> args.fileSize = fileSize);
+            // 计算offset
+            if (partNumber > 1) {
+                operations.add(args -> args.offset = (partNumber - 1) * partSize);
+            }
+            return this;
+        }
+
     }
 
     @Override
@@ -122,12 +119,11 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         UploadMultipartPartRequest that = (UploadMultipartPartRequest) o;
-        return partNumber == that.partNumber &&
-                partSize == that.partSize;
+        return offset == that.offset;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), partNumber, partSize);
+        return Objects.hash(super.hashCode(), offset);
     }
 }

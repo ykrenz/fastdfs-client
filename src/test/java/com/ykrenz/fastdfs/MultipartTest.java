@@ -43,13 +43,20 @@ public class MultipartTest extends BaseClientTest {
             ins.skip(startPos);
             int partNumber = i;
             executorService.execute(() -> {
-                UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
-                        .stream(ins, partNumber, curPartSize)
-                        .partSize(partSize)
+                // offset方式
+//                UploadMultipartPartRequest offsetPartRequest = UploadMultipartPartRequest.builder()
+//                        .streamOffset(ins, curPartSize, startPos)
+//                        .groupName(storePath.getGroup())
+//                        .path(storePath.getPath())
+//                        .build();
+//                fastDFS.uploadMultipart(offsetPartRequest);
+                // partSize方式
+                UploadMultipartPartRequest partRequest = UploadMultipartPartRequest.builder()
+                        .streamPartSize(ins, curPartSize, partNumber, partSize)
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .build();
-                fastDFS.uploadMultipart(multipartPartRequest);
+                fastDFS.uploadMultipart(partRequest);
             });
         }
         /*

@@ -1,7 +1,8 @@
 # FastDFS客户端
 `jdk:1.8`
 ***基于tobato 1.2.72开发 https://github.com/tobato/FastDFS_Client*** <br>
-`springboot版本请移步` https://github.com/ynkren/fastdfs-client-spring-boot-starter
+`springboot版本请移步` https://github.com/ykrenz/fastdfs-client-spring-boot-starter <br>
+`springboot-server参考` https://github.com/ykrenz/springboot-file-server
 ## 新特性:
 
 - 升级fastdfs为6.07最新版本
@@ -257,13 +258,20 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
         ins.skip(startPos);
         int partNumber = i;
         executorService.execute(() -> {
-        UploadMultipartPartRequest multipartPartRequest = UploadMultipartPartRequest.builder()
-        .stream(ins, partNumber, curPartSize)
-        .partSize(partSize)
-        .group(storePath.getGroup())
-        .path(storePath.getPath())
-        .build();
-        fastDFS.uploadMultipart(multipartPartRequest);
+                // offset方式
+//                UploadMultipartPartRequest offsetPartRequest = UploadMultipartPartRequest.builder()
+//                        .streamOffset(ins, curPartSize, startPos)
+//                        .groupName(storePath.getGroup())
+//                        .path(storePath.getPath())
+//                        .build();
+//                fastDFS.uploadMultipart(offsetPartRequest);
+                // partSize方式
+                UploadMultipartPartRequest partRequest = UploadMultipartPartRequest.builder()
+                        .streamPartSize(ins, curPartSize, partNumber, partSize)
+                        .groupName(storePath.getGroup())
+                        .path(storePath.getPath())
+                        .build();
+                fastDFS.uploadMultipart(partRequest);
         });
         }
         /*
