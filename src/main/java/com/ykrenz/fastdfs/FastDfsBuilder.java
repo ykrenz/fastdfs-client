@@ -10,7 +10,7 @@ import java.util.List;
  * @author ykren
  * @date 2022/1/25
  */
-public interface FastDFSBuilder {
+public interface FastDfsBuilder {
 
     /**
      * 根据trackerServers构建 使用默认的连接池
@@ -18,7 +18,7 @@ public interface FastDFSBuilder {
      * @param trackerServers
      * @return
      */
-    FastDFS build(List<String> trackerServers);
+    FastDfs build(List<String> trackerServers);
 
     /**
      * 根据配置构建
@@ -27,5 +27,5 @@ public interface FastDFSBuilder {
      * @param configuration
      * @return
      */
-    FastDFS build(List<String> trackerServers, FastDFSConfiguration configuration);
+    FastDfs build(List<String> trackerServers, FastDFSConfiguration configuration);
 }

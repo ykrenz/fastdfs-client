@@ -10,7 +10,7 @@ import java.util.List;
  * @author ykren
  * @date 2022/1/24
  */
-public final class FastDFSClientBuilder implements FastDFSBuilder {
+public final class FastDfsClientBuilder implements FastDfsBuilder {
     /**
      * 构建FastDFS
      *
@@ -18,7 +18,7 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      * @return
      */
     @Override
-    public FastDFS build(List<String> trackerServers) {
+    public FastDfs build(List<String> trackerServers) {
         return build(trackerServers, getFastDFSConfiguration());
     }
 
@@ -29,8 +29,8 @@ public final class FastDFSClientBuilder implements FastDFSBuilder {
      * @return
      */
     @Override
-    public FastDFS build(List<String> trackerServers, FastDFSConfiguration configuration) {
-        return new FastDFSClient(trackerServers, getFastDFSConfiguration(configuration));
+    public FastDfs build(List<String> trackerServers, FastDFSConfiguration configuration) {
+        return new FastDfsClient(trackerServers, getFastDFSConfiguration(configuration));
     }
 
     /**

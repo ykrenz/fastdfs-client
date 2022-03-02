@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * @author ykren
  */
-public interface FastDFS {
+public interface FastDfs {
 
     /**
      * 获取trackerClient

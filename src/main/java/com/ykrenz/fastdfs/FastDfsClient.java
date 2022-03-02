@@ -76,12 +76,12 @@ import java.util.Set;
  * @author ykren
  * @date 2022/1/21
  */
-public class FastDFSClient implements FastDFS {
+public class FastDfsClient implements FastDfs {
 
     /**
      * 日志
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(FastDFSClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FastDfsClient.class);
 
     /**
      * TrackerClient
@@ -103,7 +103,7 @@ public class FastDFSClient implements FastDFS {
      */
     private final HttpConfiguration http;
 
-    public FastDFSClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
+    public FastDfsClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);

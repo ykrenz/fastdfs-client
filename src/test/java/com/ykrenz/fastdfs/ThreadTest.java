@@ -28,7 +28,7 @@ public class ThreadTest extends BaseClientTest {
         for (int count = 0; count < 10; count++) {
             int thread = 100;
             ExecutorService service = Executors.newFixedThreadPool(thread);
-            FastDFS fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST);
+            FastDfs fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST);
             List<Callable<Void>> tasks = new ArrayList<>();
             for (int i = 0; i < thread; i++) {
                 tasks.add(new uploadTask(fastDFS));
@@ -45,9 +45,9 @@ public class ThreadTest extends BaseClientTest {
 
     class uploadTask implements Callable<Void> {
 
-        FastDFS fastDFS;
+        FastDfs fastDFS;
 
-        public uploadTask(FastDFS fastDFS) {
+        public uploadTask(FastDfs fastDFS) {
             this.fastDFS = fastDFS;
         }
 

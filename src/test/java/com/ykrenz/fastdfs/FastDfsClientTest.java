@@ -33,9 +33,9 @@ import static org.junit.Assert.*;
  *
  * @author tobato
  */
-public class FastDFSClientTest extends BaseClientTest {
+public class FastDfsClientTest extends BaseClientTest {
 
-    protected static Logger LOGGER = LoggerFactory.getLogger(FastDFSClientTest.class);
+    protected static Logger LOGGER = LoggerFactory.getLogger(FastDfsClientTest.class);
     String testFilePath = "D:\\Users\\ykren\\Downloads\\Git-2.34.1-64-bit.exe";
 
     /**

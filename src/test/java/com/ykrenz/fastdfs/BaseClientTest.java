@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
 public class BaseClientTest {
 
     protected TrackerClient trackerClient;
-    protected FastDFS fastDFS;
+    protected FastDfs fastDFS;
 
     protected static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
     public static final String localFilePath = "/file/test.jpg";
@@ -48,7 +48,7 @@ public class BaseClientTest {
         configuration.getHttp().setWebServerUrlHasGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
-        fastDFS = new FastDFSClientBuilder().build(TRACKER_LIST, configuration);
+        fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST, configuration);
         trackerClient = fastDFS.trackerClient();
         LOGGER.info("初始化tracker={}", trackerClient.getTrackerServers());
         LOGGER.info("fastDFSClient={}", fastDFS);
