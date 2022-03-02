@@ -267,7 +267,7 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
 //                fastDFS.uploadMultipart(offsetPartRequest);
                 // partSize方式
                 UploadMultipartPartRequest partRequest = UploadMultipartPartRequest.builder()
-                        .streamPartSize(ins, curPartSize, partNumber, partSize)
+                        .streamPart(ins, curPartSize, partNumber, partSize)
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .build();

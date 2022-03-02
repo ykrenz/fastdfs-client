@@ -87,11 +87,11 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
          * @param partSize   分片大小
          * @return
          */
-        public Builder filePartSize(String filePath, int partNumber, long partSize) {
-            return filePartSize(new File(filePath), partNumber, partSize);
+        public Builder filePart(String filePath, int partNumber, long partSize) {
+            return filePart(new File(filePath), partNumber, partSize);
         }
 
-        public Builder filePartSize(File file, int partNumber, long partSize) {
+        public Builder filePart(File file, int partNumber, long partSize) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
             // 计算offset
@@ -101,7 +101,7 @@ public class UploadMultipartPartRequest extends AbstractFileArgs {
             return this;
         }
 
-        public Builder streamPartSize(InputStream inputStream, long fileSize, int partNumber, long partSize) {
+        public Builder streamPart(InputStream inputStream, long fileSize, int partNumber, long partSize) {
             operations.add(args -> args.stream = inputStream);
             operations.add(args -> args.fileSize = fileSize);
             // 计算offset
