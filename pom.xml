@@ -6,7 +6,7 @@
 
     <groupId>io.github.ykrenz</groupId>
     <artifactId>fastdfs-client</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <name>fastdfs-client</name>
     <description>基于tobato发布的代码与fastdfs-client 1.27.2版本的重构</description>
