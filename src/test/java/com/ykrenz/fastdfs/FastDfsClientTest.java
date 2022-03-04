@@ -3,10 +3,12 @@ package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.DownloadFileRequest;
+import com.ykrenz.fastdfs.model.FileInfoRequest;
 import com.ykrenz.fastdfs.model.ThumbImage;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadImageRequest;
 import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
@@ -49,11 +51,9 @@ public class FastDfsClientTest extends BaseClientTest {
         RandomTextFile file = new RandomTextFile();
 //        File file = new File(testFilePath);
 //        FileInputStream stream = new FileInputStream(file);
-//        long crc32 = FileUtils.checksumCRC32(file);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
 //                .stream(stream, file.length(), "exe")
-//                .crc32(crc32)
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
                 .listener(new UploadProgressListener() {
@@ -93,11 +93,9 @@ public class FastDfsClientTest extends BaseClientTest {
         LOGGER.debug("##上传文件..##");
         RandomTextFile file = new RandomTextFile();
 //        File file = new File(testFilePath);
-//        long crc32 = FileUtils.checksumCRC32(file);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
 //                .file(file)
-//                .crc32(crc32)
                 .metaData("key1", "value1")
                 .build();
         StorePath storePath = fastDFS.uploadFile(fileRequest);
@@ -107,7 +105,6 @@ public class FastDfsClientTest extends BaseClientTest {
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
 //                .file(file)
                 .prefix("aaa")
-//                .crc32(crc32)
                 .metaData("salvekey", "salvevalue")
                 .build();
         StorePath slaveFile = fastDFS.uploadSlaveFile(salveFileRequest);
@@ -126,7 +123,7 @@ public class FastDfsClientTest extends BaseClientTest {
     }
 
     @Test
-    public void deleteFileInfo() {
+    public void deleteFileInfo() throws IOException {
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .file(getFile())
                 .build();
@@ -162,7 +159,7 @@ public class FastDfsClientTest extends BaseClientTest {
     }
 
     @Test
-    public void uploadImageTest() {
+    public void uploadImageTest() throws IOException {
         File file = getFile();
         Set<MetaData> metaData = new HashSet<>();
         metaData.add(new MetaData("a", "a"));
@@ -180,7 +177,7 @@ public class FastDfsClientTest extends BaseClientTest {
     }
 
     @Test
-    public void createThumbImageTest() {
+    public void createThumbImageTest() throws IOException {
         File file = getFile();
         Set<MetaData> metaData = new HashSet<>();
         metaData.add(new MetaData("a", "a"));

@@ -31,7 +31,7 @@ public class BaseClientTest {
     protected FastDfs fastDFS;
 
     protected static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
-    public static final String localFilePath = "/file/test.jpg";
+    public static final String localFilePath = "../file/test.jpg";
     public static final List<String> TRACKER_LIST = new ArrayList<>();
 
     static {
@@ -95,6 +95,7 @@ public class BaseClientTest {
 
     protected File getFile() {
         URL path = BaseClientTest.class.getResource(localFilePath);
+        //TODO 待解决
         return new File(path.getPath());
     }
 }

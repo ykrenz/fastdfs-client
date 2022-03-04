@@ -4,8 +4,10 @@ import com.ykrenz.fastdfs.common.Crc32;
 import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
 import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
 import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
+import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.io.FilenameUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -75,9 +77,11 @@ public class MultipartTest extends BaseClientTest {
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())
-                .crc32(crc32)
                 .build();
         StorePath path = fastDFS.completeMultipartUpload(completeRequest);
+
+        FileInfo fileInfo = queryFile(path);
+        Assert.assertEquals(crc32,fileInfo.getCrc32());
         LOGGER.info("上传成功 path={}", path);
     }
 

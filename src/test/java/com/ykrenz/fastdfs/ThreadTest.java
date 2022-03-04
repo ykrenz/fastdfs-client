@@ -25,7 +25,7 @@ public class ThreadTest extends BaseClientTest {
 
     @Test
     public void uploadThreadTest() throws InterruptedException, ExecutionException {
-        for (int count = 0; count < 10; count++) {
+        for (int count = 0; count < 1; count++) {
             int thread = 100;
             ExecutorService service = Executors.newFixedThreadPool(thread);
             FastDfs fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST);

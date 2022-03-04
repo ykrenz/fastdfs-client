@@ -10,7 +10,6 @@
 - token防盗链功能
 - 新增regenerateAppenderFile接口 支持appender文件改为普通文件 仅支持6.0.2以上版本
 - 上传进度功能 可获取上传的进度
-- crc32校验 保证文件传输正确性 可结合断点续传和分片上传保证传输可靠性
 - 缩略图批量生成、单独上传缩略图功能
 - 动态添加和移除tracker服务
 - 集成nginx 可获取web访问的路径和下载文件的路径 配合前端更方便预览图片和下载文件
@@ -183,23 +182,6 @@ public void failed() {
         fastDFS.shutdown();
 ```
 
-上传带crc32校验
-
-```java
-List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDFS fastDFS = new FastDFSClientBuilder().build(trackerServers);
-        File file = new File("test.txt");
-        long crc32 = Crc32.file(file);
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
-        .file(file)
-        .crc32(crc32)
-        .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
-        System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
-```
-
 断点续传示例：
 
 ```java
@@ -290,11 +272,17 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
         .group(storePath.getGroup())
         .path(storePath.getPath())
-        .crc32(crc32)
         // 6.0.2版本以上支持该特性
         .regenerate(true)
         .build();
         StorePath path = fastDFS.completeMultipartUpload(completeRequest);
+        
+         FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
+                .groupName(storePath.getGroup())
+                .path(storePath.getPath())
+                .build();
+        FileInfo fileInfo = fastDFS.queryFileInfo(fileInfoRequest);
+        Assert.assertEquals(crc32,fileInfo.getCrc32());
         System.out.println("上传文件成功" + path);
         fastDFS.shutdown();
 ```
