@@ -5,8 +5,11 @@ import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
 import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
 import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
+import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,9 +17,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ykren
@@ -26,14 +33,19 @@ public class MultipartTest extends BaseClientTest {
 
     @Test
     public void multipartTest() throws IOException {
-        File sampleFile = new File("D:\\Users\\ykren\\Downloads\\Git-2.34.1-64-bit.exe");
+        int length = 1024 * 1024 * 100; // 100M
+        RandomTextFile file = new RandomTextFile(length);
+
+        File sampleFile = new File("tmp", "sampleFile.txt");
+        FileUtils.copyToFile(file.getInputStream(), sampleFile);
+
         final long partSize = 5 * 1024 * 1024L;   // 5MB
         long fileSize = sampleFile.length();
         long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
 
         InitMultipartUploadRequest initRequest = InitMultipartUploadRequest.builder()
-                .fileSize(sampleFile.length())
-                .fileExtName(FilenameUtils.getExtension(sampleFile.getName()))
+                .fileSize(fileSize)
+                .fileExtName("txt")
                 .build();
         StorePath storePath = fastDFS.initMultipartUpload(initRequest);
         LOGGER.info("初始化分片成功 path={}", storePath);
@@ -77,11 +89,17 @@ public class MultipartTest extends BaseClientTest {
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())
+                .metaData("key","Complete")
                 .build();
         StorePath path = fastDFS.completeMultipartUpload(completeRequest);
 
+        Set<MetaData> metaData = getMetaData(path);
+        assertEquals(1, metaData.size());
+        assertTrue(metaData.contains(new MetaData("key", "Complete")));
+
+        // crc32校验
         FileInfo fileInfo = queryFile(path);
-        Assert.assertEquals(crc32,fileInfo.getCrc32());
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(fileInfo.getCrc32()));
         LOGGER.info("上传成功 path={}", path);
     }
 

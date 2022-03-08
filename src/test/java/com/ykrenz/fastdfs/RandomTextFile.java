@@ -28,6 +28,11 @@ public class RandomTextFile {
         this.fileSize = text.length();
     }
 
+    public RandomTextFile(int length) {
+        this.text = RandomStringUtils.random(length, "762830abdcefghijklmnopqrstuvwxyz0991822-");
+        this.fileSize = text.length();
+    }
+
     public RandomTextFile(String text) {
         this.text = text;
         this.fileSize = text.length();

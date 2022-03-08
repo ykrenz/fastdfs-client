@@ -14,6 +14,13 @@ public final class Crc32 {
     }
 
     /**
+     * 无符号
+     */
+    public static long convertUnsigned(int crc) {
+        return (long) crc & 0xffffffffL;
+    }
+
+    /**
      * 计算二进制字节校验码
      *
      * @param data   二进制数据

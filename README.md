@@ -10,7 +10,7 @@
 - token防盗链功能
 - 新增regenerateAppenderFile接口 支持appender文件改为普通文件 仅支持6.0.2以上版本
 - 上传进度功能 可获取上传的进度
-- 缩略图批量生成、单独上传缩略图功能
+- 缩略图批量生成 单独上传缩略图功能
 - 动态添加和移除tracker服务
 - 集成nginx 可获取web访问的路径和下载文件的路径 配合前端更方便预览图片和下载文件
 
@@ -281,8 +281,10 @@ final long partSize = 5 * 1024 * 1024L;   // 5MB
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())
                 .build();
-        FileInfo fileInfo = fastDFS.queryFileInfo(fileInfoRequest);
-        Assert.assertEquals(crc32,fileInfo.getCrc32());
+
+       // crc32校验
+       FileInfo fileInfo = queryFile(path);
+       Assert.assertEquals(crc32, Crc32.convertUnsigned(fileInfo.getCrc32()));
         System.out.println("上传文件成功" + path);
         fastDFS.shutdown();
 ```

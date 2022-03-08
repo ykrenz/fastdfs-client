@@ -3,12 +3,11 @@ package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.DownloadFileRequest;
-import com.ykrenz.fastdfs.model.FileInfoRequest;
+import com.ykrenz.fastdfs.model.MetaDataRequest;
 import com.ykrenz.fastdfs.model.ThumbImage;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadImageRequest;
 import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
-import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
@@ -38,7 +37,6 @@ import static org.junit.Assert.*;
 public class FastDfsClientTest extends BaseClientTest {
 
     protected static Logger LOGGER = LoggerFactory.getLogger(FastDfsClientTest.class);
-    String testFilePath = "D:\\Users\\ykren\\Downloads\\Git-2.34.1-64-bit.exe";
 
     /**
      * 基本文件上传操作测试
@@ -200,5 +198,82 @@ public class FastDfsClientTest extends BaseClientTest {
         for (StorePath path : thumbImages) {
             delete(path);
         }
+    }
+
+
+    @Test
+    public void uploadMetadata() throws IOException {
+        LOGGER.debug("##上传文件..##");
+        RandomTextFile file = new RandomTextFile();
+        UploadFileRequest fileRequest = UploadFileRequest.builder()
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .metaData("key1", "value1")
+                .metaData("key2", "value2")
+                .build();
+        StorePath storePath = fastDFS.uploadFile(fileRequest);
+
+        UploadSalveFileRequest salveFileRequest = UploadSalveFileRequest.builder()
+                .masterPath(storePath.getPath())
+                .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
+                .prefix("aaa")
+                .metaData("salvekey1", "salvevalue1")
+                .metaData("salvekey2", "salvevalue2")
+                .build();
+        StorePath slaveFile = fastDFS.uploadSlaveFile(salveFileRequest);
+        assertNotNull(storePath);
+        assertNotNull(slaveFile);
+
+        Set<MetaData> metaData = getMetaData(storePath);
+        assertEquals(2, metaData.size());
+        assertTrue(metaData.contains(new MetaData("key1", "value1")));
+        assertTrue(metaData.contains(new MetaData("key2", "value2")));
+
+        Set<MetaData> metaData2 = getMetaData(slaveFile);
+        assertEquals(2, metaData2.size());
+        assertTrue(metaData2.contains(new MetaData("salvekey1", "salvevalue1")));
+        assertTrue(metaData2.contains(new MetaData("salvekey2", "salvevalue2")));
+
+        MetaDataRequest metaDataRequest = MetaDataRequest.builder()
+                .metaData("key1", "newvalue1")
+                .metaData("key2", "newvalue2")
+                .groupName(storePath.getGroup())
+                .path(storePath.getPath())
+                .build();
+        fastDFS.mergeMetadata(metaDataRequest);
+
+        Set<MetaData> newMeta = getMetaData(storePath);
+        assertEquals(2, newMeta.size());
+        assertTrue(newMeta.contains(new MetaData("key1", "newvalue1")));
+        assertTrue(newMeta.contains(new MetaData("key2", "newvalue2")));
+
+
+        MetaDataRequest metaDataRequesto = MetaDataRequest.builder()
+                .metaData("keyo", "valueo")
+                .groupName(storePath.getGroup())
+                .path(storePath.getPath())
+                .build();
+        fastDFS.overwriteMetadata(metaDataRequesto);
+
+        Set<MetaData> oMeta = getMetaData(storePath);
+        assertEquals(1, oMeta.size());
+        assertTrue(oMeta.contains(new MetaData("keyo", "valueo")));
+
+
+        MetaDataRequest metaDataRequesto2 = MetaDataRequest.builder()
+                .metaData("skeyo", "svalueo")
+                .groupName(slaveFile.getGroup())
+                .path(slaveFile.getPath())
+                .build();
+        fastDFS.overwriteMetadata(metaDataRequesto2);
+
+        Set<MetaData> soMeta = getMetaData(slaveFile);
+        assertEquals(1, soMeta.size());
+        assertTrue(soMeta.contains(new MetaData("skeyo", "svalueo")));
+
+
+        delete(storePath);
+        delete(slaveFile);
+        assertNull(queryFile(storePath));
+        assertNull(queryFile(slaveFile));
     }
 }

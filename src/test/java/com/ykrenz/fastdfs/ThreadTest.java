@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/2/10
  */
 public class ThreadTest extends BaseClientTest {
-    String testFilePath = "D:\\Users\\ykren\\Downloads\\Git-2.34.1-64-bit.exe";
 
     @Test
     public void uploadThreadTest() throws InterruptedException, ExecutionException {
