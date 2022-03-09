@@ -11,7 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +31,6 @@ public class BaseClientTest {
     protected FastDfs fastDFS;
 
     protected static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
-    public static final String localFilePath = "file/test.jpg";
     public static final List<String> TRACKER_LIST = new ArrayList<>();
 
     static {
@@ -95,7 +93,6 @@ public class BaseClientTest {
     }
 
     protected File getFile() throws IOException {
-        ClassPathResource resource = new ClassPathResource(localFilePath);
-        return resource.getFile();
+        return new File("src/test/resources/file/test.jpg");
     }
 }

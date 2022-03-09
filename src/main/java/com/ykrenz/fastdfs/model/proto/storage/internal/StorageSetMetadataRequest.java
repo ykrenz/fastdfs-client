@@ -64,7 +64,7 @@ public class StorageSetMetadataRequest extends FdfsRequest {
                                      StorageMetadataSetType type) {
         super();
         Validate.notBlank(groupName, "分组不能为空");
-        Validate.notBlank(path, "分组不能为空");
+        Validate.notBlank(path, "文件路径不能为空");
         Validate.notNull(type, "标签设置方式不能为空");
         this.groupName = groupName;
         this.path = path;

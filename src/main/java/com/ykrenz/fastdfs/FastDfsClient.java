@@ -64,7 +64,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -93,10 +92,9 @@ public class FastDfsClient implements FastDfs {
     private final FdfsConnectionManager fdfsConnectionManager;
 
     /**
-     * 分组group 优先级大于参数 ${@link #getGroup(GroupArgs)}
-     * 优点是可以固定分组上传 不用每次都设置group
+     * 默认 group 优先级大于参数 ${@link #getGroupName(GroupArgs)}
      */
-    private final String groupName;
+    private final String defaultGroup;
     /**
      * http相关配置
      */
@@ -106,7 +104,7 @@ public class FastDfsClient implements FastDfs {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
-        this.groupName = configuration.getGroupName();
+        this.defaultGroup = configuration.getGroupName();
         this.http = configuration.getHttp();
     }
 
@@ -114,8 +112,8 @@ public class FastDfsClient implements FastDfs {
         return fdfsConnectionManager;
     }
 
-    public String getGroupName() {
-        return groupName;
+    public String getDefaultGroup() {
+        return defaultGroup;
     }
 
     public HttpConfiguration getHttp() {
@@ -135,27 +133,24 @@ public class FastDfsClient implements FastDfs {
     @Override
     public StorePath uploadFile(UploadFileRequest request) {
         //获取上传流
-        InputStream is = wrapperStream(request);
-        String groupName = getGroup(request);
+        InputStream stream = wrapperStream(request);
         // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
         // 上传文件
-        return uploadFileAndMetaData(client, is,
+        return uploadFileAndMetaData(client, stream,
                 request.fileSize(), FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData(), false);
     }
 
     @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
-        String groupName = getGroup(request);
-        CodeUtils.validateNotBlankString(groupName, "group");
         //获取上传流
-        InputStream is = wrapperStream(request);
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
+        InputStream stream = wrapperStream(request);
+        StorageNodeInfo client = trackerClient.getUpdateStorage(getGroupName(request), request.masterPath());
         //上传从文件
         String handlerPrefix = FastDFSUtils.handlerFilename(request.prefix());
         String prefix = handlerPrefix.isEmpty() ? "." : handlerPrefix;
         return uploadSalveFileAndMetaData(client, request.masterPath(),
-                is, request.fileSize(), prefix, FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData());
+                stream, request.fileSize(), prefix, FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData());
     }
 
     @Override
@@ -163,17 +158,16 @@ public class FastDfsClient implements FastDfs {
         ImageStorePath imageStorePath = new ImageStorePath();
         //获取上传流
         byte[] bytes = null;
-        try (InputStream is = getStream(request)) {
-            bytes = inputStreamToByte(is);
-            String groupName = getGroup(request);
+        try (InputStream stream = getStream(request)) {
+            bytes = inputStreamToByte(stream);
             // 上传文件
             String fileExtName = FastDFSUtils.handlerFilename(request.fileExtName());
             // 获取存储节点
-            StorageNode client = trackerClient.getStoreStorage(groupName);
-            StorePath imgPath = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
+            StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
+            StorePath img = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
                     request.fileSize(), fileExtName, request.metaData(), false);
-            imageStorePath.setImg(imgPath);
-            LOGGER.debug("upload image success img path{}", imgPath);
+            imageStorePath.setImg(img);
+            LOGGER.debug("upload image success img {}", img);
 
             Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
             List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
@@ -190,7 +184,7 @@ public class FastDfsClient implements FastDfs {
                         LOGGER.debug("获取到缩略图前缀{}", prefixName);
                     }
                     StorageNodeInfo storageNodeInfo = new StorageNodeInfo(client.getIp(), client.getPort());
-                    StorePath storePath = uploadSalveFileAndMetaData(storageNodeInfo, imgPath.getPath(),
+                    StorePath storePath = uploadSalveFileAndMetaData(storageNodeInfo, img.getPath(),
                             progressStream(request.listener(), thumbImageStream), fileSize, prefixName, fileExtName, metaData);
                     LOGGER.debug("upload thumb image success thumbImage={}", thumbImage);
                     paths.add(storePath);
@@ -213,9 +207,8 @@ public class FastDfsClient implements FastDfs {
         Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
         CodeUtils.validateCollectionNotEmpty(thumbImageRequests, "thumbImage");
         List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
-        String groupName = getGroup(request);
         // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
         String fileExtName = FastDFSUtils.handlerFilename(request.fileExtName());
 
         for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
@@ -376,9 +369,8 @@ public class FastDfsClient implements FastDfs {
     @Override
     public Set<MetaData> getMetadata(MetaDataInfoRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -387,9 +379,8 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void overwriteMetadata(MetaDataRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
     }
@@ -397,14 +388,8 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void mergeMetadata(MetaDataRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
-        Set<MetaData> metaDataSet = (request.metaData() == null ? Collections.emptySet() : request.metaData());
-        if (metaDataSet.isEmpty()) {
-            LOGGER.warn("metadata is empty not merge");
-            return;
-        }
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE, request.metaData());
     }
@@ -412,9 +397,8 @@ public class FastDfsClient implements FastDfs {
     @Override
     public FileInfo queryFileInfo(FileInfoRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -423,9 +407,8 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void deleteFile(FileInfoRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -433,9 +416,8 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         CodeUtils.validateNotNull(callback, "callback");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageDownloadCommand<T> command = new StorageDownloadCommand<>(groupName, path,
@@ -447,77 +429,65 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath uploadAppenderFile(UploadFileRequest request) {
-        // 获取分组
-        String groupName = getGroup(request);
         // 获取上传流
-        InputStream inputStream = wrapperStream(request);
+        InputStream stream = wrapperStream(request);
         // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
         // 上传追加文件
-        return uploadFileAndMetaData(client, inputStream,
+        return uploadFileAndMetaData(client, stream,
                 request.fileSize(), FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData(), true);
     }
 
     @Override
     public void appendFile(AppendFileRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         // 获取上传流
-        InputStream inputStream = wrapperStream(request);
+        InputStream stream = wrapperStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-        StorageAppendFileCommand command = new StorageAppendFileCommand(inputStream, request.fileSize(), path);
+        StorageAppendFileCommand command = new StorageAppendFileCommand(stream, request.fileSize(), path);
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        // 上传metadata
-        uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
+        if (request.metaType() != null) {
+            // 上传metadata
+            uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
+        }
     }
 
     private void uploadMetaData(StorageNodeInfo client, String groupName, String path, StorageMetadataSetType type, Set<MetaData> metaData) {
-        if (type == null || client == null || StringUtils.isBlank(groupName) || StringUtils.isBlank(path)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("args is null upload metadata fail");
-            }
-            return;
-        }
-        metaData = (metaData == null ? Collections.emptySet() : metaData);
-        StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(groupName, path,
-                metaData, type);
+        StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(groupName, path, metaData, type);
         if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE) {
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
         if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE) {
-            if (metaData.isEmpty()) {
-                LOGGER.warn("metadata is empty merge failed");
-                return;
-            }
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-
     }
 
     @Override
     public void modifyFile(ModifyFileRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         // 获取上传流
-        InputStream inputStream = wrapperStream(request);
+        InputStream stream = wrapperStream(request);
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-        StorageModifyCommand command = new StorageModifyCommand(path, inputStream, request.fileSize(), request.offset());
+        StorageModifyCommand command = new StorageModifyCommand(path, stream, request.fileSize(), request.offset());
         // 修改文件
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
+
+        if (request.metaType() != null) {
+            // 上传metadata
+            uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
+        }
     }
 
     @Override
     public void truncateFile(TruncateFileRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
@@ -528,9 +498,9 @@ public class FastDfsClient implements FastDfs {
     @Override
     public StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request) {
         // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
+        // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
@@ -544,9 +514,8 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
-        String groupName = getGroup(request);
         UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
-                .groupName(groupName)
+                .groupName(getGroupName(request))
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, FastDFSUtils.handlerFilename(request.fileExtName()))
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
@@ -564,10 +533,8 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public void uploadMultipart(UploadMultipartPartRequest request) {
-        // 获取分组
-        String groupName = getGroup(request);
+        String groupName = getGroupName(request);
         String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
         ModifyFileRequest modifyFileRequest;
         if (request.file() != null) {
             modifyFileRequest = ModifyFileRequest.builder()
@@ -586,10 +553,7 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
-        String groupName = getGroup(request);
-        String path = request.path();
-        CodeUtils.validateNotBlankString(groupName, "group");
-        StorePath storePath = new StorePath(groupName, path);
+        StorePath storePath = new StorePath(getGroupName(request), request.path());
         if (request.regenerate()) {
             RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
                     .groupName(storePath.getGroup())
@@ -616,9 +580,11 @@ public class FastDfsClient implements FastDfs {
      * @param args
      * @return
      */
-    private String getGroup(GroupArgs args) {
-        String groupName = StringUtils.isNotBlank(this.groupName) ? this.groupName : args.groupName();
-        LOGGER.debug("获取到上传的group={}", groupName);
+    private String getGroupName(GroupArgs args) {
+        String groupName = StringUtils.isNotBlank(this.defaultGroup) ? this.defaultGroup : args.groupName();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("获取到上传的groupName={}", groupName);
+        }
         return groupName;
     }
 
@@ -629,8 +595,8 @@ public class FastDfsClient implements FastDfs {
      * @return
      */
     private InputStream wrapperStream(AbstractFileArgs args) {
-        InputStream is = getStream(args);
-        return progressStream(args.listener(), is);
+        InputStream stream = getStream(args);
+        return progressStream(args.listener(), stream);
     }
 
     private InputStream progressStream(ProgressListener listener, InputStream is) {
