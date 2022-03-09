@@ -122,10 +122,7 @@ public class FastDfsClientTest extends BaseClientTest {
 
     @Test
     public void deleteFileInfo() throws IOException {
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
-                .file(getFile())
-                .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        StorePath storePath = uploadRandomFile();
         assertNotNull(storePath);
         delete(storePath);
         delete(storePath);
