@@ -92,7 +92,7 @@ public class BaseClientTest {
         return fastDFS.queryFileInfo(fileInfoRequest);
     }
 
-    protected File getFile() throws IOException {
+    protected File getFile() {
         return new File("src/test/resources/file/test.jpg");
     }
 }

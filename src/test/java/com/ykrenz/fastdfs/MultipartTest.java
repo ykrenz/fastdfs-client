@@ -93,7 +93,7 @@ public class MultipartTest extends BaseClientTest {
                 .build();
         StorePath path = fastDFS.completeMultipartUpload(completeRequest);
 
-        Set<MetaData> metaData = getMetaData(path);
+        Set<MetaData> metaData = fastDFS.getMetadata(storePath.getGroup(),storePath.getPath());
         assertEquals(1, metaData.size());
         assertTrue(metaData.contains(new MetaData("key", "Complete")));
 

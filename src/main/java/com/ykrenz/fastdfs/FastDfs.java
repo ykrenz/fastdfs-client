@@ -54,22 +54,31 @@ public interface FastDfs {
     StorePath uploadFile(File file);
 
     /**
-     * 上传一般文件
+     * 上传一般文件到分组 file
      *
+     * @param groupName
+     * @param file
      * @return
      */
     StorePath uploadFile(String groupName, File file);
 
     /**
-     * 上传一般文件
+     * 上传一般文件 文件流
      *
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
      * @return
      */
     StorePath uploadFile(InputStream stream, long fileSize, String fileExtName);
 
     /**
-     * 上传一般文件
+     * 上传一般文件到分组 文件流
      *
+     * @param groupName
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
      * @return
      */
     StorePath uploadFile(String groupName, InputStream stream, long fileSize, String fileExtName);
@@ -221,6 +230,30 @@ public interface FastDfs {
     /**
      * 下载文件
      *
+     * @param groupName
+     * @param path
+     * @param callback
+     * @param <T>
+     * @return
+     */
+    <T> T downloadFile(String groupName, String path, DownloadCallback<T> callback);
+
+    /**
+     * 下载文件
+     *
+     * @param groupName
+     * @param path
+     * @param fileOffset
+     * @param downLoadSize
+     * @param callback
+     * @param <T>
+     * @return
+     */
+    <T> T downloadFile(String groupName, String path, long fileOffset, long downLoadSize, DownloadCallback<T> callback);
+
+    /**
+     * 下载文件
+     *
      * @param request
      * @param callback
      * @return
@@ -266,11 +299,20 @@ public interface FastDfs {
 
     /**
      * 断点续传文件
+     *
+     * @param groupName
+     * @param path
+     * @param file
      */
     void appendFile(String groupName, String path, File file);
 
     /**
      * 断点续传文件
+     *
+     * @param groupName
+     * @param path
+     * @param stream
+     * @param fileSize
      */
     void appendFile(String groupName, String path, InputStream stream, long fileSize);
 
@@ -284,16 +326,20 @@ public interface FastDfs {
     /**
      * 修改续传文件的内容
      *
-     * @param request
+     * @param groupName
+     * @param path
+     * @param stream
+     * @param fileSize
+     * @param offset
      */
-    void modifyFile(ModifyFileRequest request);
+    void modifyFile(String groupName, String path, InputStream stream, long fileSize, long offset);
 
     /**
-     * 清除续传类型文件的内容
+     * 修改续传文件的内容
      *
      * @param request
      */
-    void truncateFile(TruncateFileRequest request);
+    void modifyFile(ModifyFileRequest request);
 
     /**
      * 清除续传类型文件的内容
@@ -311,6 +357,13 @@ public interface FastDfs {
      * @param path
      */
     void truncateFile(String groupName, String path);
+
+    /**
+     * 清除续传类型文件的内容
+     *
+     * @param request
+     */
+    void truncateFile(TruncateFileRequest request);
 
     /**
      * appender类型文件改名为普通文件 V6.02及以上版本

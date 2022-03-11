@@ -1,5 +1,6 @@
 package com.ykrenz.fastdfs;
 
+import com.ykrenz.fastdfs.common.Crc32;
 import com.ykrenz.fastdfs.model.AppendFileRequest;
 import com.ykrenz.fastdfs.model.ModifyFileRequest;
 import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
@@ -9,12 +10,16 @@ import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import com.ykrenz.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -104,6 +109,59 @@ public class StorageAppendTest extends BaseClientTest {
         delete(storePath);
     }
 
+    @Test
+    public void appendTest() throws IOException {
+        int length = 1024 * 1024 * 10; // 100M
+        RandomTextFile file = new RandomTextFile(length);
+
+        File sampleFile = new File("tmp", "sampleFile.txt");
+        FileUtils.copyToFile(file.getInputStream(), sampleFile);
+
+        long crc32 = FileUtils.checksumCRC32(sampleFile);
+        StorePath storePath = fastDFS.uploadAppenderFile(sampleFile);
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile("group1", sampleFile);
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile(new FileInputStream(sampleFile), sampleFile.length(), file.getFileExtName());
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile("group1", new FileInputStream(sampleFile), sampleFile.length(), file.getFileExtName());
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile(new ByteArrayInputStream(new byte[]{}), 0, file.getFileExtName());
+        fastDFS.appendFile(storePath.getGroup(), storePath.getPath(), sampleFile);
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile(new ByteArrayInputStream(new byte[]{}), 0, file.getFileExtName());
+        fastDFS.appendFile(storePath.getGroup(), storePath.getPath(), new FileInputStream(sampleFile), sampleFile.length());
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+
+        storePath = fastDFS.uploadAppenderFile(new ByteArrayInputStream(new byte[]{}), 0, file.getFileExtName());
+
+        long l = sampleFile.length() / 2;
+        fastDFS.appendFile(storePath.getGroup(), storePath.getPath(), new FileInputStream(sampleFile), l);
+        FileInputStream fileInputStream = new FileInputStream(sampleFile);
+        fileInputStream.skip(l);
+        fastDFS.appendFile(storePath.getGroup(), storePath.getPath(), fileInputStream, sampleFile.length() - l);
+        Assert.assertNotNull(storePath);
+        Assert.assertEquals(crc32, Crc32.convertUnsigned(queryFile(storePath).getCrc32()));
+        delete(storePath);
+    }
+
     /**
      * appender文件上传操作测试
      *
@@ -144,6 +202,11 @@ public class StorageAppendTest extends BaseClientTest {
                 .stream(inputStream, text.length(), 0)
                 .build();
         fastDFS.modifyFile(modifyFileRequest);
+        LOGGER.debug("modify上传文件 result={} text={}", storePath, modifyFile.getText());
+
+        text = "456";
+        inputStream = new ByteArrayInputStream(text.getBytes());
+        fastDFS.modifyFile(storePath.getGroup(),storePath.getPath(),inputStream,text.length(),0);
         LOGGER.debug("modify上传文件 result={} text={}", storePath, modifyFile.getText());
 
         metaData.clear();
@@ -237,6 +300,15 @@ public class StorageAppendTest extends BaseClientTest {
         fastDFS.truncateFile(request);
         fileInfo = queryFile(storePath);
         assertEquals(size, fileInfo.getFileSize());
+
+        size = 10;
+        fastDFS.truncateFile(storePath.getGroup(),storePath.getPath(),size);
+        fileInfo = queryFile(storePath);
+        assertEquals(size, fileInfo.getFileSize());
+
+        fastDFS.truncateFile(storePath.getGroup(),storePath.getPath());
+        fileInfo = queryFile(storePath);
+        assertEquals(0, fileInfo.getFileSize());
 
         delete(storePath);
     }

@@ -6,6 +6,7 @@ import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class ArgsTest {
 
     @Before
     public void before() throws IOException {
-        file.createNewFile();
+        FileUtils.touch(file);
     }
 
     @Test

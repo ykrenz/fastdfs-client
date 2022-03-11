@@ -175,7 +175,11 @@ public class FastDfsClient implements FastDfs {
             bytes = inputStreamToByte(stream);
 
             UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
-                    .stream(new ByteArrayInputStream(bytes), request.fileSize(), request.fileExtName()).build();
+                    .groupName(request.groupName())
+                    .listener(request.listener())
+                    .stream(new ByteArrayInputStream(bytes), request.fileSize(), request.fileExtName())
+                    .metaData(request.metaData())
+                    .build();
             StorePath img = uploadFile(uploadFileRequest);
             imageStorePath.setImg(img);
             LOGGER.debug("upload image success img {}", img);
@@ -197,6 +201,7 @@ public class FastDfsClient implements FastDfs {
                     UploadSalveFileRequest uploadSalveFileRequest = UploadSalveFileRequest.builder()
                             .stream(thumbImageStream, fileSize, request.fileExtName())
                             .groupName(img.getGroup())
+                            .listener(request.listener())
                             .masterPath(img.getPath())
                             .prefix(prefixName)
                             .metaData(metaData)
@@ -472,6 +477,24 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public <T> T downloadFile(String groupName, String path, DownloadCallback<T> callback) {
+        return this.downloadFile(DownloadFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build(), callback);
+    }
+
+    @Override
+    public <T> T downloadFile(String groupName, String path, long fileOffset, long downLoadSize, DownloadCallback<T> callback) {
+        return this.downloadFile(DownloadFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .offset(fileOffset)
+                .fileSize(downLoadSize)
+                .build(), callback);
+    }
+
+    @Override
     public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
         String groupName = getGroupName(request.groupName());
         String path = request.path();
@@ -539,6 +562,15 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public void modifyFile(String groupName, String path, InputStream stream, long fileSize, long offset) {
+        this.modifyFile(ModifyFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .stream(stream, fileSize, offset)
+                .build());
+    }
+
+    @Override
     public void modifyFile(ModifyFileRequest request) {
         String groupName = getGroupName(request.groupName());
         String path = request.path();
@@ -547,15 +579,6 @@ public class FastDfsClient implements FastDfs {
         StorageModifyCommand command = new StorageModifyCommand(path, stream, request.fileSize(), request.offset());
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         uploadMetaData(client.getInetSocketAddress(), groupName, path, request.metaType(), request.metaData());
-    }
-
-    @Override
-    public void truncateFile(TruncateFileRequest request) {
-        String groupName = getGroupName(request.groupName());
-        String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-        StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
-        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
@@ -574,6 +597,15 @@ public class FastDfsClient implements FastDfs {
                 .path(path)
                 .fileSize(0)
                 .build());
+    }
+
+    @Override
+    public void truncateFile(TruncateFileRequest request) {
+        String groupName = getGroupName(request.groupName());
+        String path = request.path();
+        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
+        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
