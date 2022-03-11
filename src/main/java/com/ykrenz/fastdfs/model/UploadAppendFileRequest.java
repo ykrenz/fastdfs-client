@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * 一般文件上传参数
+ * append文件上传参数
  *
  * @author ykren
  * @date 2022/1/22
