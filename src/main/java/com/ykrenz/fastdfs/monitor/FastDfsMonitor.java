@@ -6,7 +6,7 @@ package com.ykrenz.fastdfs.monitor;
  * @author ykren
  * @date 2022/2/15
  */
-public interface FastDFSMonitor {
+public interface FastDfsMonitor {
 
     /**
      * 监控

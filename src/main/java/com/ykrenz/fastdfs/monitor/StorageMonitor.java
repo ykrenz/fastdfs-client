@@ -16,7 +16,7 @@ import java.util.List;
  * @author ykren
  * @date 2022/2/18
  */
-public class StorageMonitor implements FastDFSMonitor {
+public class StorageMonitor implements FastDfsMonitor {
     /**
      * 日志
      */
