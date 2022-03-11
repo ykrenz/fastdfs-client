@@ -279,3 +279,22 @@ List<String> trackerServers = new ArrayList<>();
 //        fastDFS.downloadFile(request, new DownloadOutputStream(ous));
         fastDFS.shutdown();
 ```
+获取预览和下载路径
+
+``` java
+    List<String> trackerServers = new ArrayList<>();
+    trackerServers.add("192.168.24.130:22122");
+    FastDFSConfiguration configuration = new FastDFSConfiguration();
+    configuration.setDefaultGroup("group1");
+    configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
+    configuration.getHttp().setWebServerUrlHasGroup(true);
+    configuration.getHttp().setHttpAntiStealToken(true);
+    configuration.getHttp().setSecretKey("FastDFS1234567890");
+    FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
+    StorePath storePath = fastDfs.uploadFile(sampleFile);
+    fastDfs.shutdown();
+    System.out.println("上传文件成功" + storePath);
+    System.out.println("web访问路径" + storePath.getWebPath());
+    // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
+    System.out.println("web下载路径" + storePath.getDownLoadPath("1.txt"));
+```

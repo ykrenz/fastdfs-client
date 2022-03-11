@@ -75,7 +75,16 @@ public class App {
     }
 
     private static void path() {
-        FastDfs fastDfs = configDfs();
+        // 配置构建
+        List<String> trackerServers = new ArrayList<>();
+        trackerServers.add("192.168.24.130:22122");
+        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        configuration.setDefaultGroup("group1");
+        configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
+        configuration.getHttp().setWebServerUrlHasGroup(true);
+        configuration.getHttp().setHttpAntiStealToken(true);
+        configuration.getHttp().setSecretKey("FastDFS1234567890");
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
         StorePath storePath = fastDfs.uploadFile(sampleFile);
         fastDfs.shutdown();
         System.out.println("上传文件成功" + storePath);
