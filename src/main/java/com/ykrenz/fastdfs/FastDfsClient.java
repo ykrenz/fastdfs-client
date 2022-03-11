@@ -1,14 +1,32 @@
 package com.ykrenz.fastdfs;
 
+import com.ykrenz.fastdfs.common.CodeUtils;
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 import com.ykrenz.fastdfs.config.FastDfsConfiguration;
-import com.ykrenz.fastdfs.config.HttpConfiguration;
 import com.ykrenz.fastdfs.conn.FdfsConnectionManager;
 import com.ykrenz.fastdfs.conn.FdfsConnectionPool;
 import com.ykrenz.fastdfs.conn.TrackerConnectionManager;
 import com.ykrenz.fastdfs.event.ProgressInputStream;
 import com.ykrenz.fastdfs.event.ProgressListener;
 import com.ykrenz.fastdfs.exception.FdfsUploadImageException;
-import com.ykrenz.fastdfs.model.*;
+import com.ykrenz.fastdfs.model.AbstractFileArgs;
+import com.ykrenz.fastdfs.model.AppendFileRequest;
+import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
+import com.ykrenz.fastdfs.model.DownloadFileRequest;
+import com.ykrenz.fastdfs.model.FileInfoRequest;
+import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
+import com.ykrenz.fastdfs.model.InputStreamWrapper;
+import com.ykrenz.fastdfs.model.MetaDataInfoRequest;
+import com.ykrenz.fastdfs.model.MetaDataRequest;
+import com.ykrenz.fastdfs.model.ModifyFileRequest;
+import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
+import com.ykrenz.fastdfs.model.ThumbImage;
+import com.ykrenz.fastdfs.model.TruncateFileRequest;
+import com.ykrenz.fastdfs.model.UploadAppendFileRequest;
+import com.ykrenz.fastdfs.model.UploadFileRequest;
+import com.ykrenz.fastdfs.model.UploadImageRequest;
+import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
+import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -28,8 +46,6 @@ import com.ykrenz.fastdfs.model.proto.storage.StorageTruncateCommand;
 import com.ykrenz.fastdfs.model.proto.storage.StorageUploadFileCommand;
 import com.ykrenz.fastdfs.model.proto.storage.StorageUploadSlaveFileCommand;
 import com.ykrenz.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
-import com.ykrenz.fastdfs.common.CodeUtils;
-import com.ykrenz.fastdfs.common.FastDfsUtils;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -74,17 +90,18 @@ public class FastDfsClient implements FastDfs {
      * 默认 group
      */
     private final String defaultGroup;
+
     /**
-     * http相关配置
+     * FastDfs配置
      */
-    private final HttpConfiguration http;
+    private final FastDfsConfiguration fastDfsConfiguration;
 
     public FastDfsClient(final List<String> trackerServers, final FastDfsConfiguration configuration) {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
         this.defaultGroup = configuration.getDefaultGroup();
-        this.http = configuration.getHttp();
+        this.fastDfsConfiguration = configuration;
     }
 
     public FdfsConnectionManager getConnectionManager() {
@@ -95,8 +112,8 @@ public class FastDfsClient implements FastDfs {
         return defaultGroup;
     }
 
-    public HttpConfiguration getHttp() {
-        return http;
+    public FastDfsConfiguration getFastDfsConfiguration() {
+        return fastDfsConfiguration;
     }
 
     @Override
@@ -111,19 +128,19 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public String getWebPath(String groupName, String path) {
-        StorePath storePath = new StorePath(groupName, path, http);
+        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
         return storePath.getWebPath();
     }
 
     @Override
     public String getDownLoadPath(String groupName, String path, String downloadFileName) {
-        StorePath storePath = new StorePath(groupName, path, http);
+        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
         return storePath.getDownLoadPath(downloadFileName);
     }
 
     @Override
     public String getDownLoadPath(String groupName, String path, String argName, String downloadFileName) {
-        StorePath storePath = new StorePath(groupName, path, http);
+        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
         return storePath.getDownLoadPath(argName, downloadFileName);
     }
 
@@ -177,7 +194,7 @@ public class FastDfsClient implements FastDfs {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setHttp(http);
+        path.setHttp(fastDfsConfiguration.getHttp());
         return path;
     }
 
@@ -201,7 +218,7 @@ public class FastDfsClient implements FastDfs {
                     metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setHttp(http);
+        path.setHttp(fastDfsConfiguration.getHttp());
         return path;
 
     }
@@ -634,7 +651,7 @@ public class FastDfsClient implements FastDfs {
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        storePath.setHttp(http);
+        storePath.setHttp(fastDfsConfiguration.getHttp());
         return storePath;
     }
 
@@ -749,7 +766,7 @@ public class FastDfsClient implements FastDfs {
                 .metaData(request.metaData())
                 .build();
         mergeMetadata(metaDataRequest);
-        storePath.setHttp(http);
+        storePath.setHttp(fastDfsConfiguration.getHttp());
         return storePath;
     }
 
