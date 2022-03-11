@@ -4,24 +4,20 @@ import com.ykrenz.fastdfs.common.Crc32;
 import com.ykrenz.fastdfs.config.FastDFSConfiguration;
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.AppendFileRequest;
-import com.ykrenz.fastdfs.model.DownloadFileRequest;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import com.ykrenz.fastdfs.model.proto.storage.DownloadByteArray;
 import com.ykrenz.fastdfs.model.proto.storage.DownloadFileWriter;
-import com.ykrenz.fastdfs.model.proto.storage.DownloadOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -91,6 +87,11 @@ public class App {
         System.out.println("web访问路径" + storePath.getWebPath());
         // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
         System.out.println("web下载路径" + storePath.getDownLoadPath("1.txt"));
+
+        String webPath = fastDfs.getWebPath(storePath.getGroup(), storePath.getPath());
+        System.out.println(webPath);
+        String downLoadPath = fastDfs.getDownLoadPath(storePath.getGroup(), storePath.getPath(), "1.txt");
+        System.out.println(downLoadPath);
     }
 
     private static void downLoadFile() {

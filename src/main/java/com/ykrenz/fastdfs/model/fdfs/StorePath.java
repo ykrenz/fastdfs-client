@@ -27,7 +27,7 @@ public class StorePath {
     /**
      * http相关配置
      */
-    private HttpConfiguration http;
+    private HttpConfiguration http = new HttpConfiguration();
 
     /**
      * 解析路径

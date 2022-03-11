@@ -32,7 +32,7 @@ public class HttpConfiguration {
 //                ngx_fastdfs_module;
 //            }
 //        }
-    private String webServerUrl;
+    private String webServerUrl = "localhost";
     /**
      * web路径是否包含Group
      * 关联mod_fastdfs.conf url_have_group_name
