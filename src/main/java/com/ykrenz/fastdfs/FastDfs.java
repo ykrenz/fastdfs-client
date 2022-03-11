@@ -59,15 +59,18 @@ public interface FastDfs {
      *
      * @param groupName
      * @param path
+     * @param downloadFileName
      * @return
      */
     String getDownLoadPath(String groupName, String path, String downloadFileName);
 
     /**
-     * 获取下载地址
+     * 获取下载地址 自定义参数名
      *
      * @param groupName
      * @param path
+     * @param argName
+     * @param downloadFileName
      * @return
      */
     String getDownLoadPath(String groupName, String path, String argName, String downloadFileName);
@@ -288,7 +291,7 @@ public interface FastDfs {
     <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback);
 
     /**
-     * 上传一般文件
+     * 上传支持断点续传的文件
      *
      * @param file
      * @return
@@ -296,22 +299,31 @@ public interface FastDfs {
     StorePath uploadAppenderFile(File file);
 
     /**
-     * 上传一般文件
+     * 上传支持断点续传的文件
      *
+     * @param groupName
+     * @param file
      * @return
      */
     StorePath uploadAppenderFile(String groupName, File file);
 
     /**
-     * 上传一般文件
+     * 上传支持断点续传的文件
      *
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
      * @return
      */
     StorePath uploadAppenderFile(InputStream stream, long fileSize, String fileExtName);
 
     /**
-     * 上传一般文件
+     * 上传支持断点续传的文件
      *
+     * @param groupName
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
      * @return
      */
     StorePath uploadAppenderFile(String groupName, InputStream stream, long fileSize, String fileExtName);
@@ -396,6 +408,8 @@ public interface FastDfs {
      * appender类型文件改名为普通文件 V6.02及以上版本
      * since V6.02, rename appender file to normal file
      *
+     * @param groupName
+     * @param path
      * @return
      */
     StorePath regenerateAppenderFile(String groupName, String path);
@@ -428,21 +442,45 @@ public interface FastDfs {
 
     /**
      * 上传分片
+     *
+     * @param groupName
+     * @param path
+     * @param file
+     * @param offset
      */
     void uploadMultipart(String groupName, String path, File file, long offset);
 
     /**
      * 上传分片
+     *
+     * @param groupName
+     * @param path
+     * @param file
+     * @param partNumber
+     * @param partSize
      */
     void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize);
 
     /**
      * 上传分片
+     *
+     * @param groupName
+     * @param path
+     * @param stream
+     * @param fileSize
+     * @param offset
      */
     void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset);
 
     /**
      * 上传分片
+     *
+     * @param groupName
+     * @param path
+     * @param stream
+     * @param fileSize
+     * @param partNumber
+     * @param partSize
      */
     void uploadMultipart(String groupName, String path,
                          InputStream stream, long fileSize, int partNumber, long partSize);
@@ -457,7 +495,9 @@ public interface FastDfs {
     /**
      * 完成分片上传
      *
-     * @return 文件路径
+     * @param groupName
+     * @param path
+     * @return 原文件路径
      */
     StorePath completeMultipartUpload(String groupName, String path);
 
