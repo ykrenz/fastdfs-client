@@ -69,36 +69,45 @@ public class App {
 //        }
 
 //        downLoadFile();
+
+
+        path();
+    }
+
+    private static void path() {
+        FastDfs fastDfs = configDfs();
+        StorePath storePath = fastDfs.uploadFile(sampleFile);
+        fastDfs.shutdown();
+        System.out.println("上传文件成功" + storePath);
+        System.out.println("web访问路径" + storePath.getWebPath());
+        // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
+        System.out.println("web下载路径" + storePath.getDownLoadPath("1.txt"));
     }
 
     private static void downLoadFile() {
         StorePath storePath = uploadLocalFile();
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = fastDfs();
         //本地文件
-        fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadFileWriter("tmp/test.txt"));
+        fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadFileWriter("tmp/test.txt"));
         //bytes
-        byte[] bytes = fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadByteArray());
+        byte[] bytes = fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadByteArray());
         System.out.println(bytes.length);
         //下载文件片段
-        fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), 10, 1024, new DownloadFileWriter("tmp/test_10_1024.txt"));
+        fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), 10, 1024, new DownloadFileWriter("tmp/test_10_1024.txt"));
 
         //OutputStream 例如web下载 默认构造会自动关闭OutputStream
 //        OutputStream ous = response.getOutputStream();
 //        fastDFS.downloadFile(request, new DownloadOutputStream(ous));
-        fastDFS.shutdown();
+        fastDfs.shutdown();
     }
 
     private static void uploadMultipart() throws IOException {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = fastDfs();
         final long partSize = 5 * 1024 * 1024L;   // 5MB
         long fileSize = sampleFile.length();
         long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
 
-        StorePath storePath = fastDFS.initMultipartUpload(sampleFile.length(), "txt");
+        StorePath storePath = fastDfs.initMultipartUpload(sampleFile.length(), "txt");
         System.out.println("初始化分片成功" + storePath);
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         for (int i = 1; i <= partCount; i++) {
@@ -121,7 +130,7 @@ public class App {
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .build();
-                fastDFS.uploadMultipart(partRequest);
+                fastDfs.uploadMultipart(partRequest);
             });
         }
         /*
@@ -138,43 +147,40 @@ public class App {
 
         long crc32 = Crc32.file(sampleFile);
         // 6.0.2版本以上支持regenerate=true
-        StorePath path = fastDFS.completeMultipartUpload(storePath.getGroup(), storePath.getPath(), true);
+        StorePath path = fastDfs.completeMultipartUpload(storePath.getGroup(), storePath.getPath(), true);
 
         // crc32校验
-        FileInfo fileInfo = fastDFS.queryFileInfo(path.getGroup(), path.getPath());
+        FileInfo fileInfo = fastDfs.queryFileInfo(path.getGroup(), path.getPath());
         Assert.assertEquals(crc32, Crc32.convertUnsigned(fileInfo.getCrc32()));
         System.out.println("上传文件成功" + path);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
     }
 
-    private static void uploadAppendFile() {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+    private static StorePath uploadAppendFile() {
+        FastDfs fastDfs = fastDfs();
         StorePath storePath = null;
         for (int i = 1; i < 10; i++) {
             String appendStr = String.valueOf(i);
             if (i == 1) {
-                storePath = fastDFS.uploadAppenderFile(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length(), "txt");
+                storePath = fastDfs.uploadAppenderFile(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length(), "txt");
             } else {
                 AppendFileRequest appendRequest = AppendFileRequest.builder()
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .stream(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length())
                         .build();
-                fastDFS.appendFile(appendRequest);
+                fastDfs.appendFile(appendRequest);
             }
         }
         // 修改为普通文件 6.0.2版本以上支持该特性
-        StorePath reStorePath = fastDFS.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
+        StorePath reStorePath = fastDfs.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
         System.out.println("上传Append文件成功" + reStorePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
+        return reStorePath;
     }
 
-    private static void uploadFileProgress() {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+    private static StorePath uploadFileProgress() {
+        FastDfs fastDfs = fastDfs();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .file(sampleFile)
                 .listener(new UploadProgressListener() {
@@ -199,40 +205,46 @@ public class App {
                     }
                 })
                 .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        StorePath storePath = fastDfs.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
+        return storePath;
     }
 
-    private static void uploadFileWithMetaData() {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+    private static StorePath uploadFileWithMetaData() {
+        FastDfs fastDfs = fastDfs();
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .file(sampleFile)
                 .metaData("MetaKey", "MetaValue")
                 .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        StorePath storePath = fastDfs.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
+        return storePath;
     }
 
-    private static void uploadStream() {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+    private static StorePath uploadStream() {
+        FastDfs fastDfs = fastDfs();
         String str = "123";
-        StorePath storePath = fastDFS.uploadFile(new ByteArrayInputStream(str.getBytes()), str.length(), "txt");
+        StorePath storePath = fastDfs.uploadFile(new ByteArrayInputStream(str.getBytes()), str.length(), "txt");
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
+        return storePath;
+    }
+
+    private static StorePath uploadLocalFile() {
+        FastDfs fastDfs = fastDfs();
+        StorePath storePath = fastDfs.uploadFile(sampleFile);
+        fastDfs.shutdown();
+        System.out.println("上传文件成功" + storePath);
+        return storePath;
     }
 
     public static FastDfs fastDfs() {
         // 默认配置构建
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
-        return fastDFS;
+        return new FastDfsClientBuilder().build(trackerServers);
     }
 
     public static FastDfs configDfs() {
@@ -245,17 +257,7 @@ public class App {
         configuration.getHttp().setWebServerUrlHasGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
-        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
-        return fastDfs;
+        return new FastDfsClientBuilder().build(trackerServers, configuration);
     }
 
-    private static StorePath uploadLocalFile() {
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
-        StorePath storePath = fastDFS.uploadFile(sampleFile);
-        fastDFS.shutdown();
-        System.out.println("上传文件成功" + storePath);
-        return storePath;
-    }
 }
