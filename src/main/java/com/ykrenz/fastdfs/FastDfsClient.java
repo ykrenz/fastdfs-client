@@ -7,25 +7,8 @@ import com.ykrenz.fastdfs.conn.FdfsConnectionPool;
 import com.ykrenz.fastdfs.conn.TrackerConnectionManager;
 import com.ykrenz.fastdfs.event.ProgressInputStream;
 import com.ykrenz.fastdfs.event.ProgressListener;
-import com.ykrenz.fastdfs.exception.FdfsIOException;
 import com.ykrenz.fastdfs.exception.FdfsUploadImageException;
-import com.ykrenz.fastdfs.model.AbstractFileArgs;
-import com.ykrenz.fastdfs.model.AppendFileRequest;
-import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
-import com.ykrenz.fastdfs.model.UploadImageRequest;
-import com.ykrenz.fastdfs.model.DownloadFileRequest;
-import com.ykrenz.fastdfs.model.FileInfoRequest;
-import com.ykrenz.fastdfs.model.GroupArgs;
-import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
-import com.ykrenz.fastdfs.model.MetaDataInfoRequest;
-import com.ykrenz.fastdfs.model.MetaDataRequest;
-import com.ykrenz.fastdfs.model.ModifyFileRequest;
-import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
-import com.ykrenz.fastdfs.model.ThumbImage;
-import com.ykrenz.fastdfs.model.TruncateFileRequest;
-import com.ykrenz.fastdfs.model.UploadFileRequest;
-import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
-import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.*;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -46,8 +29,7 @@ import com.ykrenz.fastdfs.model.proto.storage.StorageUploadFileCommand;
 import com.ykrenz.fastdfs.model.proto.storage.StorageUploadSlaveFileCommand;
 import com.ykrenz.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
 import com.ykrenz.fastdfs.common.CodeUtils;
-import com.ykrenz.fastdfs.common.FastDFSUtils;
-import com.ykrenz.fastdfs.model.fdfs.FastDFSConstants;
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,17 +37,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -92,7 +71,7 @@ public class FastDfsClient implements FastDfs {
     private final FdfsConnectionManager fdfsConnectionManager;
 
     /**
-     * 默认 group 优先级大于参数 ${@link #getGroupName(GroupArgs)}
+     * 默认 group
      */
     private final String defaultGroup;
     /**
@@ -104,7 +83,7 @@ public class FastDfsClient implements FastDfs {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
-        this.defaultGroup = configuration.getGroupName();
+        this.defaultGroup = configuration.getDefaultGroup();
         this.http = configuration.getHttp();
     }
 
@@ -121,7 +100,7 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public TrackerClient trackerClient() {
+    public TrackerClient getTrackerClient() {
         return trackerClient;
     }
 
@@ -131,41 +110,77 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public StorePath uploadFile(File file) {
+        return this.uploadFile(UploadFileRequest.builder().file(file).build());
+    }
+
+    @Override
+    public StorePath uploadFile(String groupName, File file) {
+        return this.uploadFile(UploadFileRequest.builder().groupName(groupName).file(file).build());
+    }
+
+    @Override
+    public StorePath uploadFile(InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadFile(UploadFileRequest.builder().stream(stream, fileSize, fileExtName).build());
+    }
+
+    @Override
+    public StorePath uploadFile(String groupName, InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadFile(UploadFileRequest.builder().groupName(groupName).stream(stream, fileSize, fileExtName).build());
+    }
+
+    @Override
     public StorePath uploadFile(UploadFileRequest request) {
         //获取上传流
-        InputStream stream = wrapperStream(request);
+        InputStream stream = getInputStream(request);
         // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
+        StorageNode client = trackerClient.getStoreStorage(getGroupName(request.groupName()));
         // 上传文件
-        return uploadFileAndMetaData(client, stream,
-                request.fileSize(), FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData(), false);
+        return uploadFileAndMetaData(client, stream, request.fileSize(),
+                request.fileExtName(), request.metaData(), false);
     }
 
     @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
-        //获取上传流
-        InputStream stream = wrapperStream(request);
-        StorageNodeInfo client = trackerClient.getUpdateStorage(getGroupName(request), request.masterPath());
+        String groupName = getGroupName(request.groupName());
+        InputStream stream = getInputStream(request);
+        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
         //上传从文件
-        String handlerPrefix = FastDFSUtils.handlerFilename(request.prefix());
+        String handlerPrefix = FastDfsUtils.handlerFilename(request.prefix());
         String prefix = handlerPrefix.isEmpty() ? "." : handlerPrefix;
-        return uploadSalveFileAndMetaData(client, request.masterPath(),
-                stream, request.fileSize(), prefix, FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData());
+        String fileExtName = FastDfsUtils.handlerFilename(request.fileExtName());
+
+        StorageUploadSlaveFileCommand command = new StorageUploadSlaveFileCommand(stream, request.fileSize(), request.masterPath(),
+                prefix, fileExtName);
+        StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+
+        Set<MetaData> metaData = request.metaData();
+        // 上传metadata
+        if (hasMetaData(metaData)) {
+            StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(path.getGroup(), path.getPath(),
+                    metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
+            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
+        }
+        path.setHttp(http);
+        return path;
+
     }
 
     @Override
     public ImageStorePath uploadImage(UploadImageRequest request) {
         ImageStorePath imageStorePath = new ImageStorePath();
         //获取上传流
-        byte[] bytes = null;
-        try (InputStream stream = getStream(request)) {
+        byte[] bytes;
+        try (InputStream stream = getStream(request.stream(), request.file())) {
             bytes = inputStreamToByte(stream);
-            // 上传文件
-            String fileExtName = FastDFSUtils.handlerFilename(request.fileExtName());
-            // 获取存储节点
-            StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
-            StorePath img = uploadFileAndMetaData(client, progressStream(request.listener(), new ByteArrayInputStream(bytes)),
-                    request.fileSize(), fileExtName, request.metaData(), false);
+
+            UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
+                    .groupName(request.groupName())
+                    .listener(request.listener())
+                    .stream(new ByteArrayInputStream(bytes), request.fileSize(), request.fileExtName())
+                    .metaData(request.metaData())
+                    .build();
+            StorePath img = uploadFile(uploadFileRequest);
             imageStorePath.setImg(img);
             LOGGER.debug("upload image success img {}", img);
 
@@ -183,11 +198,18 @@ public class FastDfsClient implements FastDfs {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("获取到缩略图前缀{}", prefixName);
                     }
-                    StorageNodeInfo storageNodeInfo = new StorageNodeInfo(client.getIp(), client.getPort());
-                    StorePath storePath = uploadSalveFileAndMetaData(storageNodeInfo, img.getPath(),
-                            progressStream(request.listener(), thumbImageStream), fileSize, prefixName, fileExtName, metaData);
+                    UploadSalveFileRequest uploadSalveFileRequest = UploadSalveFileRequest.builder()
+                            .stream(thumbImageStream, fileSize, request.fileExtName())
+                            .groupName(img.getGroup())
+                            .listener(request.listener())
+                            .masterPath(img.getPath())
+                            .prefix(prefixName)
+                            .metaData(metaData)
+                            .build();
+
+                    StorePath thumbStorePath = this.uploadSlaveFile(uploadSalveFileRequest);
                     LOGGER.debug("upload thumb image success thumbImage={}", thumbImage);
-                    paths.add(storePath);
+                    paths.add(thumbStorePath);
                 }
             }
             imageStorePath.setThumbs(paths);
@@ -207,15 +229,17 @@ public class FastDfsClient implements FastDfs {
         Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
         CodeUtils.validateCollectionNotEmpty(thumbImageRequests, "thumbImage");
         List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
-        // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
-        String fileExtName = FastDFSUtils.handlerFilename(request.fileExtName());
+
+        String groupName = getGroupName(request.groupName());
+        StorageNode client = trackerClient.getStoreStorage(groupName);
+        String fileExtName = FastDfsUtils.handlerFilename(request.fileExtName());
 
         for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
             ThumbImage thumbImage = thumbImageRequest.thumbImage();
-            try (InputStream stream = getStream(request);
+            try (InputStream stream = getStream(request.stream(), request.file());
                  ByteArrayInputStream thumbImageStream = generateThumbImageStream(stream, thumbImage)) {
                 Set<MetaData> metaDataSet = thumbImageRequest.thumbMetaData();
+
                 StorePath storePath = uploadFileAndMetaData(client, progressStream(request.listener(), thumbImageStream), thumbImageStream.available(),
                         fileExtName, metaDataSet, false);
                 paths.add(storePath);
@@ -318,33 +342,7 @@ public class FastDfsClient implements FastDfs {
                                               String fileExtName, Set<MetaData> metaDataSet, boolean isAppenderFile) {
         // 上传文件
         StorageUploadFileCommand command = new StorageUploadFileCommand(client.getStoreIndex(), inputStream,
-                fileExtName, fileSize, isAppenderFile);
-        StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        // 上传metadata
-        if (hasMetaData(metaDataSet)) {
-            StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(path.getGroup(), path.getPath(),
-                    metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
-            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
-        }
-        path.setHttp(http);
-        return path;
-    }
-
-    /**
-     * 上传从文件和元数据
-     *
-     * @param client
-     * @param inputStream
-     * @param fileSize
-     * @param fileExtName
-     * @param metaDataSet
-     * @return
-     */
-    protected StorePath uploadSalveFileAndMetaData(StorageNodeInfo client, String masterPath,
-                                                   InputStream inputStream, long fileSize,
-                                                   String prefix, String fileExtName, Set<MetaData> metaDataSet) {
-        StorageUploadSlaveFileCommand command = new StorageUploadSlaveFileCommand(inputStream, fileSize, masterPath,
-                prefix, fileExtName);
+                FastDfsUtils.handlerFilename(fileExtName), fileSize, isAppenderFile);
         StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         // 上传metadata
         if (hasMetaData(metaDataSet)) {
@@ -367,37 +365,94 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public Set<MetaData> getMetadata(String groupName, String path) {
+        return getMetadata(MetaDataInfoRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build());
+    }
+
+    @Override
     public Set<MetaData> getMetadata(MetaDataInfoRequest request) {
         // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
+    private void uploadMetaData(InetSocketAddress address, String groupName, String path,
+                                StorageMetadataSetType type, Set<MetaData> metaData) {
+        if (type == null) {
+            return;
+        }
+        StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(groupName, path, metaData, type);
+        if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE) {
+            fdfsConnectionManager.executeFdfsCmd(address, setMDCommand);
+        }
+        if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE) {
+            fdfsConnectionManager.executeFdfsCmd(address, setMDCommand);
+        }
+    }
+
+    @Override
+    public void overwriteMetadata(String groupName, String path, Set<MetaData> metaData) {
+        this.overwriteMetadata(MetaDataRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .metaData(metaData)
+                .build());
+    }
+
     @Override
     public void overwriteMetadata(MetaDataRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-        uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
+        uploadMetaData(client.getInetSocketAddress(), groupName, path,
+                StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
+    }
+
+    @Override
+    public void mergeMetadata(String groupName, String path, Set<MetaData> metaData) {
+        this.mergeMetadata(MetaDataRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .metaData(metaData)
+                .build());
     }
 
     @Override
     public void mergeMetadata(MetaDataRequest request) {
         // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
-        uploadMetaData(client, groupName, path, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE, request.metaData());
+        uploadMetaData(client.getInetSocketAddress(), groupName, path,
+                StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE, request.metaData());
+    }
+
+    @Override
+    public void deleteMetadata(String groupName, String path) {
+        this.overwriteMetadata(MetaDataRequest
+                .builder()
+                .groupName(groupName)
+                .path(path)
+                .build());
+    }
+
+    @Override
+    public FileInfo queryFileInfo(String groupName, String path) {
+        return this.queryFileInfo(FileInfoRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build());
     }
 
     @Override
     public FileInfo queryFileInfo(FileInfoRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
@@ -405,9 +460,16 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public void deleteFile(String groupName, String path) {
+        this.deleteFile(FileInfoRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build());
+    }
+
+    @Override
     public void deleteFile(FileInfoRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
@@ -415,8 +477,26 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public <T> T downloadFile(String groupName, String path, DownloadCallback<T> callback) {
+        return this.downloadFile(DownloadFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build(), callback);
+    }
+
+    @Override
+    public <T> T downloadFile(String groupName, String path, long fileOffset, long downLoadSize, DownloadCallback<T> callback) {
+        return this.downloadFile(DownloadFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .offset(fileOffset)
+                .fileSize(downLoadSize)
+                .build(), callback);
+    }
+
+    @Override
     public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         CodeUtils.validateNotNull(callback, "callback");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
@@ -428,77 +508,115 @@ public class FastDfsClient implements FastDfs {
     // region appender
 
     @Override
-    public StorePath uploadAppenderFile(UploadFileRequest request) {
-        // 获取上传流
-        InputStream stream = wrapperStream(request);
-        // 获取存储节点
-        StorageNode client = trackerClient.getStoreStorage(getGroupName(request));
-        // 上传追加文件
-        return uploadFileAndMetaData(client, stream,
-                request.fileSize(), FastDFSUtils.handlerFilename(request.fileExtName()), request.metaData(), true);
+    public StorePath uploadAppenderFile(File file) {
+        return this.uploadAppenderFile(UploadAppendFileRequest.builder().file(file).build());
+    }
+
+    @Override
+    public StorePath uploadAppenderFile(String groupName, File file) {
+        return this.uploadAppenderFile(UploadAppendFileRequest.builder().groupName(groupName).file(file).build());
+    }
+
+    @Override
+    public StorePath uploadAppenderFile(InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadAppenderFile(UploadAppendFileRequest.builder().stream(stream, fileSize, fileExtName).build());
+    }
+
+    @Override
+    public StorePath uploadAppenderFile(String groupName, InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadAppenderFile(UploadAppendFileRequest.builder().groupName(groupName)
+                .stream(stream, fileSize, fileExtName).build());
+    }
+
+    @Override
+    public StorePath uploadAppenderFile(UploadAppendFileRequest request) {
+        String groupName = getGroupName(request.groupName());
+        InputStream stream = getInputStream(request);
+        StorageNode client = trackerClient.getStoreStorage(groupName);
+        return uploadFileAndMetaData(client, stream, request.fileSize(),
+                request.fileExtName(), request.metaData(), true);
+    }
+
+    @Override
+    public void appendFile(String groupName, String path, File file) {
+        this.appendFile(AppendFileRequest.builder()
+                .groupName(groupName).path(path).file(file).build());
+    }
+
+    @Override
+    public void appendFile(String groupName, String path, InputStream stream, long fileSize) {
+        this.appendFile(AppendFileRequest.builder()
+                .groupName(groupName).path(path).stream(stream, fileSize).build());
     }
 
     @Override
     public void appendFile(AppendFileRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
-        // 获取上传流
-        InputStream stream = wrapperStream(request);
+        InputStream stream = getInputStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageAppendFileCommand command = new StorageAppendFileCommand(stream, request.fileSize(), path);
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        if (request.metaType() != null) {
-            // 上传metadata
-            uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
-        }
+        // 上传metadata
+        uploadMetaData(client.getInetSocketAddress(), groupName, path, request.metaType(), request.metaData());
     }
 
-    private void uploadMetaData(StorageNodeInfo client, String groupName, String path, StorageMetadataSetType type, Set<MetaData> metaData) {
-        StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(groupName, path, metaData, type);
-        if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE) {
-            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
-        }
-        if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE) {
-            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
-        }
+    @Override
+    public void modifyFile(String groupName, String path, InputStream stream, long fileSize, long offset) {
+        this.modifyFile(ModifyFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .stream(stream, fileSize, offset)
+                .build());
     }
 
     @Override
     public void modifyFile(ModifyFileRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
-        // 获取上传流
-        InputStream stream = wrapperStream(request);
-        // 获取存储节点
+        InputStream stream = getInputStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageModifyCommand command = new StorageModifyCommand(path, stream, request.fileSize(), request.offset());
-        // 修改文件
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        uploadMetaData(client.getInetSocketAddress(), groupName, path, request.metaType(), request.metaData());
+    }
 
-        if (request.metaType() != null) {
-            // 上传metadata
-            uploadMetaData(client, groupName, path, request.metaType(), request.metaData());
-        }
+    @Override
+    public void truncateFile(String groupName, String path) {
+        this.truncateFile(TruncateFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .fileSize(0)
+                .build());
+    }
+
+    @Override
+    public void truncateFile(String groupName, String path, long size) {
+        this.truncateFile(TruncateFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .fileSize(size)
+                .build());
     }
 
     @Override
     public void truncateFile(TruncateFileRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
-        // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
-        // 清除文件
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
+    public StorePath regenerateAppenderFile(String groupName, String path) {
+        return this.regenerateAppenderFile(RegenerateAppenderFileRequest.builder()
+                .groupName(groupName).path(path).build());
+    }
+
+    @Override
     public StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         // 获取存储节点
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
@@ -508,15 +626,22 @@ public class FastDfsClient implements FastDfs {
         return storePath;
     }
 
+    @Override
+    public StorePath initMultipartUpload(long fileSize, String fileExtName) {
+        return this.initMultipartUpload(InitMultipartUploadRequest.builder()
+                .fileSize(fileSize).fileExtName(fileExtName).build());
+    }
+
     // endregion appender
 
     // region multipart
 
     @Override
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
-        UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
-                .groupName(getGroupName(request))
-                .stream(new ByteArrayInputStream(new byte[]{}), 0, FastDFSUtils.handlerFilename(request.fileExtName()))
+        String groupName = getGroupName(request.groupName());
+        UploadAppendFileRequest uploadFileRequest = UploadAppendFileRequest.builder()
+                .groupName(groupName)
+                .stream(new ByteArrayInputStream(new byte[]{}), 0, FastDfsUtils.handlerFilename(request.fileExtName()))
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
         if (request.fileSize() > 0) {
@@ -530,10 +655,42 @@ public class FastDfsClient implements FastDfs {
         return storePath;
     }
 
+    @Override
+    public void uploadMultipart(String groupName, String path, File file, long offset) {
+        this.uploadMultipart(UploadMultipartPartRequest.builder()
+                .groupName(groupName).path(path)
+                .fileOffset(file, offset)
+                .build());
+    }
+
+    @Override
+    public void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize) {
+        this.uploadMultipart(UploadMultipartPartRequest.builder()
+                .groupName(groupName).path(path)
+                .filePart(file, partNumber, partSize)
+                .build());
+    }
+
+    @Override
+    public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset) {
+        this.uploadMultipart(UploadMultipartPartRequest.builder()
+                .groupName(groupName).path(path)
+                .streamOffset(stream, fileSize, offset)
+                .build());
+    }
+
+    @Override
+    public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, int partNumber, long partSize) {
+        this.uploadMultipart(UploadMultipartPartRequest.builder()
+                .groupName(groupName).path(path)
+                .streamPart(stream, fileSize, partNumber, partSize)
+                .build());
+    }
+
 
     @Override
     public void uploadMultipart(UploadMultipartPartRequest request) {
-        String groupName = getGroupName(request);
+        String groupName = getGroupName(request.groupName());
         String path = request.path();
         ModifyFileRequest modifyFileRequest;
         if (request.file() != null) {
@@ -552,8 +709,21 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public StorePath completeMultipartUpload(String groupName, String path) {
+        return this.completeMultipartUpload(CompleteMultipartRequest.builder()
+                .groupName(groupName).path(path).build());
+    }
+
+    @Override
+    public StorePath completeMultipartUpload(String groupName, String path, boolean regenerate) {
+        return this.completeMultipartUpload(CompleteMultipartRequest.builder()
+                .groupName(groupName).path(path).regenerate(regenerate).build());
+    }
+
+    @Override
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
-        StorePath storePath = new StorePath(getGroupName(request), request.path());
+        String groupName = getGroupName(request.groupName());
+        StorePath storePath = new StorePath(groupName, request.path());
         if (request.regenerate()) {
             RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
                     .groupName(storePath.getGroup())
@@ -577,50 +747,34 @@ public class FastDfsClient implements FastDfs {
     /**
      * 获取分组
      *
-     * @param args
+     * @param groupName
      * @return
      */
-    private String getGroupName(GroupArgs args) {
-        String groupName = StringUtils.isNotBlank(this.defaultGroup) ? this.defaultGroup : args.groupName();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("获取到上传的groupName={}", groupName);
-        }
-        return groupName;
+    private String getGroupName(String groupName) {
+        return StringUtils.isBlank(groupName) ? defaultGroup : groupName;
     }
 
-    /**
-     * 装饰流
-     *
-     * @param args
-     * @return
-     */
-    private InputStream wrapperStream(AbstractFileArgs args) {
-        InputStream stream = getStream(args);
+    private InputStream getInputStream(final AbstractFileArgs args) {
+        final InputStream stream = getStream(args.stream(), args.file());
         return progressStream(args.listener(), stream);
     }
 
-    private InputStream progressStream(ProgressListener listener, InputStream is) {
+    private InputStream progressStream(final ProgressListener listener, final InputStream stream) {
         return (listener == null || listener == ProgressListener.NOOP) ?
-                is : ProgressInputStream.inputStreamForRequest(is, listener);
+                stream : ProgressInputStream.inputStreamForRequest(stream, listener);
     }
 
-    /**
-     * 获取上传流
-     */
-    private InputStream getStream(AbstractFileArgs args) {
-        Objects.requireNonNull(args);
-        File file = args.file();
-        InputStream is = args.stream();
-        if (file != null) {
-            try {
-                is = new FileInputStream(file);
-            } catch (FileNotFoundException e) {
-                throw new FdfsIOException(e);
+    private InputStream getStream(final InputStream origin, final File file) {
+        InputStream input = origin;
+        if (file == null) {
+            if (input == null) {
+                throw new IllegalArgumentException("upload content cannot be empty. ");
             }
+            input = InputStreamWrapper.wrap(input);
         } else {
-            is = new BufferedInputStream(is, FastDFSConstants.DEFAULT_STREAM_BUFFER_SIZE);
+            input = InputStreamWrapper.wrap(file);
         }
-        return is;
+        return input;
     }
 
 }

@@ -11,14 +11,14 @@ public class MonitorTest extends BaseClientTest {
 
     @Test
     public void storageSpaceTest() {
-        new StorageMonitor(fastDFS.trackerClient(), "85%").monitor();
-        new StorageMonitor(fastDFS.trackerClient(), "36.72G").monitor();
-        new StorageMonitor(fastDFS.trackerClient(), "36.73g").monitor();
-        new StorageMonitor(fastDFS.trackerClient(), "37597M").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), "85%").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), "36.72G").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), "36.73g").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), "37597M").monitor();
 
         long b = 1024 * 1024 * 1000L * 38;
-        new StorageMonitor(fastDFS.trackerClient(), b + "b").monitor();
-        new StorageMonitor(fastDFS.trackerClient(), b + "").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), b + "b").monitor();
+        new StorageMonitor(fastDFS.getTrackerClient(), b + "").monitor();
     }
 
 }

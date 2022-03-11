@@ -9,9 +9,9 @@ package com.ykrenz.fastdfs.config;
 public class FastDFSConfiguration {
 
     /**
-     * 上传到固定分组 优先级大于参数
+     * 默认分组 优先级大于参数
      */
-    private String groupName;
+    private String defaultGroup;
     /**
      * http相关配置
      */
@@ -21,12 +21,12 @@ public class FastDFSConfiguration {
      */
     private ConnectionConfiguration connection = new ConnectionConfiguration();
 
-    public String getGroupName() {
-        return groupName;
+    public String getDefaultGroup() {
+        return defaultGroup;
     }
 
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
+    public void setDefaultGroup(String defaultGroup) {
+        this.defaultGroup = defaultGroup;
     }
 
     public HttpConfiguration getHttp() {
