@@ -1,7 +1,7 @@
 package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.common.Crc32;
-import com.ykrenz.fastdfs.config.FastDFSConfiguration;
+import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.AppendFileRequest;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
@@ -74,7 +74,7 @@ public class App {
         // 配置构建
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);
@@ -261,7 +261,7 @@ public class App {
         // 配置构建
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);

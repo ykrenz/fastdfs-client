@@ -49,7 +49,7 @@
     // 配置构建
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);
@@ -74,7 +74,7 @@ try {
 }
 ```
 
-FastDFSConfiguration配置详解：
+FastDfsConfiguration配置详解：
 
 | 参数                          | 含义                        | 默认值            | 备注                                                         |
 | ----------------------------- | --------------------------- | ----------------- | ------------------------------------------------------------ |
@@ -284,7 +284,7 @@ List<String> trackerServers = new ArrayList<>();
 ``` java
     List<String> trackerServers = new ArrayList<>();
     trackerServers.add("192.168.24.130:22122");
-    FastDFSConfiguration configuration = new FastDFSConfiguration();
+    FastDfsConfiguration configuration = new FastDfsConfiguration();
     configuration.setDefaultGroup("group1");
     configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
     configuration.getHttp().setWebServerUrlHasGroup(true);

@@ -1,6 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.config.FastDFSConfiguration;
+import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.config.HttpConfiguration;
 import com.ykrenz.fastdfs.conn.FdfsConnectionManager;
 import com.ykrenz.fastdfs.conn.FdfsConnectionPool;
@@ -79,7 +79,7 @@ public class FastDfsClient implements FastDfs {
      */
     private final HttpConfiguration http;
 
-    public FastDfsClient(final List<String> trackerServers, final FastDFSConfiguration configuration) {
+    public FastDfsClient(final List<String> trackerServers, final FastDfsConfiguration configuration) {
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);

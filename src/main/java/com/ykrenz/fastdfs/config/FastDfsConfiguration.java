@@ -6,7 +6,7 @@ package com.ykrenz.fastdfs.config;
  * @author ykren
  * @date 2022/1/24
  */
-public class FastDFSConfiguration {
+public class FastDfsConfiguration {
 
     /**
      * 默认分组 优先级大于参数

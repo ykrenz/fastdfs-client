@@ -1,6 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.config.FastDFSConfiguration;
+import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -40,7 +40,7 @@ public class BaseClientTest {
 
     @Before
     public void initClient() {
-        FastDFSConfiguration configuration = new FastDFSConfiguration();
+        FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);

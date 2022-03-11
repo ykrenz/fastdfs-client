@@ -1,6 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.config.FastDFSConfiguration;
+import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 
 import java.util.List;
 
@@ -27,5 +27,5 @@ public interface FastDfsBuilder {
      * @param configuration
      * @return
      */
-    FastDfs build(List<String> trackerServers, FastDFSConfiguration configuration);
+    FastDfs build(List<String> trackerServers, FastDfsConfiguration configuration);
 }

@@ -1,6 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.config.FastDFSConfiguration;
+import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public final class FastDfsClientBuilder implements FastDfsBuilder {
      * @return
      */
     @Override
-    public FastDfs build(List<String> trackerServers, FastDFSConfiguration configuration) {
+    public FastDfs build(List<String> trackerServers, FastDfsConfiguration configuration) {
         return new FastDfsClient(trackerServers, getFastDFSConfiguration(configuration));
     }
 
@@ -38,13 +38,13 @@ public final class FastDfsClientBuilder implements FastDfsBuilder {
      *
      * @return
      */
-    private static FastDFSConfiguration getFastDFSConfiguration() {
-        return new FastDFSConfiguration();
+    private static FastDfsConfiguration getFastDFSConfiguration() {
+        return new FastDfsConfiguration();
     }
 
-    private static FastDFSConfiguration getFastDFSConfiguration(FastDFSConfiguration config) {
+    private static FastDfsConfiguration getFastDFSConfiguration(FastDfsConfiguration config) {
         if (config == null) {
-            config = new FastDFSConfiguration();
+            config = new FastDfsConfiguration();
         }
         return config;
     }
