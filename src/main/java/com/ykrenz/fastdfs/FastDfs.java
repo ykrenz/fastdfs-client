@@ -46,6 +46,33 @@ public interface FastDfs {
     void shutdown();
 
     /**
+     * 获取web地址
+     *
+     * @param groupName
+     * @param path
+     * @return
+     */
+    String getWebPath(String groupName, String path);
+
+    /**
+     * 获取下载地址
+     *
+     * @param groupName
+     * @param path
+     * @return
+     */
+    String getDownLoadPath(String groupName, String path, String downloadFileName);
+
+    /**
+     * 获取下载地址
+     *
+     * @param groupName
+     * @param path
+     * @return
+     */
+    String getDownLoadPath(String groupName, String path, String argName, String downloadFileName);
+
+    /**
      * 上传一般文件
      *
      * @param file

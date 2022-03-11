@@ -110,6 +110,24 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public String getWebPath(String groupName, String path) {
+        StorePath storePath = new StorePath(groupName, path, http);
+        return storePath.getWebPath();
+    }
+
+    @Override
+    public String getDownLoadPath(String groupName, String path, String downloadFileName) {
+        StorePath storePath = new StorePath(groupName, path, http);
+        return storePath.getDownLoadPath(downloadFileName);
+    }
+
+    @Override
+    public String getDownLoadPath(String groupName, String path, String argName, String downloadFileName) {
+        StorePath storePath = new StorePath(groupName, path, http);
+        return storePath.getDownLoadPath(argName, downloadFileName);
+    }
+
+    @Override
     public StorePath uploadFile(File file) {
         return this.uploadFile(UploadFileRequest.builder().file(file).build());
     }
