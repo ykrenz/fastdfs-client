@@ -1,13 +1,11 @@
 package com.ykrenz.fastdfs.monitor;
 
 import com.ykrenz.fastdfs.TrackerClient;
-import com.ykrenz.fastdfs.exception.FdfsUnavailableException;
 import com.ykrenz.fastdfs.model.fdfs.GroupState;
 import com.ykrenz.fastdfs.model.fdfs.StorageState;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,9 +42,6 @@ public class StorageMonitor implements FastDfsMonitor {
             List<String> trackerServers = trackerClient.getTrackerServers();
             LOGGER.debug("trackerServers::{}", trackerServers);
             List<GroupState> groupStates = trackerClient.listGroups();
-            if (CollectionUtils.isEmpty(groupStates)) {
-                monitorException(new FdfsUnavailableException("No available group found in tracker service" + trackerServers));
-            }
             for (GroupState groupState : groupStates) {
                 LOGGER.debug("group stage::{}", groupState);
                 String groupName = groupState.getGroupName();
