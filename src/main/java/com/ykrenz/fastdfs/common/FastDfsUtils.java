@@ -14,14 +14,14 @@ import java.util.regex.Pattern;
  * @author ykren
  * @date 2022/1/28
  */
-public final class FastDFSUtils {
-    private FastDFSUtils() {
+public final class FastDfsUtils {
+    private FastDfsUtils() {
     }
 
     /**
      * 日志
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(FastDFSUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FastDfsUtils.class);
     /**
      * 文件名或者文件前缀校验正则
      */

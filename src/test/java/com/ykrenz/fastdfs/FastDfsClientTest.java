@@ -8,6 +8,7 @@ import com.ykrenz.fastdfs.model.ThumbImage;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadImageRequest;
 import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
@@ -46,7 +47,21 @@ public class FastDfsClientTest extends BaseClientTest {
     @Test
     public void uploadFile() throws IOException {
         LOGGER.debug("##上传文件..##");
+
+        StorePath storePath = fastDFS.uploadFile(getFile());
+        delete(storePath);
+
+        storePath = fastDFS.uploadFile("group1", getFile());
+        delete(storePath);
+
         RandomTextFile file = new RandomTextFile();
+
+        storePath = fastDFS.uploadFile(file.getInputStream(), file.getFileSize(), file.getFileExtName());
+        delete(storePath);
+
+        storePath = fastDFS.uploadFile("group1", file.getInputStream(), file.getFileSize(), file.getFileExtName());
+        delete(storePath);
+
 //        File file = new File(testFilePath);
 //        FileInputStream stream = new FileInputStream(file);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
@@ -76,7 +91,7 @@ public class FastDfsClientTest extends BaseClientTest {
                     }
                 })
                 .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
         LOGGER.info("上传文件 result={}", storePath);
         LOGGER.info("上传文件 webPath={}", storePath.getWebPath());
@@ -238,6 +253,14 @@ public class FastDfsClientTest extends BaseClientTest {
                 .build();
         fastDFS.mergeMetadata(metaDataRequest);
 
+        Set<MetaData> mms = new HashSet<>();
+        mms.add(new MetaData("key1", "mmsvalue"));
+        fastDFS.mergeMetadata(storePath.getGroup(), storePath.getPath(), mms);
+        mms = getMetaData(storePath);
+        assertEquals(2, mms.size());
+        assertTrue(mms.contains(new MetaData("key1", "mmsvalue")));
+        assertTrue(mms.contains(new MetaData("key2", "newvalue2")));
+
         Set<MetaData> newMeta = getMetaData(storePath);
         assertEquals(2, newMeta.size());
         assertTrue(newMeta.contains(new MetaData("key1", "newvalue1")));
@@ -267,10 +290,24 @@ public class FastDfsClientTest extends BaseClientTest {
         assertEquals(1, soMeta.size());
         assertTrue(soMeta.contains(new MetaData("skeyo", "svalueo")));
 
+        fastDFS.deleteMetadata(storePath.getGroup(), storePath.getPath());
+        assertEquals(0, getMetaData(storePath).size());
 
         delete(storePath);
         delete(slaveFile);
         assertNull(queryFile(storePath));
         assertNull(queryFile(slaveFile));
+    }
+
+    @Test
+    public void queryFileTest() {
+        StorePath storePath = uploadRandomFile();
+        FileInfo fileInfo = fastDFS.queryFileInfo(storePath.getGroup(), storePath.getPath());
+        assertNotNull(fileInfo);
+
+        fastDFS.deleteFile(storePath.getGroup(), storePath.getPath());
+        fileInfo = fastDFS.queryFileInfo(storePath.getGroup(), storePath.getPath());
+        assertNull(fileInfo);
+
     }
 }

@@ -1,6 +1,6 @@
 package com.ykrenz.fastdfs.model.fdfs;
 
-import com.ykrenz.fastdfs.common.FastDFSUtils;
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 import com.ykrenz.fastdfs.config.HttpConfiguration;
 import com.ykrenz.fastdfs.model.proto.OtherConstants;
 import com.ykrenz.fastdfs.model.proto.mapper.DynamicFieldType;
@@ -159,7 +159,7 @@ public class StorePath {
         }
         Charset charset = http.getCharset() == null ? StandardCharsets.UTF_8 : Charset.forName(http.getCharset());
         int ts = (int) (System.currentTimeMillis() / 1000);
-        String token = FastDFSUtils.getToken(getPath(), ts, http.getSecretKey(), charset);
+        String token = FastDfsUtils.getToken(getPath(), ts, http.getSecretKey(), charset);
         return "?token=" + token + "&ts=" + ts;
     }
 

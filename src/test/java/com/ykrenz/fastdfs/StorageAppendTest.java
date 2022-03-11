@@ -4,7 +4,7 @@ import com.ykrenz.fastdfs.model.AppendFileRequest;
 import com.ykrenz.fastdfs.model.ModifyFileRequest;
 import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
 import com.ykrenz.fastdfs.model.TruncateFileRequest;
-import com.ykrenz.fastdfs.model.UploadFileRequest;
+import com.ykrenz.fastdfs.model.UploadAppendFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
@@ -43,7 +43,7 @@ public class StorageAppendTest extends BaseClientTest {
     public void uploadAppendFile() throws IOException {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
+        UploadAppendFileRequest fileRequest = UploadAppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .build();
         StorePath storePath = fastDFS.uploadAppenderFile(fileRequest);
@@ -113,7 +113,7 @@ public class StorageAppendTest extends BaseClientTest {
     public void modifyAppendFile() throws IOException {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
+        UploadAppendFileRequest fileRequest = UploadAppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
@@ -210,7 +210,7 @@ public class StorageAppendTest extends BaseClientTest {
     public void truncateFile() {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
+        UploadAppendFileRequest fileRequest = UploadAppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")
@@ -245,7 +245,7 @@ public class StorageAppendTest extends BaseClientTest {
     public void regenerateAppenderFile() {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
-        UploadFileRequest fileRequest = UploadFileRequest.builder()
+        UploadAppendFileRequest fileRequest = UploadAppendFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .metaData("key1", "value1")
                 .metaData("key2", "value2")

@@ -42,7 +42,7 @@ public class BaseClientTest {
     @Before
     public void initClient() {
         FastDFSConfiguration configuration = new FastDFSConfiguration();
-        configuration.setGroupName("group1");
+        configuration.setDefaultGroup("group1");
         configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
         configuration.getHttp().setWebServerUrlHasGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
