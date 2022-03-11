@@ -24,7 +24,6 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
      * 从文件前缀
      */
     protected String prefix;
-
     /**
      * 主文件 path
      */

@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -48,7 +47,7 @@ public class BaseClientTest {
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
         fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST, configuration);
-        trackerClient = fastDFS.trackerClient();
+        trackerClient = fastDFS.getTrackerClient();
         LOGGER.info("初始化tracker={}", trackerClient.getTrackerServers());
         LOGGER.info("fastDFSClient={}", fastDFS);
     }

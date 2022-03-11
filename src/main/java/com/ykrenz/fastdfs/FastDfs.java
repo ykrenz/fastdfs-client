@@ -38,7 +38,7 @@ public interface FastDfs {
      *
      * @return
      */
-    TrackerClient trackerClient();
+    TrackerClient getTrackerClient();
 
     /**
      * 关闭客户端
@@ -158,6 +158,15 @@ public interface FastDfs {
     /**
      * 修改文件元信息（覆盖）
      *
+     * @param groupName
+     * @param path
+     * @param metaData
+     */
+    void overwriteMetadata(String groupName, String path, Set<MetaData> metaData);
+
+    /**
+     * 修改文件元信息（覆盖）
+     *
      * @param request
      */
     void overwriteMetadata(MetaDataRequest request);
@@ -169,7 +178,7 @@ public interface FastDfs {
      * @param path
      * @param metaData
      */
-    void overwriteMetadata(String groupName, String path, Set<MetaData> metaData);
+    void mergeMetadata(String groupName, String path, Set<MetaData> metaData);
 
     /**
      * 修改文件元信息（合并）
@@ -177,15 +186,6 @@ public interface FastDfs {
      * @param request
      */
     void mergeMetadata(MetaDataRequest request);
-
-    /**
-     * 修改文件元信息（覆盖）
-     *
-     * @param groupName
-     * @param path
-     * @param metaData
-     */
-    void mergeMetadata(String groupName, String path, Set<MetaData> metaData);
 
     /**
      * 删除文件元信息
@@ -215,17 +215,17 @@ public interface FastDfs {
     /**
      * 删除文件
      *
-     * @param request
-     */
-    void deleteFile(FileInfoRequest request);
-
-    /**
-     * 删除文件
-     *
      * @param groupName
      * @param path
      */
     void deleteFile(String groupName, String path);
+
+    /**
+     * 删除文件
+     *
+     * @param request
+     */
+    void deleteFile(FileInfoRequest request);
 
     /**
      * 下载文件
@@ -346,17 +346,17 @@ public interface FastDfs {
      *
      * @param groupName
      * @param path
-     * @param size
      */
-    void truncateFile(String groupName, String path, long size);
+    void truncateFile(String groupName, String path);
 
     /**
      * 清除续传类型文件的内容
      *
      * @param groupName
      * @param path
+     * @param size
      */
-    void truncateFile(String groupName, String path);
+    void truncateFile(String groupName, String path, long size);
 
     /**
      * 清除续传类型文件的内容
@@ -369,18 +369,18 @@ public interface FastDfs {
      * appender类型文件改名为普通文件 V6.02及以上版本
      * since V6.02, rename appender file to normal file
      *
-     * @param request
      * @return
      */
-    StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request);
+    StorePath regenerateAppenderFile(String groupName, String path);
 
     /**
      * appender类型文件改名为普通文件 V6.02及以上版本
      * since V6.02, rename appender file to normal file
      *
+     * @param request
      * @return
      */
-    StorePath regenerateAppenderFile(String groupName, String path);
+    StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request);
 
     /**
      * 初始化分片上传

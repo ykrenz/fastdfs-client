@@ -100,7 +100,7 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public TrackerClient trackerClient() {
+    public TrackerClient getTrackerClient() {
         return trackerClient;
     }
 
@@ -397,6 +397,15 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public void overwriteMetadata(String groupName, String path, Set<MetaData> metaData) {
+        this.overwriteMetadata(MetaDataRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .metaData(metaData)
+                .build());
+    }
+
+    @Override
     public void overwriteMetadata(MetaDataRequest request) {
         String groupName = getGroupName(request.groupName());
         String path = request.path();
@@ -406,8 +415,8 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public void overwriteMetadata(String groupName, String path, Set<MetaData> metaData) {
-        this.overwriteMetadata(MetaDataRequest.builder()
+    public void mergeMetadata(String groupName, String path, Set<MetaData> metaData) {
+        this.mergeMetadata(MetaDataRequest.builder()
                 .groupName(groupName)
                 .path(path)
                 .metaData(metaData)
@@ -422,15 +431,6 @@ public class FastDfsClient implements FastDfs {
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client.getInetSocketAddress(), groupName, path,
                 StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE, request.metaData());
-    }
-
-    @Override
-    public void mergeMetadata(String groupName, String path, Set<MetaData> metaData) {
-        this.mergeMetadata(MetaDataRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .metaData(metaData)
-                .build());
     }
 
     @Override
@@ -460,20 +460,20 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public void deleteFile(String groupName, String path) {
+        this.deleteFile(FileInfoRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .build());
+    }
+
+    @Override
     public void deleteFile(FileInfoRequest request) {
         String groupName = getGroupName(request.groupName());
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
         fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-    }
-
-    @Override
-    public void deleteFile(String groupName, String path) {
-        this.deleteFile(FileInfoRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .build());
     }
 
     @Override
@@ -582,20 +582,20 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public void truncateFile(String groupName, String path, long size) {
-        this.truncateFile(TruncateFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .fileSize(size)
-                .build());
-    }
-
-    @Override
     public void truncateFile(String groupName, String path) {
         this.truncateFile(TruncateFileRequest.builder()
                 .groupName(groupName)
                 .path(path)
                 .fileSize(0)
+                .build());
+    }
+
+    @Override
+    public void truncateFile(String groupName, String path, long size) {
+        this.truncateFile(TruncateFileRequest.builder()
+                .groupName(groupName)
+                .path(path)
+                .fileSize(size)
                 .build());
     }
 
@@ -609,6 +609,12 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public StorePath regenerateAppenderFile(String groupName, String path) {
+        return this.regenerateAppenderFile(RegenerateAppenderFileRequest.builder()
+                .groupName(groupName).path(path).build());
+    }
+
+    @Override
     public StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request) {
         String groupName = getGroupName(request.groupName());
         String path = request.path();
@@ -618,12 +624,6 @@ public class FastDfsClient implements FastDfs {
         StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         storePath.setHttp(http);
         return storePath;
-    }
-
-    @Override
-    public StorePath regenerateAppenderFile(String groupName, String path) {
-        return this.regenerateAppenderFile(RegenerateAppenderFileRequest.builder()
-                .groupName(groupName).path(path).build());
     }
 
     @Override
