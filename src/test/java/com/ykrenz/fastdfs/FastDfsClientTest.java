@@ -130,6 +130,21 @@ public class FastDfsClientTest extends BaseClientTest {
         LOGGER.info("上传文件 downLoadPath2={} downLoadPath2={}",
                 storePath.getDownLoadPath("name", "1.txt"),
                 slaveFile.getDownLoadPath("name", "1.txt"));
+
+
+        StorePath slaveFilePath = fastDFS.uploadSlaveFile(storePath.getGroup(), storePath.getPath(), "_file_", getFile());
+        LOGGER.info("上传文件 result={} slaveFilePath={}", storePath, slaveFilePath);
+        Assert.assertNotNull(slaveFilePath);
+        delete(slaveFilePath);
+        assertNull(queryFile(slaveFilePath));
+
+        StorePath slaveFilePath2 = fastDFS.uploadSlaveFile(storePath.getGroup(), storePath.getPath(), "_is_",
+                file.getInputStream(),file.getFileSize(),file.getFileExtName());
+        LOGGER.info("上传文件 result={} slaveFilePath={}", storePath, slaveFilePath2);
+        Assert.assertNotNull(slaveFilePath2);
+        delete(slaveFilePath2);
+        assertNull(queryFile(slaveFilePath2));
+
         delete(storePath);
         delete(slaveFile);
         assertNull(queryFile(storePath));

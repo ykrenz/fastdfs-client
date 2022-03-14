@@ -131,7 +131,7 @@ public class TrackerLocator {
             InetSocketAddress address = holder.getAddress();
             config.append(address.toString()).append(",");
         }
-        return config.substring(0, config.length() - 1);
+        return config.length() > 0 ? config.substring(0, config.length() - 1) : config.toString();
     }
 
     /**
@@ -164,24 +164,15 @@ public class TrackerLocator {
      *
      * @param trackerServer
      */
-    public boolean addTracker(String trackerServer) {
+    public void addTracker(String trackerServer) {
+        TRACKER_LOCK.lock();
         try {
-            if (TRACKER_LOCK.tryLock()) {
-                if (StringUtils.isBlank(trackerServer)) {
-                    return false;
-                }
-
-                if (trackerServers.contains(trackerServer)) {
-                    return true;
-                }
-
-                if (!initTrackerServer(trackerServer)) {
-                    return false;
-                }
-                trackerServers.add(trackerServer);
-                return true;
+            if (StringUtils.isBlank(trackerServer) ||
+                    trackerServers.contains(trackerServer) ||
+                    !initTrackerServer(trackerServer)) {
+                return;
             }
-            return false;
+            trackerServers.add(trackerServer);
         } finally {
             TRACKER_LOCK.unlock();
         }
@@ -192,22 +183,16 @@ public class TrackerLocator {
      *
      * @param trackerServer
      */
-    public boolean removeTracker(String trackerServer) {
+    public void removeTracker(String trackerServer) {
+        TRACKER_LOCK.lock();
         try {
-            if (TRACKER_LOCK.tryLock()) {
-                if (StringUtils.isBlank(trackerServer)) {
-                    return false;
-                }
-
-                if (!trackerServers.contains(trackerServer)) {
-                    return true;
-                }
-
-                InetSocketAddress address = getInetSocketAddress(trackerServer);
-                TrackerAddressHolder holder = trackerAddressMap.remove(address);
-                return trackerAddressCircular.remove(holder) && trackerServers.remove(trackerServer);
+            if (StringUtils.isBlank(trackerServer) || !trackerServers.contains(trackerServer)) {
+                return;
             }
-            return false;
+            InetSocketAddress address = getInetSocketAddress(trackerServer);
+            TrackerAddressHolder holder = trackerAddressMap.remove(address);
+            trackerAddressCircular.remove(holder);
+            trackerServers.remove(trackerServer);
         } finally {
             TRACKER_LOCK.unlock();
         }

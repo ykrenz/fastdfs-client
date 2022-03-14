@@ -199,6 +199,25 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
+    public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix, File file) {
+        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
+                .masterPath(masterFilePath)
+                .prefix(prefix)
+                .file(file)
+                .build());
+    }
+
+    @Override
+    public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix,
+                                     InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
+                .masterPath(masterFilePath)
+                .prefix(prefix)
+                .stream(stream, fileSize, fileExtName)
+                .build());
+    }
+
+    @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
         String groupName = getGroupName(request.groupName());
         InputStream stream = getInputStream(request);

@@ -41,13 +41,13 @@ public class DefaultTrackerClient implements TrackerClient {
     }
 
     @Override
-    public boolean addTrackerServer(String trackerServer) {
-        return trackerConnectionManager.getTrackerLocator().addTracker(trackerServer);
+    public void addTrackerServer(String trackerServer) {
+        trackerConnectionManager.getTrackerLocator().addTracker(trackerServer);
     }
 
     @Override
-    public boolean removeTrackerServer(String trackerServer) {
-        return trackerConnectionManager.getTrackerLocator().removeTracker(trackerServer);
+    public void removeTrackerServer(String trackerServer) {
+        trackerConnectionManager.getTrackerLocator().removeTracker(trackerServer);
     }
 
     /**

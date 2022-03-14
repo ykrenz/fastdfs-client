@@ -124,6 +124,31 @@ public interface FastDfs {
     /**
      * 上传从文件
      *
+     * @param groupName
+     * @param masterFilePath
+     * @param prefix
+     * @param file
+     * @return
+     */
+    StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix, File file);
+
+    /**
+     * 上传从文件
+     *
+     * @param groupName
+     * @param masterFilePath
+     * @param prefix
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
+     * @return
+     */
+    StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix,
+                              InputStream stream, long fileSize, String fileExtName);
+
+    /**
+     * 上传从文件
+     *
      * @param request
      * @return
      */
@@ -505,7 +530,10 @@ public interface FastDfs {
      * 完成分片上传
      * version<6.02 regenerate = false
      *
-     * @return 最终文件路径
+     * @param groupName
+     * @param path
+     * @param regenerate
+     * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(String groupName, String path, boolean regenerate);
 
@@ -514,7 +542,7 @@ public interface FastDfs {
      * version<6.02 regenerate = false
      *
      * @param request
-     * @return 最终文件路径
+     * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(CompleteMultipartRequest request);
 
