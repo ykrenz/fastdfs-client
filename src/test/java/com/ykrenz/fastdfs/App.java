@@ -4,6 +4,7 @@ import com.ykrenz.fastdfs.common.Crc32;
 import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.AppendFileRequest;
+import com.ykrenz.fastdfs.model.FastDfsWeb;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
@@ -33,7 +34,7 @@ public class App {
     static File sampleFile = new File("tmp", "sampleFile.txt");
 
     static {
-        int length = 1024 * 1024 * 100; // 100M
+        int length = 1024 * 1024 * 2; // 2M
         RandomTextFile file = new RandomTextFile(length);
         try {
             FileUtils.copyToFile(file.getInputStream(), sampleFile);
@@ -43,8 +44,8 @@ public class App {
     }
 
     public static void main(String[] args) {
-        FastDfs fastDfs = fastDfs();
-        fastDfs.shutdown();
+//        FastDfs fastDfs = fastDfs();
+//        fastDfs.shutdown();
 //        FastDfs configDfs = configDfs();
 //        configDfs.shutdown();
 //
@@ -76,22 +77,27 @@ public class App {
         trackerServers.add("192.168.24.130:22122");
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
-        configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
-        configuration.getHttp().setWebServerUrlHasGroup(true);
+        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.24.131:8888");
+        configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
+
         FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
         StorePath storePath = fastDfs.uploadFile(sampleFile);
         fastDfs.shutdown();
         System.out.println("上传文件成功" + storePath);
-        System.out.println("web访问路径" + storePath.getWebPath());
-        // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
-        System.out.println("web下载路径" + storePath.getDownLoadPath("1.txt"));
 
-        String webPath = fastDfs.getWebPath(storePath.getGroup(), storePath.getPath());
-        System.out.println(webPath);
-        String downLoadPath = fastDfs.getDownLoadPath(storePath.getGroup(), storePath.getPath(), "1.txt");
-        System.out.println(downLoadPath);
+        // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
+        String webPath1 = fastDfs.accessUrl(storePath.getGroup(), storePath.getPath());
+        String webPath2 = fastDfs.accessUrl(storePath.getGroup(), storePath.getPath());
+        System.out.println("web访问路径1 " + webPath1);
+        System.out.println("web访问路径2 " + webPath2);
+
+        String downLoadPath1 = fastDfs.downLoadUrl(storePath.getGroup(), storePath.getPath(), sampleFile.getName());
+        System.out.println("web下载路径1 " + downLoadPath1);
+        String downLoadPath2 = fastDfs.downLoadUrl(storePath.getGroup(), storePath.getPath(), "attachment", sampleFile.getName());
+        System.out.println("web下载路径自定义参数名2 " + downLoadPath2);
     }
 
     private static void downLoadFile() {
@@ -263,8 +269,8 @@ public class App {
         trackerServers.add("192.168.24.130:22122");
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
-        configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
-        configuration.getHttp().setWebServerUrlHasGroup(true);
+        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+        configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
         return new FastDfsClientBuilder().build(trackerServers, configuration);

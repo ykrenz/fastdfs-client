@@ -1,7 +1,9 @@
 package com.ykrenz.fastdfs.config;
 
-import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import com.ykrenz.fastdfs.model.fdfs.FastDFSConstants;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * http相关配置
@@ -10,34 +12,29 @@ import com.ykrenz.fastdfs.model.fdfs.FastDFSConstants;
  * @date 2022/2/15
  */
 public class HttpConfiguration {
+
     /**
-     * web访问路径 eg: nginx地址
-     * <p>
-     * 配合fastdfs-nginx-module使用
-     * <p>
-     * 预览地址{@link StorePath#getWebPath()}
-     * 下载地址{@link StorePath#getDownLoadPath(String)} ()}
-     * <p>
-     * nginx参考配置
+     * web访问url 默认为负载均衡轮询
+     * nginx参考配置 配合fastdfs-nginx-module使用
+     *       server {
+     *         listen 8888;
+     *         server_name localhost;
+     *         #location ~/group([0-9])/M00 {
+     *             location ~/M00 {
+     *                 root /home/data/fastdfs/storage;
+     *                 if ($arg_attname ~ "^(.+)") {
+     *                     add_header Content-Disposition "attachment;filename=$arg_attname";
+     *                 }
+     *                 ngx_fastdfs_module;
+     *             }
+     *         }
      */
-//    server {
-//        listen 8888;
-//        server_name localhost;
-//        #location ~/group([0-9])/M00 {
-//            location ~/M00 {
-//                root /home/data/fastdfs/storage;
-//                if ($arg_attname ~ "^(.+)") {
-//                    add_header Content-Disposition "attachment;filename=$arg_attname";
-//                }
-//                ngx_fastdfs_module;
-//            }
-//        }
-    private String webServerUrl = "http://localhost";
+    private List<String> webServers = new ArrayList<>();
     /**
      * web路径是否包含Group
      * 关联mod_fastdfs.conf url_have_group_name
      */
-    private boolean webServerUrlHasGroup;
+    private boolean urlHaveGroup;
     /**
      * 是否开启http防盗链
      * 关联http.config http.anti_steal.check_token
@@ -51,22 +48,22 @@ public class HttpConfiguration {
     /**
      * 字符集
      */
-    private String charset = FastDFSConstants.DEFAULT_CHARSET;
+    private String secretKeyCharset = FastDFSConstants.DEFAULT_CHARSET;
 
-    public String getWebServerUrl() {
-        return webServerUrl;
+    public List<String> getWebServers() {
+        return webServers;
     }
 
-    public void setWebServerUrl(String webServerUrl) {
-        this.webServerUrl = webServerUrl;
+    public void setWebServers(List<String> webServers) {
+        this.webServers = webServers;
     }
 
-    public boolean isWebServerUrlHasGroup() {
-        return webServerUrlHasGroup;
+    public boolean isUrlHaveGroup() {
+        return urlHaveGroup;
     }
 
-    public void setWebServerUrlHasGroup(boolean webServerUrlHasGroup) {
-        this.webServerUrlHasGroup = webServerUrlHasGroup;
+    public void setUrlHaveGroup(boolean urlHaveGroup) {
+        this.urlHaveGroup = urlHaveGroup;
     }
 
     public boolean isHttpAntiStealToken() {
@@ -85,11 +82,11 @@ public class HttpConfiguration {
         this.secretKey = secretKey;
     }
 
-    public String getCharset() {
-        return charset;
+    public String getSecretKeyCharset() {
+        return secretKeyCharset;
     }
 
-    public void setCharset(String charset) {
-        this.charset = charset;
+    public void setSecretKeyCharset(String secretKeyCharset) {
+        this.secretKeyCharset = secretKeyCharset;
     }
 }

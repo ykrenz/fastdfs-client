@@ -72,9 +72,9 @@ public final class FastDfsUtils {
      * @return
      */
     public static String getToken(String path, int ts, String secretKey, Charset charset) {
-        byte[] bsFilename = path.getBytes(charset);
-        byte[] bsKey = secretKey.getBytes(charset);
-        byte[] bsTimestamp = Integer.toString(ts).getBytes(charset);
+        byte[] bsFilename = charset == null ? path.getBytes() : path.getBytes(charset);
+        byte[] bsKey = charset == null ? secretKey.getBytes() : secretKey.getBytes(charset);
+        byte[] bsTimestamp = charset == null ? Integer.toString(ts).getBytes() : Integer.toString(ts).getBytes(charset);
 
         byte[] buff = new byte[bsFilename.length + bsKey.length + bsTimestamp.length];
         System.arraycopy(bsFilename, 0, buff, 0, bsFilename.length);

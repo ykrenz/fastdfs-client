@@ -1,15 +1,10 @@
 package com.ykrenz.fastdfs.model.fdfs;
 
-import com.ykrenz.fastdfs.common.FastDfsUtils;
-import com.ykrenz.fastdfs.config.HttpConfiguration;
 import com.ykrenz.fastdfs.model.proto.OtherConstants;
 import com.ykrenz.fastdfs.model.proto.mapper.DynamicFieldType;
 import com.ykrenz.fastdfs.model.proto.mapper.FdfsColumn;
 import com.ykrenz.fastdfs.exception.FdfsUnsupportStorePathException;
 import org.apache.commons.lang3.Validate;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * 存储文件的路径信息
@@ -23,11 +18,6 @@ public class StorePath {
 
     @FdfsColumn(index = 1, dynamicField = DynamicFieldType.allRestByte)
     private String path;
-
-    /**
-     * http相关配置
-     */
-    private HttpConfiguration http = new HttpConfiguration();
 
     /**
      * 解析路径
@@ -58,12 +48,6 @@ public class StorePath {
         this.path = path;
     }
 
-    public StorePath(String group, String path, HttpConfiguration http) {
-        this.group = group;
-        this.path = path;
-        this.http = http;
-    }
-
     /**
      * @return the group
      */
@@ -92,14 +76,6 @@ public class StorePath {
         this.path = path;
     }
 
-    public HttpConfiguration getHttp() {
-        return http;
-    }
-
-    public void setHttp(HttpConfiguration http) {
-        this.http = http;
-    }
-
     /**
      * 获取文件全路径
      *
@@ -107,60 +83,6 @@ public class StorePath {
      */
     public String getFullPath() {
         return this.group.concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(this.path);
-    }
-
-    /**
-     * 获取Web访问路径
-     *
-     * @return
-     */
-    public String getWebPath() {
-        return getBaseWebPath().concat(getTokenPath());
-    }
-
-    /**
-     * 获取文件下载地址
-     *
-     * @param filename
-     * @return
-     */
-    public String getDownLoadPath(String filename) {
-        String tokenPath = getTokenPath();
-        String webPath = getBaseWebPath();
-        return tokenPath.isEmpty() ?
-                webPath.concat("?filename=").concat(filename) :
-                webPath.concat(tokenPath).concat("&").concat("filename=").concat(filename);
-    }
-
-    /**
-     * 获取文件下载地址
-     *
-     * @param attachmentArgName attachment参数名称
-     * @param filename
-     * @return
-     */
-    public String getDownLoadPath(String attachmentArgName, String filename) {
-        String tokenPath = getTokenPath();
-        String webPath = getBaseWebPath();
-        return tokenPath.isEmpty() ?
-                webPath.concat("?").concat(attachmentArgName).concat("=").concat(filename) :
-                webPath.concat(tokenPath).concat("&").concat(attachmentArgName).concat("=").concat(filename);
-    }
-
-    private String getBaseWebPath() {
-        return http.isWebServerUrlHasGroup() ?
-                http.getWebServerUrl().concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getFullPath()) :
-                http.getWebServerUrl().concat(SPLIT_GROUP_NAME_AND_FILENAME_SEPERATOR).concat(getPath());
-    }
-
-    private String getTokenPath() {
-        if (!http.isHttpAntiStealToken()) {
-            return "";
-        }
-        Charset charset = http.getCharset() == null ? StandardCharsets.UTF_8 : Charset.forName(http.getCharset());
-        int ts = (int) (System.currentTimeMillis() / 1000);
-        String token = FastDfsUtils.getToken(getPath(), ts, http.getSecretKey(), charset);
-        return "?token=" + token + "&ts=" + ts;
     }
 
     @Override
@@ -184,20 +106,6 @@ public class StorePath {
         int pathStartPos = filePath.indexOf(group) + group.length() + 1;
         String path = filePath.substring(pathStartPos, filePath.length());
         return new StorePath(group, path);
-    }
-
-
-    /**
-     * 从url解析 配置http配置
-     *
-     * @param filePath
-     * @param http
-     * @return
-     */
-    public static StorePath parseFromUrl(String filePath, HttpConfiguration http) {
-        StorePath storePath = parseFromUrl(filePath);
-        storePath.setHttp(http);
-        return storePath;
     }
 
     /**
