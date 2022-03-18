@@ -12,33 +12,34 @@ public final class FastDfsWeb {
     /**
      * 分组名称
      */
-    private String groupName;
+    private final String groupName;
     /**
      * path路径
      */
-    private String path;
+    private final String path;
     /**
      * web url
      */
-    private String url;
+    private final String url;
     /**
      * web路径是否包含Group
      */
-    private boolean haveGroupName;
+    private final boolean haveGroupName;
     /**
      * 防盗链
      */
-    private boolean httpAntiStealToken;
+    private final boolean httpAntiStealToken;
     /**
      * http防盗链 secretKey
      */
-    private String secretKey;
+    private final String secretKey;
     /**
      * 字符集
      */
-    private Charset secretKeyCharset;
+    private final Charset secretKeyCharset;
 
     private static final String SLASH = "/";
+    private static final String EMPTY = "";
 
     /**
      * 获取Web访问路径
@@ -88,7 +89,7 @@ public final class FastDfsWeb {
 
     private String getTokenPath() {
         if (!httpAntiStealToken) {
-            return "";
+            return EMPTY;
         }
         return getTokenSuffix();
     }
@@ -116,8 +117,8 @@ public final class FastDfsWeb {
 
     public static class Builder {
         private String groupName;
-        private String path;
-        private String url;
+        private final String path;
+        private final String url;
         private boolean haveGroupName;
         private boolean httpAntiStealToken;
         private String secretKey;
