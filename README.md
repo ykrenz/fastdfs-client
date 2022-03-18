@@ -52,7 +52,7 @@
 
 代码示例：详见com.ykrenz.fastdfs.App
 
-客户端FastDFS构建：
+构建FastDfs客户端：
 
 ```java
     // 默认配置构建
