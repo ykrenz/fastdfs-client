@@ -46,34 +46,34 @@ public interface FastDfs {
     void shutdown();
 
     /**
-     * 获取web地址
+     * 文件访问路径url
      *
      * @param groupName
      * @param path
      * @return
      */
-    String getWebPath(String groupName, String path);
+    String accessUrl(String groupName, String path);
 
     /**
-     * 获取下载地址
+     * 自定义下载文件名地址
      *
      * @param groupName
      * @param path
      * @param downloadFileName
      * @return
      */
-    String getDownLoadPath(String groupName, String path, String downloadFileName);
+    String downLoadUrl(String groupName, String path, String downloadFileName);
 
     /**
-     * 获取下载地址 自定义参数名
+     * 自定义下载文件名 参数名地址
      *
      * @param groupName
      * @param path
-     * @param argName
+     * @param urlArgName
      * @param downloadFileName
      * @return
      */
-    String getDownLoadPath(String groupName, String path, String argName, String downloadFileName);
+    String downLoadUrl(String groupName, String path, String urlArgName, String downloadFileName);
 
     /**
      * 上传一般文件
@@ -120,6 +120,31 @@ public interface FastDfs {
      * @return
      */
     StorePath uploadFile(UploadFileRequest request);
+
+    /**
+     * 上传从文件
+     *
+     * @param groupName
+     * @param masterFilePath
+     * @param prefix
+     * @param file
+     * @return
+     */
+    StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix, File file);
+
+    /**
+     * 上传从文件
+     *
+     * @param groupName
+     * @param masterFilePath
+     * @param prefix
+     * @param stream
+     * @param fileSize
+     * @param fileExtName
+     * @return
+     */
+    StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix,
+                              InputStream stream, long fileSize, String fileExtName);
 
     /**
      * 上传从文件
@@ -505,7 +530,10 @@ public interface FastDfs {
      * 完成分片上传
      * version<6.02 regenerate = false
      *
-     * @return 最终文件路径
+     * @param groupName
+     * @param path
+     * @param regenerate
+     * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(String groupName, String path, boolean regenerate);
 
@@ -514,7 +542,7 @@ public interface FastDfs {
      * version<6.02 regenerate = false
      *
      * @param request
-     * @return 最终文件路径
+     * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(CompleteMultipartRequest request);
 

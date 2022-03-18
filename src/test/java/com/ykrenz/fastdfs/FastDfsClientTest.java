@@ -95,9 +95,6 @@ public class FastDfsClientTest extends BaseClientTest {
         storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
         LOGGER.info("上传文件 result={}", storePath);
-        LOGGER.info("上传文件 webPath={}", storePath.getWebPath());
-        LOGGER.info("上传文件 downLoadPath={}", storePath.getDownLoadPath("1.txt"));
-        LOGGER.info("上传文件 downLoadPath2={}", storePath.getDownLoadPath("name", "1.txt"));
         delete(storePath);
         assertNull(queryFile(storePath));
     }
@@ -125,11 +122,20 @@ public class FastDfsClientTest extends BaseClientTest {
         assertNotNull(storePath);
         assertNotNull(slaveFile);
         LOGGER.info("上传文件 result={} slaveFile={}", storePath, slaveFile);
-        LOGGER.info("上传文件 webPath={} webPath={}", storePath.getWebPath(), slaveFile.getWebPath());
-        LOGGER.info("上传文件 downLoadPath={} downLoadPath={}", storePath.getDownLoadPath("1.txt"), slaveFile.getDownLoadPath("1.txt"));
-        LOGGER.info("上传文件 downLoadPath2={} downLoadPath2={}",
-                storePath.getDownLoadPath("name", "1.txt"),
-                slaveFile.getDownLoadPath("name", "1.txt"));
+
+        StorePath slaveFilePath = fastDFS.uploadSlaveFile(storePath.getGroup(), storePath.getPath(), "_file_", getFile());
+        LOGGER.info("上传文件 result={} slaveFilePath={}", storePath, slaveFilePath);
+        Assert.assertNotNull(slaveFilePath);
+        delete(slaveFilePath);
+        assertNull(queryFile(slaveFilePath));
+
+        StorePath slaveFilePath2 = fastDFS.uploadSlaveFile(storePath.getGroup(), storePath.getPath(), "_is_",
+                file.getInputStream(),file.getFileSize(),file.getFileExtName());
+        LOGGER.info("上传文件 result={} slaveFilePath={}", storePath, slaveFilePath2);
+        Assert.assertNotNull(slaveFilePath2);
+        delete(slaveFilePath2);
+        assertNull(queryFile(slaveFilePath2));
+
         delete(storePath);
         delete(slaveFile);
         assertNull(queryFile(storePath));

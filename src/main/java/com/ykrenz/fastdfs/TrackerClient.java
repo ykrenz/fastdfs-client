@@ -26,17 +26,15 @@ public interface TrackerClient {
      * 添加tracker
      *
      * @param trackerServer
-     * @return
      */
-    boolean addTrackerServer(String trackerServer);
+    void addTrackerServer(String trackerServer);
 
     /**
      * 移除tracker
      *
      * @param trackerServer
-     * @return
      */
-    boolean removeTrackerServer(String trackerServer);
+    void removeTrackerServer(String trackerServer);
 
     /**
      * 获取存储节点 get the StoreStorage Client

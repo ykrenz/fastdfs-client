@@ -96,12 +96,28 @@ public class FastDfsClient implements FastDfs {
      */
     private final FastDfsConfiguration fastDfsConfiguration;
 
+    /**
+     * web客户端
+     */
+    private final FastDfsWebClient fastDfsWebClient;
+
     public FastDfsClient(final List<String> trackerServers, final FastDfsConfiguration configuration) {
+        checkClient(trackerServers, configuration);
         FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
         this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
+        this.fastDfsWebClient = new DefaultFastDfsWebClient(configuration.getHttp());
         this.fdfsConnectionManager = new FdfsConnectionManager(pool);
         this.defaultGroup = configuration.getDefaultGroup();
         this.fastDfsConfiguration = configuration;
+    }
+
+    private void checkClient(List<String> trackerServers, FastDfsConfiguration configuration) {
+        if (trackerServers == null || trackerServers.isEmpty()) {
+            throw new IllegalArgumentException("trackerServers should not be null or empty.");
+        }
+        if (configuration == null) {
+            throw new IllegalArgumentException("configuration should not be null.");
+        }
     }
 
     public FdfsConnectionManager getConnectionManager() {
@@ -116,6 +132,10 @@ public class FastDfsClient implements FastDfs {
         return fastDfsConfiguration;
     }
 
+    public FastDfsWebClient getFastDfsWebClient() {
+        return fastDfsWebClient;
+    }
+
     @Override
     public TrackerClient getTrackerClient() {
         return trackerClient;
@@ -127,21 +147,18 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public String getWebPath(String groupName, String path) {
-        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
-        return storePath.getWebPath();
+    public String accessUrl(String groupName, String path) {
+        return fastDfsWebClient.accessUrl(groupName, path);
     }
 
     @Override
-    public String getDownLoadPath(String groupName, String path, String downloadFileName) {
-        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
-        return storePath.getDownLoadPath(downloadFileName);
+    public String downLoadUrl(String groupName, String path, String downloadFileName) {
+        return fastDfsWebClient.downLoadUrl(groupName, path, downloadFileName);
     }
 
     @Override
-    public String getDownLoadPath(String groupName, String path, String argName, String downloadFileName) {
-        StorePath storePath = new StorePath(groupName, path, fastDfsConfiguration.getHttp());
-        return storePath.getDownLoadPath(argName, downloadFileName);
+    public String downLoadUrl(String groupName, String path, String urlArgName, String downloadFileName) {
+        return fastDfsWebClient.downLoadUrl(groupName, path, urlArgName, downloadFileName);
     }
 
     @Override
@@ -194,8 +211,26 @@ public class FastDfsClient implements FastDfs {
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setHttp(fastDfsConfiguration.getHttp());
         return path;
+    }
+
+    @Override
+    public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix, File file) {
+        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
+                .masterPath(masterFilePath)
+                .prefix(prefix)
+                .file(file)
+                .build());
+    }
+
+    @Override
+    public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix,
+                                     InputStream stream, long fileSize, String fileExtName) {
+        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
+                .masterPath(masterFilePath)
+                .prefix(prefix)
+                .stream(stream, fileSize, fileExtName)
+                .build());
     }
 
     @Override
@@ -218,7 +253,6 @@ public class FastDfsClient implements FastDfs {
                     metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
             fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
-        path.setHttp(fastDfsConfiguration.getHttp());
         return path;
 
     }
@@ -650,9 +684,7 @@ public class FastDfsClient implements FastDfs {
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
-        StorePath storePath = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-        storePath.setHttp(fastDfsConfiguration.getHttp());
-        return storePath;
+        return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
@@ -766,7 +798,6 @@ public class FastDfsClient implements FastDfs {
                 .metaData(request.metaData())
                 .build();
         mergeMetadata(metaDataRequest);
-        storePath.setHttp(fastDfsConfiguration.getHttp());
         return storePath;
     }
 

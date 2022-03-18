@@ -3,6 +3,19 @@
 ***基于tobato 1.2.72开发 https://github.com/tobato/FastDFS_Client*** <br>
 `springboot版本请移步` https://github.com/ykrenz/fastdfs-client-spring-boot-starter <br>
 `springboot-server参考` https://github.com/ykrenz/springboot-file-server
+
+
+
+## 依赖：
+
+```xml
+     <dependency>
+            <groupId>io.github.ykrenz</groupId>
+            <artifactId>fastdfs-client</artifactId>
+            <version>1.0.0</version>
+     </dependency>
+```
+
 ## 新特性:
 
 - 升级fastdfs为6.07最新版本
@@ -12,7 +25,7 @@
 - 上传进度功能 可获取上传的进度
 - 缩略图批量生成 单独上传缩略图功能
 - 动态添加和移除tracker服务
-- 集成nginx 可获取web访问的路径和下载文件的路径 配合前端更方便预览图片和下载文件
+- 集成fastdfs-nginx-module 获取文件访问的路径和下载文件的路径
 
 ## 优化
 
@@ -39,28 +52,28 @@
 
 代码示例：详见com.ykrenz.fastdfs.App
 
-客户端FastDFS构建：
+构建FastDfs客户端：
 
 ```java
-	// 默认配置构建
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+    // 默认配置构建
+    List<String> trackerServers = new ArrayList<>();
+    trackerServers.add("192.168.24.130:22122");
+    FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
     // 配置构建
-        List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfsConfiguration configuration = new FastDfsConfiguration();
-        configuration.setDefaultGroup("group1");
-        configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
-        configuration.getHttp().setWebServerUrlHasGroup(true);
-        configuration.getHttp().setHttpAntiStealToken(true);
-        configuration.getHttp().setSecretKey("FastDFS1234567890");
-        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
+    List<String> trackerServers = new ArrayList<>();
+    trackerServers.add("192.168.24.130:22122");
+    FastDfsConfiguration configuration = new FastDfsConfiguration();
+    configuration.setDefaultGroup("group1");
+    configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+    configuration.getHttp().setUrlHaveGroup(true);
+    configuration.getHttp().setHttpAntiStealToken(true);
+    configuration.getHttp().setSecretKey("FastDFS1234567890");
+    FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
 ```
 
 备注：
 
-**FastDFS关闭客户端 此客户端关闭后则不可使用 **
+**FastDfs关闭客户端 此客户端关闭后则不可使用 **
 
 **此客户端是线程安全的 建议单例模式使用 不建议每次新建和关闭客户端  **
 
@@ -68,9 +81,9 @@
 
 ```java
 try {
-	// 上传文件
+	// upload to fastDfs
 }finally {
-    fastDFS.shutdown();
+    fastDfs.shutdown();
 }
 ```
 
@@ -80,9 +93,9 @@ FastDfsConfiguration配置详解：
 | ----------------------------- | --------------------------- | ----------------- | ------------------------------------------------------------ |
 | defaultGroup                  | 默认分组                    | 无                | 优先级大于参数                                               |
 |                               |                             |                   |                                                              |
-| HttpConfiguration             | http相关配置                |                   | 1.Token防盗链<br/> 2.获取预览地址 StorePath.getWebPath() <br/> 3.获取下载地址StorePath.getDownLoadPath(String) |
-| webServerUrl                  | web访问路径                 | 无                | eg: nginx地址 配合fastdfs-nginx-module使用<br> 例如图片等可直接返回预览地址 下载时传入文件名即可返回下载地址 自带token防盗链 |
-| webServerUrlHasGroup          | web路径是否包含Group        | false             | 关联服务器配置mod_fastdfs.conf url_have_group_name<br> 配和StorePath.getWebPath StorePath.getDownLoadPath使用 |
+| HttpConfiguration             | http相关配置                |                   | 1.Token防盗链<br/> 2.获取预览地址 <br/> 3.获取下载地址 |
+| webServers          | web服务器地址                 | 无                | eg: nginx地址 配合fastdfs-nginx-module使用<br> 例如图片等可直接返回预览地址 下载时传入文件名即可返回下载地址 自带token防盗链 |
+| urlHaveGroup | web路径是否包含Group        | false             | 关联服务器配置mod_fastdfs.conf url_have_group_name<br> |
 | httpAntiStealToken            | 是否开启http防盗链          | false             | 关联服务器配置http.config http.anti_steal.check_token        |
 | secretKey                     | http防盗链密钥              | FastDFS1234567890 | 关联服务器配置http.config http.anti_steal.secret_key         |
 | charset                       | 字符集                      | UTF-8             |                                                              |
@@ -106,46 +119,46 @@ FastDfsConfiguration配置详解：
 
 ```java
     	List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
-        StorePath storePath = fastDFS.uploadFile(sampleFile);
-        fastDFS.shutdown();
+    	trackerServers.add("192.168.24.130:22122");
+    	FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
+        StorePath storePath = fastDfs.uploadFile(sampleFile);
+        fastDfs.shutdown();
         System.out.println("上传文件成功" + storePath);
 ```
 
 上传文件流
 
 ```java
-		List<String> trackerServers = new ArrayList<>();
+        List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
         String str = "123";
-        StorePath storePath = fastDFS.uploadFile(new ByteArrayInputStream(str.getBytes()), str.length(), "txt");
+        StorePath storePath = fastDfs.uploadFile(new ByteArrayInputStream(str.getBytes()), str.length(), "txt");
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();	
+        fastDfs.shutdown();	
 ```
 
 上传文件带元数据
 
 ```java
- 		List<String> trackerServers = new ArrayList<>();
+        List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .file(sampleFile)
                 .metaData("MetaKey", "MetaValue")
                 .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        StorePath storePath = fastDfs.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
 ```
 
 上传文件带进度条
 
 ```java
-     List<String> trackerServers = new ArrayList<>();
+        List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .file(sampleFile)
                 .listener(new UploadProgressListener() {
@@ -170,9 +183,9 @@ FastDfsConfiguration配置详解：
                     }
                 })
                 .build();
-        StorePath storePath = fastDFS.uploadFile(fileRequest);
+        StorePath storePath = fastDfs.uploadFile(fileRequest);
         System.out.println("上传文件成功" + storePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
 ```
 
 断点续传示例：
@@ -180,25 +193,25 @@ FastDfsConfiguration配置详解：
 ```java
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
         StorePath storePath = null;
         for (int i = 1; i < 10; i++) {
             String appendStr = String.valueOf(i);
             if (i == 1) {
-                storePath = fastDFS.uploadAppenderFile(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length(), "txt");
+                storePath = fastDfs.uploadAppenderFile(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length(), "txt");
             } else {
                 AppendFileRequest appendRequest = AppendFileRequest.builder()
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .stream(new ByteArrayInputStream(appendStr.getBytes()), appendStr.length())
                         .build();
-                fastDFS.appendFile(appendRequest);
+                fastDfs.appendFile(appendRequest);
             }
         }
         // 修改为普通文件 6.0.2版本以上支持该特性
-        StorePath reStorePath = fastDFS.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
+        StorePath reStorePath = fastDfs.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
         System.out.println("上传Append文件成功" + reStorePath);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
 ```
 
 分片上传：
@@ -206,12 +219,12 @@ FastDfsConfiguration配置详解：
 ```java
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
         final long partSize = 5 * 1024 * 1024L;   // 5MB
         long fileSize = sampleFile.length();
         long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
 
-        StorePath storePath = fastDFS.initMultipartUpload(sampleFile.length(), "txt");
+        StorePath storePath = fastDfs.initMultipartUpload(sampleFile.length(), "txt");
         System.out.println("初始化分片成功" + storePath);
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         for (int i = 1; i <= partCount; i++) {
@@ -234,7 +247,7 @@ FastDfsConfiguration配置详解：
                         .groupName(storePath.getGroup())
                         .path(storePath.getPath())
                         .build();
-                fastDFS.uploadMultipart(partRequest);
+                fastDfs.uploadMultipart(partRequest);
             });
         }
         /*
@@ -251,50 +264,55 @@ FastDfsConfiguration配置详解：
 
         long crc32 = Crc32.file(sampleFile);
         // 6.0.2版本以上支持regenerate=true
-        StorePath path = fastDFS.completeMultipartUpload(storePath.getGroup(), storePath.getPath(), true);
+        StorePath path = fastDfs.completeMultipartUpload(storePath.getGroup(), storePath.getPath(), true);
 
         // crc32校验
-        FileInfo fileInfo = fastDFS.queryFileInfo(path.getGroup(), path.getPath());
+        FileInfo fileInfo = fastDfs.queryFileInfo(path.getGroup(), path.getPath());
         Assert.assertEquals(crc32, Crc32.convertUnsigned(fileInfo.getCrc32()));
         System.out.println("上传文件成功" + path);
-        fastDFS.shutdown();
+        fastDfs.shutdown();
 ```
 
 下载文件
 
 ```java
-List<String> trackerServers = new ArrayList<>();
+        List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
-        FastDfs fastDFS = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
+        StorePath storePath = fastDfs.uploadFile(sampleFile);
         //本地文件
-        fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadFileWriter("tmp/test.txt"));
+        fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadFileWriter("tmp/test.txt"));
         //bytes
-        byte[] bytes = fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadByteArray());
+        byte[] bytes = fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), new DownloadByteArray());
         System.out.println(bytes.length);
         //下载文件片段
-        fastDFS.downloadFile(storePath.getGroup(), storePath.getPath(), 10, 1024, new DownloadFileWriter("tmp/test_10_1024.txt"));
+        fastDfs.downloadFile(storePath.getGroup(), storePath.getPath(), 10, 1024, new DownloadFileWriter("tmp/test_10_1024.txt"));
 
         //OutputStream 例如web下载 默认构造会自动关闭OutputStream
 //        OutputStream ous = response.getOutputStream();
 //        fastDFS.downloadFile(request, new DownloadOutputStream(ous));
-        fastDFS.shutdown();
+        fastDfs.shutdown();
 ```
 获取预览和下载路径
 
 ``` java
-    List<String> trackerServers = new ArrayList<>();
-    trackerServers.add("192.168.24.130:22122");
-    FastDfsConfiguration configuration = new FastDfsConfiguration();
-    configuration.setDefaultGroup("group1");
-    configuration.getHttp().setWebServerUrl("http://192.168.24.130:8888");
-    configuration.getHttp().setWebServerUrlHasGroup(true);
-    configuration.getHttp().setHttpAntiStealToken(true);
-    configuration.getHttp().setSecretKey("FastDFS1234567890");
-    FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
-    StorePath storePath = fastDfs.uploadFile(sampleFile);
-    fastDfs.shutdown();
-    System.out.println("上传文件成功" + storePath);
-    System.out.println("web访问路径" + storePath.getWebPath());
-    // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
-    System.out.println("web下载路径" + storePath.getDownLoadPath("1.txt"));
+        List<String> trackerServers = new ArrayList<>();
+        trackerServers.add("192.168.24.130:22122");
+        FastDfsConfiguration configuration = new FastDfsConfiguration();
+        configuration.setDefaultGroup("group1");
+        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.24.131:8888");
+        configuration.getHttp().setUrlHaveGroup(true);
+        configuration.getHttp().setHttpAntiStealToken(true);
+        configuration.getHttp().setSecretKey("FastDFS1234567890");
+        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
+        StorePath storePath = fastDfs.uploadFile(sampleFile);
+        fastDfs.shutdown();
+        System.out.println("上传文件成功" + storePath);
+
+        // 配合fastdfs-nginx-module 支持token防盗链 具体查看http配置
+        System.out.println("web访问路径1 " + fastDfs.accessUrl(storePath.getGroup(),storePath.getPath()));
+        System.out.println("web访问路径2 " + fastDfs.accessUrl(storePath.getGroup(),storePath.getPath()));
+        System.out.println("web下载路径1 " + fastDfs.downLoadUrl(storePath.getGroup(),storePath.getPath(),"sampleFile.txt"));
+        System.out.println("web下载路径2 " + fastDfs.downLoadUrl(storePath.getGroup(),storePath.getPath(),"attachment","sampleFile.txt"));
 ```
