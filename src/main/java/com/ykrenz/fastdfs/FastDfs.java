@@ -484,17 +484,7 @@ public interface FastDfs {
      *
      * @param groupName
      * @param path
-     * @return 原文件路径
-     */
-    StorePath completeMultipartUpload(String groupName, String path);
-
-    /**
-     * 完成分片上传
-     * version<6.02 regenerate = false
-     *
-     * @param groupName
-     * @param path
-     * @param regenerate
+     * @param regenerate 是否改为普通文件 true条件 version>=6.02
      * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(String groupName, String path, boolean regenerate);

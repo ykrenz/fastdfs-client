@@ -5,7 +5,6 @@ import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.event.UploadProgressListener;
 import com.ykrenz.fastdfs.model.AppendFileRequest;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
-import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import com.ykrenz.fastdfs.model.proto.storage.DownloadByteArray;

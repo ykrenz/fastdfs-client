@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author ykren
  * @date 2022/1/26
  */
-public class MultipartTest2 extends BaseClientTest {
+public class MultipartUploadTest extends BaseClientTest {
 
     @Test
     public void multipartTest() throws IOException {

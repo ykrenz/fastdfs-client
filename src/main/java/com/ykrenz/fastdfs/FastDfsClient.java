@@ -730,12 +730,6 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public StorePath completeMultipartUpload(String groupName, String path) {
-        return this.completeMultipartUpload(CompleteMultipartRequest.builder()
-                .groupName(groupName).path(path).build());
-    }
-
-    @Override
     public StorePath completeMultipartUpload(String groupName, String path, boolean regenerate) {
         return this.completeMultipartUpload(CompleteMultipartRequest.builder()
                 .groupName(groupName).path(path).regenerate(regenerate).build());
