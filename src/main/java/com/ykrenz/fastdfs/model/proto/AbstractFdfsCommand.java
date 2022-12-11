@@ -152,7 +152,7 @@ public abstract class AbstractFdfsCommand<T> implements FdfsCommand<T> {
             while (remaining > 0) {
                 l = ins.read(buffer, 0, (int) Math.min(DEFAULT_BUFFER_SIZE, remaining));
                 if (l == -1) {
-                    break;
+                    throw new IOException("the end of the stream has been reached. not match the expected size ");
                 }
                 ous.write(buffer, 0, l);
                 remaining -= l;

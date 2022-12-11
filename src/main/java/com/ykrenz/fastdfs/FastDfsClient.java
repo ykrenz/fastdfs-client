@@ -1,32 +1,18 @@
 package com.ykrenz.fastdfs;
 
+import com.ykrenz.fastdfs.cache.MultipartUploadAttachment;
+import com.ykrenz.fastdfs.cache.DefaultMultipartAttachmentAccessor;
+import com.ykrenz.fastdfs.cache.MultipartAttachmentAccessor;
 import com.ykrenz.fastdfs.common.CodeUtils;
-import com.ykrenz.fastdfs.common.FastDfsUtils;
 import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.conn.FdfsConnectionManager;
 import com.ykrenz.fastdfs.conn.FdfsConnectionPool;
 import com.ykrenz.fastdfs.conn.TrackerConnectionManager;
 import com.ykrenz.fastdfs.event.ProgressInputStream;
 import com.ykrenz.fastdfs.event.ProgressListener;
+import com.ykrenz.fastdfs.exception.FdfsClientException;
 import com.ykrenz.fastdfs.exception.FdfsUploadImageException;
-import com.ykrenz.fastdfs.model.AbstractFileArgs;
-import com.ykrenz.fastdfs.model.AppendFileRequest;
-import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
-import com.ykrenz.fastdfs.model.DownloadFileRequest;
-import com.ykrenz.fastdfs.model.FileInfoRequest;
-import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
-import com.ykrenz.fastdfs.model.InputStreamWrapper;
-import com.ykrenz.fastdfs.model.MetaDataInfoRequest;
-import com.ykrenz.fastdfs.model.MetaDataRequest;
-import com.ykrenz.fastdfs.model.ModifyFileRequest;
-import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
-import com.ykrenz.fastdfs.model.ThumbImage;
-import com.ykrenz.fastdfs.model.TruncateFileRequest;
-import com.ykrenz.fastdfs.model.UploadAppendFileRequest;
-import com.ykrenz.fastdfs.model.UploadFileRequest;
-import com.ykrenz.fastdfs.model.UploadImageRequest;
-import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
-import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.*;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -178,13 +164,16 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath uploadFile(String groupName, InputStream stream, long fileSize, String fileExtName) {
-        return this.uploadFile(UploadFileRequest.builder().groupName(groupName).stream(stream, fileSize, fileExtName).build());
+        return this.uploadFile(UploadFileRequest.builder()
+                .groupName(groupName).stream(stream, fileSize, fileExtName).build()
+        );
     }
 
     @Override
     public StorePath uploadFile(UploadFileRequest request) {
+        String groupName = getGroupName(request);
         InputStream stream = getInputStream(request);
-        StorageNode client = trackerClient.getStoreStorage(getGroupName(request.groupName()));
+        StorageNode client = trackerClient.getStoreStorage(groupName);
         return uploadFileAndMetaData(client, stream, request.fileSize(),
                 request.fileExtName(), request.metaData(), false);
     }
@@ -203,7 +192,7 @@ public class FastDfsClient implements FastDfs {
                                               String fileExtName, Set<MetaData> metaDataSet, boolean isAppenderFile) {
         // 上传文件
         StorageUploadFileCommand command = new StorageUploadFileCommand(client.getStoreIndex(), inputStream,
-                FastDfsUtils.handlerFilename(fileExtName), fileSize, isAppenderFile);
+                fileExtName, fileSize, isAppenderFile);
         StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         // 上传metadata
         if (hasMetaData(metaDataSet)) {
@@ -216,34 +205,31 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix, File file) {
-        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
-                .masterPath(masterFilePath)
-                .prefix(prefix)
-                .file(file)
-                .build());
+        return this.uploadSlaveFile(
+                UploadSalveFileRequest.builder().groupName(groupName)
+                        .masterPath(masterFilePath).prefix(prefix)
+                        .file(file).build()
+        );
     }
 
     @Override
     public StorePath uploadSlaveFile(String groupName, String masterFilePath, String prefix,
                                      InputStream stream, long fileSize, String fileExtName) {
-        return this.uploadSlaveFile(UploadSalveFileRequest.builder()
-                .masterPath(masterFilePath)
-                .prefix(prefix)
-                .stream(stream, fileSize, fileExtName)
-                .build());
+        return this.uploadSlaveFile(
+                UploadSalveFileRequest.builder().groupName(groupName)
+                        .masterPath(masterFilePath).prefix(prefix)
+                        .stream(stream, fileSize, fileExtName).build()
+        );
     }
 
     @Override
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         InputStream stream = getInputStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
 
-        String handlerPrefix = FastDfsUtils.handlerFilename(request.prefix());
-        String prefix = handlerPrefix.isEmpty() ? "." : handlerPrefix;
-        String fileExtName = FastDfsUtils.handlerFilename(request.fileExtName());
-        StorageUploadSlaveFileCommand command = new StorageUploadSlaveFileCommand(stream, request.fileSize(), request.masterPath(),
-                prefix, fileExtName);
+        StorageUploadSlaveFileCommand command = new StorageUploadSlaveFileCommand(stream,
+                request.fileSize(), request.masterPath(), request.prefix(), request.fileExtName());
         StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
 
         Set<MetaData> metaData = request.metaData();
@@ -277,6 +263,7 @@ public class FastDfsClient implements FastDfs {
 
             Set<UploadImageRequest.ThumbImageRequest> thumbImageRequests = request.thumbImages();
             List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
+            // TODO 多线程优化
             for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
                 ThumbImage thumbImage = thumbImageRequest.thumbImage();
                 Set<MetaData> metaData = thumbImageRequest.thumbMetaData();
@@ -321,9 +308,8 @@ public class FastDfsClient implements FastDfs {
         CodeUtils.validateCollectionNotEmpty(thumbImageRequests, "thumbImage");
         List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
 
-        String groupName = getGroupName(request.groupName());
+        String groupName = getGroupName(request);
         StorageNode client = trackerClient.getStoreStorage(groupName);
-        String fileExtName = FastDfsUtils.handlerFilename(request.fileExtName());
 
         for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
             ThumbImage thumbImage = thumbImageRequest.thumbImage();
@@ -331,8 +317,10 @@ public class FastDfsClient implements FastDfs {
                  ByteArrayInputStream thumbImageStream = generateThumbImageStream(stream, thumbImage)) {
                 Set<MetaData> metaDataSet = thumbImageRequest.thumbMetaData();
 
-                StorePath storePath = uploadFileAndMetaData(client, progressStream(request.listener(), thumbImageStream), thumbImageStream.available(),
-                        fileExtName, metaDataSet, false);
+                StorePath storePath = uploadFileAndMetaData(client,
+                        progressStream(request.listener(), thumbImageStream),
+                        thumbImageStream.available(),
+                        request.fileExtName(), metaDataSet, false);
                 paths.add(storePath);
             } catch (IOException e) {
                 throw new FdfsUploadImageException("upload ThumbImage error", e.getCause());
@@ -431,16 +419,13 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public Set<MetaData> getMetadata(String groupName, String path) {
-        return getMetadata(MetaDataInfoRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .build());
+        return this.getMetadata(MetaDataInfoRequest.builder()
+                .groupName(groupName).path(path).build());
     }
 
     @Override
     public Set<MetaData> getMetadata(MetaDataInfoRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
@@ -464,15 +449,13 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void overwriteMetadata(String groupName, String path, Set<MetaData> metaData) {
         this.overwriteMetadata(MetaDataRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .metaData(metaData)
-                .build());
+                .groupName(groupName).path(path)
+                .metaData(metaData).build());
     }
 
     @Override
     public void overwriteMetadata(MetaDataRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client.getInetSocketAddress(), groupName, path,
@@ -482,16 +465,12 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void mergeMetadata(String groupName, String path, Set<MetaData> metaData) {
         this.mergeMetadata(MetaDataRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .metaData(metaData)
-                .build());
+                .groupName(groupName).path(path).metaData(metaData).build());
     }
 
     @Override
     public void mergeMetadata(MetaDataRequest request) {
-        // 获取分组
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         uploadMetaData(client.getInetSocketAddress(), groupName, path,
@@ -500,24 +479,19 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public void deleteMetadata(String groupName, String path) {
-        this.overwriteMetadata(MetaDataRequest
-                .builder()
-                .groupName(groupName)
-                .path(path)
-                .build());
+        this.overwriteMetadata(MetaDataRequest.builder()
+                .groupName(groupName).path(path).build());
     }
 
     @Override
     public FileInfo queryFileInfo(String groupName, String path) {
         return this.queryFileInfo(FileInfoRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .build());
+                .groupName(groupName).path(path).build());
     }
 
     @Override
     public FileInfo queryFileInfo(FileInfoRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
@@ -527,14 +501,12 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void deleteFile(String groupName, String path) {
         this.deleteFile(FileInfoRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .build());
+                .groupName(groupName).path(path).build());
     }
 
     @Override
     public void deleteFile(FileInfoRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
@@ -544,24 +516,19 @@ public class FastDfsClient implements FastDfs {
     @Override
     public <T> T downloadFile(String groupName, String path, DownloadCallback<T> callback) {
         return this.downloadFile(DownloadFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .build(), callback);
+                .groupName(groupName).path(path).build(), callback);
     }
 
     @Override
     public <T> T downloadFile(String groupName, String path, long fileOffset, long downLoadSize, DownloadCallback<T> callback) {
         return this.downloadFile(DownloadFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .offset(fileOffset)
-                .fileSize(downLoadSize)
-                .build(), callback);
+                .groupName(groupName).path(path)
+                .offset(fileOffset).fileSize(downLoadSize).build(), callback);
     }
 
     @Override
     public <T> T downloadFile(DownloadFileRequest request, DownloadCallback<T> callback) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         CodeUtils.validateNotNull(callback, "callback");
         StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
@@ -579,23 +546,28 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath uploadAppenderFile(String groupName, File file) {
-        return this.uploadAppenderFile(UploadAppendFileRequest.builder().groupName(groupName).file(file).build());
+        return this.uploadAppenderFile(
+                UploadAppendFileRequest.builder().groupName(groupName).file(file).build()
+        );
     }
 
     @Override
     public StorePath uploadAppenderFile(InputStream stream, long fileSize, String fileExtName) {
-        return this.uploadAppenderFile(UploadAppendFileRequest.builder().stream(stream, fileSize, fileExtName).build());
+        return this.uploadAppenderFile(
+                UploadAppendFileRequest.builder().stream(stream, fileSize, fileExtName).build()
+        );
     }
 
     @Override
     public StorePath uploadAppenderFile(String groupName, InputStream stream, long fileSize, String fileExtName) {
-        return this.uploadAppenderFile(UploadAppendFileRequest.builder().groupName(groupName)
-                .stream(stream, fileSize, fileExtName).build());
+        return this.uploadAppenderFile(
+                UploadAppendFileRequest.builder().groupName(groupName).stream(stream, fileSize, fileExtName).build()
+        );
     }
 
     @Override
     public StorePath uploadAppenderFile(UploadAppendFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = getGroupName(request);
         InputStream stream = getInputStream(request);
         StorageNode client = trackerClient.getStoreStorage(groupName);
         return uploadFileAndMetaData(client, stream, request.fileSize(),
@@ -616,7 +588,7 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public void appendFile(AppendFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         InputStream stream = getInputStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
@@ -628,15 +600,13 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void modifyFile(String groupName, String path, InputStream stream, long fileSize, long offset) {
         this.modifyFile(ModifyFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .stream(stream, fileSize, offset)
-                .build());
+                .groupName(groupName).path(path)
+                .stream(stream, fileSize, offset).build());
     }
 
     @Override
     public void modifyFile(ModifyFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         InputStream stream = getInputStream(request);
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
@@ -648,24 +618,18 @@ public class FastDfsClient implements FastDfs {
     @Override
     public void truncateFile(String groupName, String path) {
         this.truncateFile(TruncateFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .fileSize(0)
-                .build());
+                .groupName(groupName).path(path).fileSize(0).build());
     }
 
     @Override
     public void truncateFile(String groupName, String path, long size) {
         this.truncateFile(TruncateFileRequest.builder()
-                .groupName(groupName)
-                .path(path)
-                .fileSize(size)
-                .build());
+                .groupName(groupName).path(path).fileSize(size).build());
     }
 
     @Override
     public void truncateFile(TruncateFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
@@ -680,17 +644,11 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
         return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
-    }
-
-    @Override
-    public StorePath initMultipartUpload(long fileSize, String fileExtName) {
-        return this.initMultipartUpload(InitMultipartUploadRequest.builder()
-                .fileSize(fileSize).fileExtName(fileExtName).build());
     }
 
     // endregion appender
@@ -698,74 +656,121 @@ public class FastDfsClient implements FastDfs {
     // region multipart
 
     @Override
+    public StorePath initMultipartUpload(long fileSize, String fileExtName) {
+        return this.initMultipartUpload(InitMultipartUploadRequest.builder()
+                .fileSize(fileSize).fileExtName(fileExtName).build());
+    }
+
+    private final MultipartAttachmentAccessor multipartAttachment = new DefaultMultipartAttachmentAccessor(this);
+
+    @Override
+    public StorePath initMultipartUpload(long fileSize, long partSize, String fileExtName) {
+        return this.initMultipartUpload(InitMultipartUploadRequest.builder()
+                .fileSize(fileSize).partSize(partSize).fileExtName(fileExtName).build());
+    }
+
+    @Override
     public StorePath initMultipartUpload(InitMultipartUploadRequest request) {
+        String groupName = getGroupName(request);
+        long fileSize = request.fileSize();
         UploadAppendFileRequest uploadFileRequest = UploadAppendFileRequest.builder()
-                .groupName(request.groupName())
-                .stream(new ByteArrayInputStream(new byte[]{}), 0, request.fileExtName())
+                .groupName(groupName)
+                .stream(new ByteArrayInputStream(new byte[0]), 0, request.fileExtName())
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
-        if (request.fileSize() > 0) {
-            TruncateFileRequest truncateFileRequest = TruncateFileRequest.builder()
-                    .groupName(storePath.getGroup())
-                    .path(storePath.getPath())
-                    .fileSize(request.fileSize())
-                    .build();
-            truncateFile(truncateFileRequest);
+        String group = storePath.getGroup();
+        String path = storePath.getPath();
+        if (fileSize > 0) {
+            this.truncateFile(group, path, fileSize);
         }
+        // save attachment
+        multipartAttachment.put(group, path, new MultipartUploadAttachment(fileSize, request.partSize()));
         return storePath;
     }
 
     @Override
     public void uploadMultipart(String groupName, String path, File file, long offset) {
         this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path)
-                .fileOffset(file, offset)
-                .build());
+                .groupName(groupName).path(path).fileOffset(file, offset).build());
     }
 
     @Override
     public void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize) {
         this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path)
-                .filePart(file, partNumber, partSize)
-                .build());
+                .groupName(groupName).path(path).filePart(file, partNumber, partSize).build());
     }
 
     @Override
     public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset) {
         this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path)
-                .streamOffset(stream, fileSize, offset)
-                .build());
+                .groupName(groupName).path(path).streamOffset(stream, fileSize, offset).build());
     }
 
     @Override
     public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, int partNumber, long partSize) {
         this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path)
-                .streamPart(stream, fileSize, partNumber, partSize)
-                .build());
+                .groupName(groupName).path(path).streamPart(stream, fileSize, partNumber, partSize).build());
     }
 
+    @Override
+    public void uploadMultipart(String groupName, String path, File part, int partNumber) {
+        this.uploadMultipart(UploadMultipartRequest.builder()
+                .groupName(groupName).path(path).file(part, partNumber).build());
+    }
+
+    @Override
+    public void uploadMultipart(String groupName, String path, InputStream part, int partNumber) {
+        this.uploadMultipart(UploadMultipartRequest.builder()
+                .groupName(groupName).path(path).stream(part, partNumber).build());
+    }
 
     @Override
     public void uploadMultipart(UploadMultipartPartRequest request) {
-        String groupName = getGroupName(request.groupName());
+        String groupName = request.groupName();
         String path = request.path();
         ModifyFileRequest modifyFileRequest;
+        ModifyFileRequest.Builder builder = ModifyFileRequest.builder().groupName(groupName).path(path);
         if (request.file() != null) {
-            modifyFileRequest = ModifyFileRequest.builder()
-                    .groupName(groupName)
-                    .path(path)
-                    .file(request.file(), request.offset()).build();
-            modifyFile(modifyFileRequest);
+            modifyFileRequest = builder.file(request.file(), request.offset()).build();
         } else {
-            modifyFileRequest = ModifyFileRequest.builder()
-                    .groupName(groupName)
-                    .path(path)
-                    .stream(request.stream(), request.fileSize(), request.offset()).build();
+            modifyFileRequest = builder.stream(request.stream(), request.fileSize(), request.offset()).build();
         }
         modifyFile(modifyFileRequest);
+    }
+
+    @Override
+    public void uploadMultipart(UploadMultipartRequest request) {
+        String groupName = request.groupName();
+        String path = request.path();
+        int partNumber = request.partNumber();
+        MultipartUploadAttachment attachment = multipartAttachment.get(groupName, path);
+        if (attachment == null) {
+            throw new FdfsClientException("Not found multipart attachment.");
+        }
+        long partCount = attachment.getPartCount();
+        if (partCount <= 0) {
+            throw new FdfsClientException("No part need to be uploaded please check your file size or part size.");
+        }
+        if (partNumber > partCount) {
+            throw new FdfsClientException("Incorrect partNumber it should be in the range of 1-" + partCount);
+        }
+
+        if (attachment.getFileSize() == 0) {
+            // size=0 则只有一个size为0的分片 不需要在上传了
+            return;
+        }
+
+        long[] att = attachment.offset(partNumber);
+        long offset = att[0], size = att[1];
+        ModifyFileRequest modifyFileRequest;
+        ModifyFileRequest.Builder builder = ModifyFileRequest.builder()
+                .groupName(groupName).path(path);
+        if (request.file() != null) {
+            modifyFileRequest = builder.file(request.file(), offset).build();
+        } else {
+            modifyFileRequest = builder.stream(request.stream(), size, offset).build();
+        }
+        this.modifyFile(modifyFileRequest);
     }
 
     @Override
@@ -782,22 +787,16 @@ public class FastDfsClient implements FastDfs {
 
     @Override
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
-        String groupName = getGroupName(request.groupName());
-        StorePath storePath = new StorePath(groupName, request.path());
+        StorePath storePath = new StorePath(request.groupName(), request.path());
         if (request.regenerate()) {
-            RegenerateAppenderFileRequest reRequest = RegenerateAppenderFileRequest.builder()
-                    .groupName(storePath.getGroup())
-                    .path(storePath.getPath())
-                    .build();
-            storePath = regenerateAppenderFile(reRequest);
+            storePath = this.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
         }
+        String group = storePath.getGroup();
+        String path = storePath.getPath();
         // 重置metadata
-        MetaDataRequest metaDataRequest = MetaDataRequest.builder()
-                .groupName(storePath.getGroup())
-                .path(storePath.getPath())
-                .metaData(request.metaData())
-                .build();
-        mergeMetadata(metaDataRequest);
+        this.mergeMetadata(group, path, request.metaData());
+        //remove attachment
+        multipartAttachment.remove(group, path);
         return storePath;
     }
 
@@ -806,11 +805,15 @@ public class FastDfsClient implements FastDfs {
     /**
      * 获取分组
      *
-     * @param groupName
+     * @param args
      * @return
      */
-    private String getGroupName(String groupName) {
-        return StringUtils.isBlank(groupName) ? defaultGroup : groupName;
+    private String getGroupName(GroupArgs args) {
+        String groupName = args.groupName();
+        if (StringUtils.isNotBlank(groupName)) {
+            return groupName;
+        }
+        return StringUtils.isBlank(defaultGroup) ? null : defaultGroup;
     }
 
     /**

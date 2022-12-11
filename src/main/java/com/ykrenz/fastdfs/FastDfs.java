@@ -1,20 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.model.AppendFileRequest;
-import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
-import com.ykrenz.fastdfs.model.UploadAppendFileRequest;
-import com.ykrenz.fastdfs.model.UploadImageRequest;
-import com.ykrenz.fastdfs.model.DownloadFileRequest;
-import com.ykrenz.fastdfs.model.FileInfoRequest;
-import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
-import com.ykrenz.fastdfs.model.MetaDataInfoRequest;
-import com.ykrenz.fastdfs.model.MetaDataRequest;
-import com.ykrenz.fastdfs.model.ModifyFileRequest;
-import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
-import com.ykrenz.fastdfs.model.TruncateFileRequest;
-import com.ykrenz.fastdfs.model.UploadFileRequest;
-import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
-import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.*;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -454,13 +440,25 @@ public interface FastDfs {
      * @param fileSize
      * @param fileExtName
      * @return StorePath
+     * Use {@link #initMultipartUpload(long fileSize, long partSize, String fileExtName)}
      */
+    @Deprecated
     StorePath initMultipartUpload(long fileSize, String fileExtName);
 
     /**
      * 初始化分片上传
      *
-     * @param request group
+     * @param fileSize    文件大小
+     * @param fileExtName 文件后缀
+     * @param partSize    分片大小
+     * @return StorePath
+     */
+    StorePath initMultipartUpload(long fileSize, long partSize, String fileExtName);
+
+    /**
+     * 初始化分片上传
+     *
+     * @param request
      * @return StorePath
      */
     StorePath initMultipartUpload(InitMultipartUploadRequest request);
@@ -471,8 +469,9 @@ public interface FastDfs {
      * @param groupName
      * @param path
      * @param file
-     * @param offset
+     * @param offset    Use {@link #uploadMultipart(String groupName, String path, File part, int partNumber)}
      */
+    @Deprecated
     void uploadMultipart(String groupName, String path, File file, long offset);
 
     /**
@@ -482,8 +481,9 @@ public interface FastDfs {
      * @param path
      * @param file
      * @param partNumber
-     * @param partSize
+     * @param partSize   Use {@link #uploadMultipart(String groupName, String path, File part, int partNumber)}
      */
+    @Deprecated
     void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize);
 
     /**
@@ -495,6 +495,7 @@ public interface FastDfs {
      * @param fileSize
      * @param offset
      */
+    @Deprecated
     void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset);
 
     /**
@@ -505,17 +506,46 @@ public interface FastDfs {
      * @param stream
      * @param fileSize
      * @param partNumber
-     * @param partSize
+     * @param partSize   Use {@link #uploadMultipart(String groupName, String path, InputStream stream, int partNumber)}
      */
+    @Deprecated
     void uploadMultipart(String groupName, String path,
                          InputStream stream, long fileSize, int partNumber, long partSize);
 
     /**
      * 上传分片
      *
+     * @param groupName  组名称
+     * @param path       路径
+     * @param part       分片文件 (size<=partSize)
+     * @param partNumber 分片索引 (start=1)
+     */
+    void uploadMultipart(String groupName, String path, File part, int partNumber);
+
+    /**
+     * 上传分片
+     *
+     * @param groupName  组名称
+     * @param path       路径
+     * @param part       分片文件流 (size<=partSize)
+     * @param partNumber 分片索引 (start=1)
+     */
+    void uploadMultipart(String groupName, String path, InputStream part, int partNumber);
+
+    /**
+     * 上传分片
+     *
      * @param request
      */
+    @Deprecated
     void uploadMultipart(UploadMultipartPartRequest request);
+
+    /**
+     * 上传分片
+     *
+     * @param request
+     */
+    void uploadMultipart(UploadMultipartRequest request);
 
     /**
      * 完成分片上传

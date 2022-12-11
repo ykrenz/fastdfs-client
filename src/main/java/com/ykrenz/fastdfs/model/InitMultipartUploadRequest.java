@@ -1,8 +1,11 @@
 package com.ykrenz.fastdfs.model;
 
-import com.ykrenz.fastdfs.common.CodeUtils;
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 
 import java.util.Objects;
+
+import static com.ykrenz.fastdfs.common.CodeUtils.validateGreaterZero;
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotLessZero;
 
 /**
  * 初始化分片上传
@@ -16,6 +19,10 @@ public class InitMultipartUploadRequest extends GroupArgs {
      */
     protected long fileSize;
     /**
+     * 分片大小
+     */
+    protected long partSize;
+    /**
      * 文件后缀
      */
     protected String fileExtName;
@@ -28,6 +35,10 @@ public class InitMultipartUploadRequest extends GroupArgs {
         return fileSize;
     }
 
+    public long partSize() {
+        return partSize;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -38,7 +49,8 @@ public class InitMultipartUploadRequest extends GroupArgs {
     public static final class Builder extends GroupArgs.Builder<InitMultipartUploadRequest.Builder, InitMultipartUploadRequest> {
         @Override
         protected void validate(InitMultipartUploadRequest args) {
-            CodeUtils.validateNotLessZero(args.fileSize, "fileSize");
+            validateNotLessZero(args.fileSize, "fileSize");
+            validateGreaterZero(args.partSize, "partSize");
         }
 
         /**
@@ -53,13 +65,25 @@ public class InitMultipartUploadRequest extends GroupArgs {
         }
 
         /**
+         * 分片大小
+         *
+         * @param partSize 分片大小
+         * @return
+         */
+        public Builder partSize(long partSize) {
+            operations.add(args -> args.partSize = partSize);
+            return this;
+        }
+
+        /**
          * 文件后缀名
          *
          * @param fileExtName
          * @return
          */
         public Builder fileExtName(String fileExtName) {
-            operations.add(args -> args.fileExtName = fileExtName);
+            String handlerFileExtName = FastDfsUtils.handlerFilename(fileExtName);
+            operations.add(args -> args.fileExtName = handlerFileExtName);
             return this;
         }
     }
@@ -70,12 +94,11 @@ public class InitMultipartUploadRequest extends GroupArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         InitMultipartUploadRequest that = (InitMultipartUploadRequest) o;
-        return fileSize == that.fileSize &&
-                Objects.equals(fileExtName, that.fileExtName);
+        return fileSize == that.fileSize && partSize == that.partSize && Objects.equals(fileExtName, that.fileExtName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fileSize, fileExtName);
+        return Objects.hash(super.hashCode(), fileSize, partSize, fileExtName);
     }
 }

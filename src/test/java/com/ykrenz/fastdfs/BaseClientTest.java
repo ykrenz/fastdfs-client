@@ -33,7 +33,7 @@ public class BaseClientTest {
     public static final List<String> TRACKER_LIST = new ArrayList<>();
 
     static {
-        TRACKER_LIST.add("192.168.24.130:22122");
+        TRACKER_LIST.add("192.168.100.200:22122");
 //        TRACKER_LIST.add("192.168.24.131:22122");
 //        TRACKER_LIST.add("192.168.24.132:22122");
     }
@@ -81,6 +81,7 @@ public class BaseClientTest {
                 .path(storePath.getPath())
                 .build();
         fastDFS.deleteFile(fileInfoRequest);
+        LOGGER.info("删除文件成功 path={}", storePath);
     }
 
     protected FileInfo queryFile(StorePath storePath) {

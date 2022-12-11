@@ -1,9 +1,8 @@
 package com.ykrenz.fastdfs.model;
 
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.proto.OtherConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -19,7 +18,8 @@ import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
  * @author ykren
  * @date 2022/1/21
  */
-public class UploadSalveFileRequest extends AbstractFileArgs {
+public class UploadSalveFileRequest extends AbstractFileExtHandlerArgs {
+
     /**
      * 从文件前缀
      */
@@ -35,10 +35,6 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         return prefix;
     }
 
-    public String fileExtName() {
-        return fileExtName;
-    }
-
     public Set<MetaData> metaData() {
         return metaData;
     }
@@ -47,15 +43,16 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         return new Builder();
     }
 
-    public static final class Builder extends AbstractFileArgs.Builder<Builder, UploadSalveFileRequest> {
+    public static final class Builder extends AbstractFileExtHandlerArgs.Builder<Builder, UploadSalveFileRequest> {
         /**
-         * 日志
+         * 默认前缀名
          */
-        private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
+        private static final String DEFAULT_PREFIX = "_";
 
         @Override
         protected void validate(UploadSalveFileRequest args) {
             super.validate(args);
+            validateNotBlankString(args.groupName, "master file groupName");
             validateNotBlankString(args.path, "master file path");
             validateNotBlankString(args.prefix, "salve prefix");
             if (args.prefix.length() > OtherConstants.FDFS_FILE_PREFIX_MAX_LEN) {
@@ -70,7 +67,8 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         }
 
         public Builder prefix(String prefix) {
-            operations.add(args -> args.prefix = prefix);
+            String handlerPrefix = FastDfsUtils.handlerPrefix(prefix);
+            operations.add(args -> args.prefix = handlerPrefix);
             return this;
         }
 
@@ -88,7 +86,7 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         public Builder file(File file) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.fileExtName = getExtension(file.getName()));
+            super.fileExtName(getExtension(file.getName()));
             return this;
         }
 
@@ -103,7 +101,7 @@ public class UploadSalveFileRequest extends AbstractFileArgs {
         public Builder stream(InputStream stream, long fileSize, String fileExtName) {
             operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.fileExtName = fileExtName);
+            super.fileExtName(fileExtName);
             return this;
         }
 

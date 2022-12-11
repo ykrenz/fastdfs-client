@@ -1,8 +1,8 @@
 package com.ykrenz.fastdfs.model;
 
-import com.ykrenz.fastdfs.common.CodeUtils;
-
 import java.util.Objects;
+
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
 
 /**
  * path参数抽象类
@@ -31,7 +31,8 @@ public class GroupPathArgs extends GroupArgs {
 
         @Override
         protected void validate(A args) {
-            CodeUtils.validateNotBlankString(args.path, "path");
+            validateNotBlankString(args.groupName, "groupName");
+            validateNotBlankString(args.path, "path");
         }
 
         @SuppressWarnings("unchecked")

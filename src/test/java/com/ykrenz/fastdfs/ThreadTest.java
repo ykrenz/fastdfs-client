@@ -67,11 +67,7 @@ public class ThreadTest extends BaseClientTest {
                 LOGGER.info("上传成功={}", storePath);
             } finally {
                 if (storePath != null) {
-                    FileInfoRequest fileInfoRequest = FileInfoRequest.builder()
-                            .groupName(storePath.getGroup())
-                            .path(storePath.getPath())
-                            .build();
-                    fastDFS.deleteFile(fileInfoRequest);
+                    delete(storePath);
                 }
             }
             return null;

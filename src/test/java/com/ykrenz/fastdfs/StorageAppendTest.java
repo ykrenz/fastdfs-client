@@ -291,7 +291,7 @@ public class StorageAppendTest extends BaseClientTest {
         FileInfo fileInfo = queryFile(storePath);
         assertEquals(0, fileInfo.getFileSize());
 
-        long size = 100;
+        long size = 1024 * 1024 * 500;
         request = TruncateFileRequest.builder()
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())

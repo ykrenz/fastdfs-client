@@ -2,13 +2,15 @@ package com.ykrenz.fastdfs.model;
 
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.proto.storage.enums.StorageMetadataSetType;
-import com.ykrenz.fastdfs.common.CodeUtils;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotNull;
 
 /**
  * 追加文件请求参数
@@ -46,9 +48,10 @@ public class AppendFileRequest extends AbstractFileArgs {
         @Override
         protected void validate(AppendFileRequest args) {
             super.validate(args);
-            CodeUtils.validateNotBlankString(args.path, "path");
+            validateNotBlankString(args.groupName, "groupName");
+            validateNotBlankString(args.path, "path");
             if (args.metaData != null && !args.metaData.isEmpty()) {
-                CodeUtils.validateNotNull(args.metaType, "metadata type");
+                validateNotNull(args.metaType, "metadata type");
             }
         }
 

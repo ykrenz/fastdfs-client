@@ -9,7 +9,7 @@ package com.ykrenz.fastdfs.config;
 public class FastDfsConfiguration {
 
     /**
-     * 默认分组 优先级大于参数
+     * 默认分组 固定客户端上传分组 若已设置其他分组 则配置失效
      */
     private String defaultGroup;
     /**

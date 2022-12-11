@@ -1,5 +1,6 @@
 package com.ykrenz.fastdfs.model;
 
+import com.ykrenz.fastdfs.common.FastDfsUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -71,7 +72,7 @@ public class ThumbImage {
      * @param prefixName
      */
     public void setPrefixName(String prefixName) {
-        this.prefixName = prefixName;
+        this.prefixName = FastDfsUtils.handlerPrefix(prefixName);
     }
 
     /**

@@ -11,6 +11,7 @@ import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
  * @author ykren
  * @date 2022/1/25
  */
+@Deprecated
 public class UploadMultipartPartRequest extends AbstractFileArgs {
     /**
      * 分片起始位置

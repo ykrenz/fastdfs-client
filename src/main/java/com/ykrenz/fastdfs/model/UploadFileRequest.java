@@ -13,11 +13,7 @@ import java.util.Set;
  * @author ykren
  * @date 2022/1/22
  */
-public class UploadFileRequest extends AbstractFileArgs {
-
-    public String fileExtName() {
-        return fileExtName;
-    }
+public class UploadFileRequest extends AbstractFileExtHandlerArgs {
 
     public Set<MetaData> metaData() {
         return metaData;
@@ -30,7 +26,7 @@ public class UploadFileRequest extends AbstractFileArgs {
     /**
      * 参数构建类
      */
-    public static final class Builder extends AbstractFileArgs.Builder<Builder, UploadFileRequest> {
+    public static final class Builder extends AbstractFileExtHandlerArgs.Builder<Builder, UploadFileRequest> {
 
         /**
          * 上传文件
@@ -51,7 +47,7 @@ public class UploadFileRequest extends AbstractFileArgs {
         public Builder file(File file) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.fileExtName = getExtension(file.getName()));
+            super.fileExtName(getExtension(file.getName()));
             return this;
         }
 
@@ -66,7 +62,7 @@ public class UploadFileRequest extends AbstractFileArgs {
         public Builder stream(InputStream stream, long fileSize, String fileExtName) {
             operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.fileExtName = fileExtName);
+            super.fileExtName(fileExtName);
             return this;
         }
 
