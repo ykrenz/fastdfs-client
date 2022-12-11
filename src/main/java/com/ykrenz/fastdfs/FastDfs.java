@@ -437,17 +437,6 @@ public interface FastDfs {
     /**
      * 初始化分片上传
      *
-     * @param fileSize
-     * @param fileExtName
-     * @return StorePath
-     * Use {@link #initMultipartUpload(long fileSize, long partSize, String fileExtName)}
-     */
-    @Deprecated
-    StorePath initMultipartUpload(long fileSize, String fileExtName);
-
-    /**
-     * 初始化分片上传
-     *
      * @param fileSize    文件大小
      * @param fileExtName 文件后缀
      * @param partSize    分片大小
@@ -462,55 +451,6 @@ public interface FastDfs {
      * @return StorePath
      */
     StorePath initMultipartUpload(InitMultipartUploadRequest request);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param file
-     * @param offset    Use {@link #uploadMultipart(String groupName, String path, File part, int partNumber)}
-     */
-    @Deprecated
-    void uploadMultipart(String groupName, String path, File file, long offset);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param file
-     * @param partNumber
-     * @param partSize   Use {@link #uploadMultipart(String groupName, String path, File part, int partNumber)}
-     */
-    @Deprecated
-    void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param stream
-     * @param fileSize
-     * @param offset
-     */
-    @Deprecated
-    void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param stream
-     * @param fileSize
-     * @param partNumber
-     * @param partSize   Use {@link #uploadMultipart(String groupName, String path, InputStream stream, int partNumber)}
-     */
-    @Deprecated
-    void uploadMultipart(String groupName, String path,
-                         InputStream stream, long fileSize, int partNumber, long partSize);
 
     /**
      * 上传分片
@@ -531,14 +471,6 @@ public interface FastDfs {
      * @param partNumber 分片索引 (start=1)
      */
     void uploadMultipart(String groupName, String path, InputStream part, int partNumber);
-
-    /**
-     * 上传分片
-     *
-     * @param request
-     */
-    @Deprecated
-    void uploadMultipart(UploadMultipartPartRequest request);
 
     /**
      * 上传分片

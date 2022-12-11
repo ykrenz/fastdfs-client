@@ -42,7 +42,7 @@ public class BaseClientTest {
     public void initClient() {
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
-        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
         configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");

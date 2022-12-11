@@ -655,12 +655,6 @@ public class FastDfsClient implements FastDfs {
 
     // region multipart
 
-    @Override
-    public StorePath initMultipartUpload(long fileSize, String fileExtName) {
-        return this.initMultipartUpload(InitMultipartUploadRequest.builder()
-                .fileSize(fileSize).fileExtName(fileExtName).build());
-    }
-
     private final MultipartAttachmentAccessor multipartAttachment = new DefaultMultipartAttachmentAccessor(this);
 
     @Override
@@ -689,30 +683,6 @@ public class FastDfsClient implements FastDfs {
     }
 
     @Override
-    public void uploadMultipart(String groupName, String path, File file, long offset) {
-        this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path).fileOffset(file, offset).build());
-    }
-
-    @Override
-    public void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize) {
-        this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path).filePart(file, partNumber, partSize).build());
-    }
-
-    @Override
-    public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset) {
-        this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path).streamOffset(stream, fileSize, offset).build());
-    }
-
-    @Override
-    public void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, int partNumber, long partSize) {
-        this.uploadMultipart(UploadMultipartPartRequest.builder()
-                .groupName(groupName).path(path).streamPart(stream, fileSize, partNumber, partSize).build());
-    }
-
-    @Override
     public void uploadMultipart(String groupName, String path, File part, int partNumber) {
         this.uploadMultipart(UploadMultipartRequest.builder()
                 .groupName(groupName).path(path).file(part, partNumber).build());
@@ -722,20 +692,6 @@ public class FastDfsClient implements FastDfs {
     public void uploadMultipart(String groupName, String path, InputStream part, int partNumber) {
         this.uploadMultipart(UploadMultipartRequest.builder()
                 .groupName(groupName).path(path).stream(part, partNumber).build());
-    }
-
-    @Override
-    public void uploadMultipart(UploadMultipartPartRequest request) {
-        String groupName = request.groupName();
-        String path = request.path();
-        ModifyFileRequest modifyFileRequest;
-        ModifyFileRequest.Builder builder = ModifyFileRequest.builder().groupName(groupName).path(path);
-        if (request.file() != null) {
-            modifyFileRequest = builder.file(request.file(), request.offset()).build();
-        } else {
-            modifyFileRequest = builder.stream(request.stream(), request.fileSize(), request.offset()).build();
-        }
-        modifyFile(modifyFileRequest);
     }
 
     @Override

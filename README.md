@@ -222,34 +222,20 @@ public void failed(){
         List<String> trackerServers=new ArrayList<>();
         trackerServers.add("192.168.24.130:22122");
         FastDfs fastDfs=new FastDfsClientBuilder().build(trackerServers);
-final long partSize=5*1024*1024L;   // 5MB
+        final long partSize=5*1024*1024L;   // 5MB
         long fileSize=sampleFile.length();
         long partCount=fileSize>0?(long)Math.ceil((double)fileSize/partSize):1;
 
-        StorePath storePath=fastDfs.initMultipartUpload(sampleFile.length(),"txt");
-        System.out.println("初始化分片成功"+storePath);
-        ExecutorService executorService=Executors.newFixedThreadPool(3);
-        for(int i=1;i<=partCount;i++){
-        long startPos=(i-1)*partSize;
-        long curPartSize=(i==partCount)?(fileSize-startPos):partSize;
-        InputStream ins=new FileInputStream(sampleFile);
+        StorePath storePath = fastDfs.initMultipartUpload(sampleFile.length(), partSize, "txt");
+        System.out.println("初始化分片成功" + storePath);
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        for (int i = 1; i <= partCount; i++) {
+        long startPos = (i - 1) * partSize;
+        InputStream ins = new FileInputStream(sampleFile);
         ins.skip(startPos);
-        int partNumber=i;
-        executorService.execute(()->{
-        // offset方式
-//                UploadMultipartPartRequest offsetPartRequest = UploadMultipartPartRequest.builder()
-//                        .streamOffset(ins, curPartSize, startPos)
-//                        .groupName(storePath.getGroup())
-//                        .path(storePath.getPath())
-//                        .build();
-//                fastDFS.uploadMultipart(offsetPartRequest);
-        // partSize方式
-        UploadMultipartPartRequest partRequest=UploadMultipartPartRequest.builder()
-        .streamPart(ins,curPartSize,partNumber,partSize)
-        .groupName(storePath.getGroup())
-        .path(storePath.getPath())
-        .build();
-        fastDfs.uploadMultipart(partRequest);
+        int partNumber = i;
+        executorService.execute(() -> {
+        fastDfs.uploadMultipart(storePath.getGroup(), storePath.getPath(), ins, partNumber);
         });
         }
         /*

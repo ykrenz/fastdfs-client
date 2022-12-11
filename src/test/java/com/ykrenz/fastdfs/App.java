@@ -58,26 +58,24 @@ public class App {
 //
 //        uploadAppendFile();
 
-//        try {
-//            uploadMultipart();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            uploadMultipart();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 //        downLoadFile();
-
-
-        path();
+//        path();
     }
 
     private static void path() {
         // 配置构建
         List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
+        trackerServers.add("192.168.100.200:22122");
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
-        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
-        configuration.getHttp().getWebServers().add("http://192.168.24.131:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.100.201:8888");
         configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
@@ -122,30 +120,16 @@ public class App {
         long fileSize = sampleFile.length();
         long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
 
-        StorePath storePath = fastDfs.initMultipartUpload(sampleFile.length(), "txt");
+        StorePath storePath = fastDfs.initMultipartUpload(sampleFile.length(), partSize, "txt");
         System.out.println("初始化分片成功" + storePath);
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         for (int i = 1; i <= partCount; i++) {
             long startPos = (i - 1) * partSize;
-            long curPartSize = (i == partCount) ? (fileSize - startPos) : partSize;
             InputStream ins = new FileInputStream(sampleFile);
             ins.skip(startPos);
             int partNumber = i;
             executorService.execute(() -> {
-                // offset方式
-//                UploadMultipartPartRequest offsetPartRequest = UploadMultipartPartRequest.builder()
-//                        .streamOffset(ins, curPartSize, startPos)
-//                        .groupName(storePath.getGroup())
-//                        .path(storePath.getPath())
-//                        .build();
-//                fastDFS.uploadMultipart(offsetPartRequest);
-                // partSize方式
-                UploadMultipartPartRequest partRequest = UploadMultipartPartRequest.builder()
-                        .streamPart(ins, curPartSize, partNumber, partSize)
-                        .groupName(storePath.getGroup())
-                        .path(storePath.getPath())
-                        .build();
-                fastDfs.uploadMultipart(partRequest);
+                fastDfs.uploadMultipart(storePath.getGroup(), storePath.getPath(), ins, partNumber);
             });
         }
         /*
@@ -258,17 +242,17 @@ public class App {
     public static FastDfs fastDfs() {
         // 默认配置构建
         List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
+        trackerServers.add("192.168.100.200:22122");
         return new FastDfsClientBuilder().build(trackerServers);
     }
 
     public static FastDfs configDfs() {
         // 配置构建
         List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.24.130:22122");
+        trackerServers.add("192.168.100.200:22122");
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.setDefaultGroup("group1");
-        configuration.getHttp().getWebServers().add("http://192.168.24.130:8888");
+        configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
         configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
