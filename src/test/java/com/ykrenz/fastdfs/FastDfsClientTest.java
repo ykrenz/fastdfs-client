@@ -383,11 +383,15 @@ public class FastDfsClientTest extends BaseClientTest {
 
     @Test
     public void nullFileTest() throws IOException {
-        RandomTextFile file = new RandomTextFile(0);
-        File sampleFile = new File("tmp", "sampleFile.txt");
-        FileUtils.copyToFile(file.getInputStream(), sampleFile);
-        StorePath storePath = fastDFS.uploadFile(sampleFile);
-        LOGGER.info("上传完成 path {}", storePath);
-        delete(storePath);
+        for (int i = 0;i<4;i++){
+            RandomTextFile file = new RandomTextFile(0);
+            File sampleFile = new File("tmp", "sampleFile.txt");
+            FileUtils.copyToFile(file.getInputStream(), sampleFile);
+            StorePath storePath = fastDFS.uploadFile(sampleFile);
+            LOGGER.info("上传完成 path {}", storePath);
+//        delete(storePath);
+            System.out.println(queryFile(storePath));
+        }
+
     }
 }

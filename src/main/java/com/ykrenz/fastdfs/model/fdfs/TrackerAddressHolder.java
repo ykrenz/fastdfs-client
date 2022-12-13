@@ -68,7 +68,7 @@ public class TrackerAddressHolder {
             return true;
         }
         // 如果连接无效，并且达到重试时间
-        return (System.currentTimeMillis() - lastUnavailableTime) > retryAfterSecond * 1000;
+        return retryAfterSecond > 0 && (System.currentTimeMillis() - lastUnavailableTime) > retryAfterSecond * 1000L;
     }
 
     public InetSocketAddress getAddress() {

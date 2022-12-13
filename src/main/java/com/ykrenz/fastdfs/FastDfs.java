@@ -17,49 +17,12 @@ import java.util.Set;
  *
  * @author ykren
  */
-public interface FastDfs {
-
-    /**
-     * 获取trackerClient
-     *
-     * @return
-     */
-    TrackerClient getTrackerClient();
+public interface FastDfs extends TrackerClient, HttpServerClient {
 
     /**
      * 关闭客户端
      */
     void shutdown();
-
-    /**
-     * 文件访问路径url
-     *
-     * @param groupName
-     * @param path
-     * @return
-     */
-    String accessUrl(String groupName, String path);
-
-    /**
-     * 自定义下载文件名地址
-     *
-     * @param groupName
-     * @param path
-     * @param downloadFileName
-     * @return
-     */
-    String downLoadUrl(String groupName, String path, String downloadFileName);
-
-    /**
-     * 自定义下载文件名 参数名地址
-     *
-     * @param groupName
-     * @param path
-     * @param urlArgName
-     * @param downloadFileName
-     * @return
-     */
-    String downLoadUrl(String groupName, String path, String urlArgName, String downloadFileName);
 
     /**
      * 上传一般文件

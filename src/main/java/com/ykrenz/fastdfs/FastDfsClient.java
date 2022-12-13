@@ -14,10 +14,12 @@ import com.ykrenz.fastdfs.exception.FdfsClientException;
 import com.ykrenz.fastdfs.exception.FdfsUploadImageException;
 import com.ykrenz.fastdfs.model.*;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
+import com.ykrenz.fastdfs.model.fdfs.GroupState;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorageNode;
 import com.ykrenz.fastdfs.model.fdfs.StorageNodeInfo;
+import com.ykrenz.fastdfs.model.fdfs.StorageState;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import com.ykrenz.fastdfs.model.proto.storage.DownloadCallback;
 import com.ykrenz.fastdfs.model.proto.storage.StorageAppendFileCommand;
@@ -63,16 +65,6 @@ public class FastDfsClient implements FastDfs {
     private static final Logger LOGGER = LoggerFactory.getLogger(FastDfsClient.class);
 
     /**
-     * TrackerClient
-     */
-    private final TrackerClient trackerClient;
-
-    /**
-     * 连接管理器
-     */
-    private final FdfsConnectionManager fdfsConnectionManager;
-
-    /**
      * 默认 group
      */
     private final String defaultGroup;
@@ -80,21 +72,31 @@ public class FastDfsClient implements FastDfs {
     /**
      * FastDfs配置
      */
-    private final FastDfsConfiguration fastDfsConfiguration;
+    private final FastDfsConfiguration configuration;
 
     /**
-     * web客户端
+     * TrackerClient
      */
-    private final FastDfsWebClient fastDfsWebClient;
+    private TrackerClient trackerClient;
+
+    /**
+     * 连接管理器
+     */
+    private FdfsConnectionManager connectionManager;
+
+    /**
+     * http客户端
+     */
+    private HttpServerClient httpServerClient;
 
     public FastDfsClient(final List<String> trackerServers, final FastDfsConfiguration configuration) {
         checkClient(trackerServers, configuration);
-        FdfsConnectionPool pool = new FdfsConnectionPool(configuration.getConnection());
-        this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers, pool));
-        this.fastDfsWebClient = new DefaultFastDfsWebClient(configuration.getHttp());
-        this.fdfsConnectionManager = new FdfsConnectionManager(pool);
+        this.configuration = configuration;
         this.defaultGroup = configuration.getDefaultGroup();
-        this.fastDfsConfiguration = configuration;
+        this.connectionManager = new FdfsConnectionManager(new FdfsConnectionPool(configuration.getConnection()));
+        this.httpServerClient = new DefaultHttpServerClient(configuration.getHttp());
+        this.trackerClient = new DefaultTrackerClient(new TrackerConnectionManager(trackerServers,
+                new FdfsConnectionPool(configuration.getConnection())));
     }
 
     private void checkClient(List<String> trackerServers, FastDfsConfiguration configuration) {
@@ -106,45 +108,62 @@ public class FastDfsClient implements FastDfs {
         }
     }
 
-    public FdfsConnectionManager getConnectionManager() {
-        return fdfsConnectionManager;
+    public FastDfsConfiguration getConfiguration() {
+        return configuration;
     }
 
-    public String getDefaultGroup() {
-        return defaultGroup;
-    }
-
-    public FastDfsConfiguration getFastDfsConfiguration() {
-        return fastDfsConfiguration;
-    }
-
-    public FastDfsWebClient getFastDfsWebClient() {
-        return fastDfsWebClient;
-    }
-
-    @Override
     public TrackerClient getTrackerClient() {
         return trackerClient;
     }
 
+    public void setTrackerClient(TrackerClient trackerClient) {
+        this.trackerClient = trackerClient;
+    }
+
+    public FdfsConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
+    public void setConnectionManager(FdfsConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
+
+    public HttpServerClient getHttpServerClient() {
+        return httpServerClient;
+    }
+
+    public void setHttpServerClient(HttpServerClient httpServerClient) {
+        this.httpServerClient = httpServerClient;
+    }
+
+    public MultipartAttachmentAccessor getMultipartAttachment() {
+        return multipartAttachment;
+    }
+
+    public void setMultipartAttachment(MultipartAttachmentAccessor accessor) {
+        this.multipartAttachment = accessor;
+    }
+
     @Override
     public void shutdown() {
-        fdfsConnectionManager.getPool().close();
+        trackerClient.shutdown();
+        connectionManager.getPool().close();
+        LOGGER.debug("fastdfs is shutting down");
     }
 
     @Override
     public String accessUrl(String groupName, String path) {
-        return fastDfsWebClient.accessUrl(groupName, path);
+        return httpServerClient.accessUrl(groupName, path);
     }
 
     @Override
     public String downLoadUrl(String groupName, String path, String downloadFileName) {
-        return fastDfsWebClient.downLoadUrl(groupName, path, downloadFileName);
+        return httpServerClient.downLoadUrl(groupName, path, downloadFileName);
     }
 
     @Override
     public String downLoadUrl(String groupName, String path, String urlArgName, String downloadFileName) {
-        return fastDfsWebClient.downLoadUrl(groupName, path, urlArgName, downloadFileName);
+        return httpServerClient.downLoadUrl(groupName, path, urlArgName, downloadFileName);
     }
 
     @Override
@@ -173,7 +192,7 @@ public class FastDfsClient implements FastDfs {
     public StorePath uploadFile(UploadFileRequest request) {
         String groupName = getGroupName(request);
         InputStream stream = getInputStream(request);
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = this.getStoreStorage(groupName);
         return uploadFileAndMetaData(client, stream, request.fileSize(),
                 request.fileExtName(), request.metaData(), false);
     }
@@ -193,12 +212,12 @@ public class FastDfsClient implements FastDfs {
         // 上传文件
         StorageUploadFileCommand command = new StorageUploadFileCommand(client.getStoreIndex(), inputStream,
                 fileExtName, fileSize, isAppenderFile);
-        StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        StorePath path = connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         // 上传metadata
         if (hasMetaData(metaDataSet)) {
             StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(path.getGroup(), path.getPath(),
                     metaDataSet, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
-            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
+            connectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
         return path;
     }
@@ -226,18 +245,18 @@ public class FastDfsClient implements FastDfs {
     public StorePath uploadSlaveFile(UploadSalveFileRequest request) {
         String groupName = request.groupName();
         InputStream stream = getInputStream(request);
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, request.masterPath());
+        StorageNodeInfo client = this.getUpdateStorage(groupName, request.masterPath());
 
         StorageUploadSlaveFileCommand command = new StorageUploadSlaveFileCommand(stream,
                 request.fileSize(), request.masterPath(), request.prefix(), request.fileExtName());
-        StorePath path = fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        StorePath path = connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
 
         Set<MetaData> metaData = request.metaData();
         // 上传metadata
         if (hasMetaData(metaData)) {
             StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(path.getGroup(), path.getPath(),
                     metaData, StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE);
-            fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
+            connectionManager.executeFdfsCmd(client.getInetSocketAddress(), setMDCommand);
         }
         return path;
 
@@ -309,7 +328,7 @@ public class FastDfsClient implements FastDfs {
         List<StorePath> paths = new ArrayList<>(thumbImageRequests.size());
 
         String groupName = getGroupName(request);
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = this.getStoreStorage(groupName);
 
         for (UploadImageRequest.ThumbImageRequest thumbImageRequest : thumbImageRequests) {
             ThumbImage thumbImage = thumbImageRequest.thumbImage();
@@ -427,9 +446,9 @@ public class FastDfsClient implements FastDfs {
     public Set<MetaData> getMetadata(MetaDataInfoRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
+        StorageNodeInfo client = this.getFetchStorage(groupName, path);
         StorageGetMetadataCommand command = new StorageGetMetadataCommand(groupName, path);
-        return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        return connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     private void uploadMetaData(InetSocketAddress address, String groupName, String path,
@@ -439,10 +458,10 @@ public class FastDfsClient implements FastDfs {
         }
         StorageSetMetadataCommand setMDCommand = new StorageSetMetadataCommand(groupName, path, metaData, type);
         if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE) {
-            fdfsConnectionManager.executeFdfsCmd(address, setMDCommand);
+            connectionManager.executeFdfsCmd(address, setMDCommand);
         }
         if (type == StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE) {
-            fdfsConnectionManager.executeFdfsCmd(address, setMDCommand);
+            connectionManager.executeFdfsCmd(address, setMDCommand);
         }
     }
 
@@ -457,7 +476,7 @@ public class FastDfsClient implements FastDfs {
     public void overwriteMetadata(MetaDataRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         uploadMetaData(client.getInetSocketAddress(), groupName, path,
                 StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE, request.metaData());
     }
@@ -472,7 +491,7 @@ public class FastDfsClient implements FastDfs {
     public void mergeMetadata(MetaDataRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         uploadMetaData(client.getInetSocketAddress(), groupName, path,
                 StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_MERGE, request.metaData());
     }
@@ -493,9 +512,9 @@ public class FastDfsClient implements FastDfs {
     public FileInfo queryFileInfo(FileInfoRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
+        StorageNodeInfo client = this.getFetchStorage(groupName, path);
         StorageQueryFileInfoCommand command = new StorageQueryFileInfoCommand(groupName, path);
-        return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        return connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
@@ -508,9 +527,9 @@ public class FastDfsClient implements FastDfs {
     public void deleteFile(FileInfoRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         StorageDeleteFileCommand command = new StorageDeleteFileCommand(groupName, path);
-        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
@@ -531,10 +550,10 @@ public class FastDfsClient implements FastDfs {
         String groupName = request.groupName();
         String path = request.path();
         CodeUtils.validateNotNull(callback, "callback");
-        StorageNodeInfo client = trackerClient.getFetchStorage(groupName, path);
+        StorageNodeInfo client = this.getFetchStorage(groupName, path);
         StorageDownloadCommand<T> command = new StorageDownloadCommand<>(groupName, path,
                 request.offset(), request.fileSize(), callback);
-        return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        return connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     // region appender
@@ -569,7 +588,7 @@ public class FastDfsClient implements FastDfs {
     public StorePath uploadAppenderFile(UploadAppendFileRequest request) {
         String groupName = getGroupName(request);
         InputStream stream = getInputStream(request);
-        StorageNode client = trackerClient.getStoreStorage(groupName);
+        StorageNode client = this.getStoreStorage(groupName);
         return uploadFileAndMetaData(client, stream, request.fileSize(),
                 request.fileExtName(), request.metaData(), true);
     }
@@ -591,9 +610,9 @@ public class FastDfsClient implements FastDfs {
         String groupName = request.groupName();
         String path = request.path();
         InputStream stream = getInputStream(request);
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         StorageAppendFileCommand command = new StorageAppendFileCommand(stream, request.fileSize(), path);
-        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         uploadMetaData(client.getInetSocketAddress(), groupName, path, request.metaType(), request.metaData());
     }
 
@@ -609,9 +628,9 @@ public class FastDfsClient implements FastDfs {
         String groupName = request.groupName();
         String path = request.path();
         InputStream stream = getInputStream(request);
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         StorageModifyCommand command = new StorageModifyCommand(path, stream, request.fileSize(), request.offset());
-        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
         uploadMetaData(client.getInetSocketAddress(), groupName, path, request.metaType(), request.metaData());
     }
 
@@ -631,9 +650,9 @@ public class FastDfsClient implements FastDfs {
     public void truncateFile(TruncateFileRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         StorageTruncateCommand command = new StorageTruncateCommand(path, request.fileSize());
-        fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     @Override
@@ -646,16 +665,16 @@ public class FastDfsClient implements FastDfs {
     public StorePath regenerateAppenderFile(RegenerateAppenderFileRequest request) {
         String groupName = request.groupName();
         String path = request.path();
-        StorageNodeInfo client = trackerClient.getUpdateStorage(groupName, path);
+        StorageNodeInfo client = this.getUpdateStorage(groupName, path);
         StorageRegenerateAppendFileCommand command = new StorageRegenerateAppendFileCommand(path);
-        return fdfsConnectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
+        return connectionManager.executeFdfsCmd(client.getInetSocketAddress(), command);
     }
 
     // endregion appender
 
     // region multipart
 
-    private final MultipartAttachmentAccessor multipartAttachment = new DefaultMultipartAttachmentAccessor(this);
+    private MultipartAttachmentAccessor multipartAttachment = new DefaultMultipartAttachmentAccessor(this);
 
     @Override
     public StorePath initMultipartUpload(long fileSize, long partSize, String fileExtName) {
@@ -795,4 +814,58 @@ public class FastDfsClient implements FastDfs {
         return input;
     }
 
+    @Override
+    public List<String> getTrackerServers() {
+        return trackerClient.getTrackerServers();
+    }
+
+    @Override
+    public void addTrackerServer(String trackerServer) {
+        trackerClient.addTrackerServer(trackerServer);
+    }
+
+    @Override
+    public void removeTrackerServer(String trackerServer) {
+        trackerClient.removeTrackerServer(trackerServer);
+    }
+
+    @Override
+    public StorageNode getStoreStorage() {
+        return trackerClient.getStoreStorage();
+    }
+
+    @Override
+    public StorageNode getStoreStorage(String groupName) {
+        return trackerClient.getStoreStorage(groupName);
+    }
+
+    @Override
+    public StorageNodeInfo getFetchStorage(String groupName, String filename) {
+        return trackerClient.getFetchStorage(groupName, filename);
+    }
+
+    @Override
+    public StorageNodeInfo getUpdateStorage(String groupName, String filename) {
+        return trackerClient.getUpdateStorage(groupName, filename);
+    }
+
+    @Override
+    public List<GroupState> listGroups() {
+        return trackerClient.listGroups();
+    }
+
+    @Override
+    public List<StorageState> listStorages(String groupName) {
+        return trackerClient.listStorages(groupName);
+    }
+
+    @Override
+    public List<StorageState> listStorages(String groupName, String storageIpAddr) {
+        return trackerClient.listStorages(groupName, storageIpAddr);
+    }
+
+    @Override
+    public void deleteStorage(String groupName, String storageIpAddr) {
+        trackerClient.deleteStorage(groupName, storageIpAddr);
+    }
 }

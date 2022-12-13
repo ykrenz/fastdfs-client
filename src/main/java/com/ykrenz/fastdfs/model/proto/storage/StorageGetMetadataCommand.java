@@ -1,10 +1,10 @@
 package com.ykrenz.fastdfs.model.proto.storage;
 
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
+import com.ykrenz.fastdfs.model.proto.AbstractFdfsCommand;
 import com.ykrenz.fastdfs.model.proto.storage.internal.StorageGetMetadataRequest;
 import com.ykrenz.fastdfs.model.proto.storage.internal.StorageGetMetadataResponse;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -12,7 +12,7 @@ import java.util.Set;
  *
  * @author tobato
  */
-public class StorageGetMetadataCommand extends AbstractFdfsFileNotFoundCommand<Set<MetaData>> {
+public class StorageGetMetadataCommand extends AbstractFdfsCommand<Set<MetaData>> {
 
 
     /**
@@ -27,8 +27,4 @@ public class StorageGetMetadataCommand extends AbstractFdfsFileNotFoundCommand<S
         this.response = new StorageGetMetadataResponse();
     }
 
-    @Override
-    protected Set<MetaData> getResult() {
-        return new HashSet<>();
-    }
 }

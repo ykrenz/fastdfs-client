@@ -34,21 +34,20 @@ public class BaseClientTest {
 
     static {
         TRACKER_LIST.add("192.168.100.200:22122");
-//        TRACKER_LIST.add("192.168.24.131:22122");
+        TRACKER_LIST.add("192.168.100.201:22122");
 //        TRACKER_LIST.add("192.168.24.132:22122");
     }
 
     @Before
     public void initClient() {
         FastDfsConfiguration configuration = new FastDfsConfiguration();
-        configuration.setDefaultGroup("group1");
+//        configuration.setDefaultGroup("group2");
         configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
         configuration.getHttp().setUrlHaveGroup(true);
         configuration.getHttp().setHttpAntiStealToken(true);
         configuration.getHttp().setSecretKey("FastDFS1234567890");
         fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST, configuration);
-        trackerClient = fastDFS.getTrackerClient();
-        LOGGER.info("初始化tracker={}", trackerClient.getTrackerServers());
+        LOGGER.info("初始化tracker={}", fastDFS.getTrackerServers());
         LOGGER.info("fastDFSClient={}", fastDFS);
     }
 

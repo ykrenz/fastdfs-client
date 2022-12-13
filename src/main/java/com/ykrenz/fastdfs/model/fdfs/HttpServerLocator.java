@@ -9,33 +9,33 @@ import java.util.List;
  * @author ykren
  * @date 2022/3/15
  */
-public class WebServerLocator {
+public class HttpServerLocator {
 
     /**
      * 轮询圈
      */
     private final CircularList<String> circularList = new CircularList<>();
 
-    private List<String> webUrls;
+    private List<String> httpUrls;
 
-    public WebServerLocator(final List<String> webUrls) {
-        this.webUrls = webUrls;
+    public HttpServerLocator(final List<String> httpUrls) {
+        this.httpUrls = httpUrls;
         init();
     }
 
     private void init() {
-        if (webUrls != null) {
-            circularList.addAll(webUrls);
+        if (httpUrls != null) {
+            circularList.addAll(httpUrls);
         }
     }
 
-    public List<String> getWebUrls() {
-        return Collections.unmodifiableList(webUrls);
+    public List<String> getHttpUrls() {
+        return Collections.unmodifiableList(httpUrls);
     }
 
-    public String getWebUrl() {
+    public String getHttpUrl() {
         if (circularList.isEmpty()) {
-            throw new FdfsUnavailableException("找不到可用的webUrl");
+            throw new FdfsUnavailableException("找不到可用的httpUrl");
         }
         return circularList.next();
     }

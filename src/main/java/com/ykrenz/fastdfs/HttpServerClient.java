@@ -4,7 +4,7 @@ package com.ykrenz.fastdfs;
  * @author ykren
  * @date 2022/3/15
  */
-public interface FastDfsWebClient {
+public interface HttpServerClient {
 
     /**
      * 文件访问路径url

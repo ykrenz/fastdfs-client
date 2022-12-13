@@ -32,7 +32,7 @@ public class App {
     static File sampleFile = new File("tmp", "sampleFile.txt");
 
     static {
-        int length = 1024 * 1024 * 2; // 2M
+        int length = 100;
         RandomTextFile file = new RandomTextFile(length);
         try {
             FileUtils.copyToFile(file.getInputStream(), sampleFile);
@@ -57,27 +57,30 @@ public class App {
 //
 //        uploadAppendFile();
 
-        try {
-            uploadMultipart();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            uploadMultipart();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 //        downLoadFile();
-//        path();
+        path();
     }
 
     private static void path() {
         // 配置构建
+        String tracker1 = "192.168.100.200:22122";
+        String tracker2 = "192.168.100.201:22122";
+        String httpUrl = "http://192.168.100.200:8888";
         List<String> trackerServers = new ArrayList<>();
-        trackerServers.add("192.168.100.200:22122");
+        trackerServers.add(tracker1);
+        trackerServers.add(tracker2);
         FastDfsConfiguration configuration = new FastDfsConfiguration();
-        configuration.setDefaultGroup("group1");
-        configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
-        configuration.getHttp().getWebServers().add("http://192.168.100.201:8888");
+//        configuration.setDefaultGroup("group1");
+        configuration.getHttp().getWebServers().add(httpUrl);
         configuration.getHttp().setUrlHaveGroup(true);
-        configuration.getHttp().setHttpAntiStealToken(true);
-        configuration.getHttp().setSecretKey("FastDFS1234567890");
+//        configuration.getHttp().setHttpAntiStealToken(true);
+//        configuration.getHttp().setSecretKey("FastDFS1234567890");
 
         FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers, configuration);
         StorePath storePath = fastDfs.uploadFile(sampleFile);
@@ -94,6 +97,7 @@ public class App {
         System.out.println("web下载路径1 " + downLoadPath1);
         String downLoadPath2 = fastDfs.downLoadUrl(storePath.getGroup(), storePath.getPath(), "attachment", sampleFile.getName());
         System.out.println("web下载路径自定义参数名2 " + downLoadPath2);
+        fastDfs.shutdown();
     }
 
     private static void downLoadFile() {
@@ -242,6 +246,7 @@ public class App {
         // 默认配置构建
         List<String> trackerServers = new ArrayList<>();
         trackerServers.add("192.168.100.200:22122");
+        trackerServers.add("192.168.100.201:22122");
         return new FastDfsClientBuilder().build(trackerServers);
     }
 

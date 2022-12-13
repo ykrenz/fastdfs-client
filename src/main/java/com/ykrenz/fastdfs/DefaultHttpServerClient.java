@@ -2,7 +2,7 @@ package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.config.HttpConfiguration;
 import com.ykrenz.fastdfs.model.FastDfsWeb;
-import com.ykrenz.fastdfs.model.fdfs.WebServerLocator;
+import com.ykrenz.fastdfs.model.fdfs.HttpServerLocator;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -11,14 +11,14 @@ import java.nio.charset.StandardCharsets;
  * @author ykren
  * @date 2022/3/15
  */
-public class DefaultFastDfsWebClient implements FastDfsWebClient {
+public class DefaultHttpServerClient implements HttpServerClient {
 
     private final HttpConfiguration configuration;
 
     /**
      * web url
      */
-    private final WebServerLocator webServerLocator;
+    private final HttpServerLocator httpServerLocator;
     /**
      * web路径是否包含Group
      * 关联mod_fastdfs.conf url_have_group_name
@@ -39,9 +39,9 @@ public class DefaultFastDfsWebClient implements FastDfsWebClient {
      */
     private final Charset secretKeyCharset;
 
-    public DefaultFastDfsWebClient(HttpConfiguration configuration) {
+    public DefaultHttpServerClient(HttpConfiguration configuration) {
         this.configuration = configuration;
-        this.webServerLocator = new WebServerLocator(configuration.getWebServers());
+        this.httpServerLocator = new HttpServerLocator(configuration.getWebServers());
         this.urlHaveGroup = configuration.isUrlHaveGroup();
         this.httpAntiStealToken = configuration.isHttpAntiStealToken();
         this.secretKey = configuration.getSecretKey();
@@ -57,14 +57,14 @@ public class DefaultFastDfsWebClient implements FastDfsWebClient {
         return configuration;
     }
 
-    public WebServerLocator getWebServerLocator() {
-        return webServerLocator;
+    public HttpServerLocator getHttpServerLocator() {
+        return httpServerLocator;
     }
 
     @Override
     public String accessUrl(String groupName, String path) {
         return FastDfsWeb.builder(path,
-                webServerLocator.getWebUrl())
+                httpServerLocator.getHttpUrl())
                 .haveGroupName(urlHaveGroup)
                 .groupName(groupName)
                 .httpAntiStealToken(httpAntiStealToken)
@@ -76,7 +76,7 @@ public class DefaultFastDfsWebClient implements FastDfsWebClient {
     @Override
     public String downLoadUrl(String groupName, String path, String downLoadName) {
         return FastDfsWeb.builder(path,
-                webServerLocator.getWebUrl())
+                httpServerLocator.getHttpUrl())
                 .haveGroupName(urlHaveGroup)
                 .groupName(groupName)
                 .httpAntiStealToken(httpAntiStealToken)
@@ -88,7 +88,7 @@ public class DefaultFastDfsWebClient implements FastDfsWebClient {
     @Override
     public String downLoadUrl(String groupName, String path, String urlArgName, String downLoadName) {
         return FastDfsWeb.builder(path,
-                webServerLocator.getWebUrl())
+                httpServerLocator.getHttpUrl())
                 .haveGroupName(urlHaveGroup)
                 .groupName(groupName)
                 .httpAntiStealToken(httpAntiStealToken)
