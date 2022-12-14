@@ -149,12 +149,11 @@ public class FastDfsClientTest extends BaseClientTest {
         StorePath storePath = uploadRandomFile();
         assertNotNull(storePath);
         delete(storePath);
-        delete(storePath);
         assertNull(queryFile(storePath));
     }
 
     @Test
-    public void downLoadTest() {
+    public void downLoadTest() throws IOException {
         StorePath storePath = uploadRandomFile();
         DownloadFileRequest request = DownloadFileRequest.builder()
                 .groupName(storePath.getGroup())
@@ -163,16 +162,10 @@ public class FastDfsClientTest extends BaseClientTest {
                 .build();
         fastDFS.downloadFile(request, new DownloadFileWriter("tmp/tmp1.txt"));
         byte[] bytes = fastDFS.downloadFile(request, new DownloadByteArray());
-        try {
-            LOGGER.info(IOUtils.toString(bytes, "UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        LOGGER.info(IOUtils.toString(bytes, "UTF-8"));
 
         try (OutputStream ous = FileUtils.openOutputStream(new File("tmp/test.txt"))) {
             fastDFS.downloadFile(request, new DownloadOutputStream(ous));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         delete(storePath);
     }
@@ -383,15 +376,16 @@ public class FastDfsClientTest extends BaseClientTest {
 
     @Test
     public void nullFileTest() throws IOException {
-        for (int i = 0;i<4;i++){
-            RandomTextFile file = new RandomTextFile(0);
-            File sampleFile = new File("tmp", "sampleFile.txt");
-            FileUtils.copyToFile(file.getInputStream(), sampleFile);
-            StorePath storePath = fastDFS.uploadFile(sampleFile);
-            LOGGER.info("上传完成 path {}", storePath);
-//        delete(storePath);
-            System.out.println(queryFile(storePath));
-        }
-
+        RandomTextFile file = new RandomTextFile(0);
+        File sampleFile = new File("tmp", "sampleFile.txt");
+        FileUtils.copyToFile(file.getInputStream(), sampleFile);
+        StorePath storePath = fastDFS.uploadFile(sampleFile);
+        LOGGER.info("上传完成 path {}", storePath);
+        Set<MetaData> set = new HashSet<>();
+        set.add(new MetaData("key", "value"));
+        fastDFS.overwriteMetadata(storePath.getGroup(), storePath.getPath(), set);
+        Set<MetaData> metadata = fastDFS.getMetadata(storePath.getGroup(), storePath.getPath());
+        System.out.println(metadata);
+        delete(storePath);
     }
 }

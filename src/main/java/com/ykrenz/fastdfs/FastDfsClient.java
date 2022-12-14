@@ -689,6 +689,7 @@ public class FastDfsClient implements FastDfs {
         UploadAppendFileRequest uploadFileRequest = UploadAppendFileRequest.builder()
                 .groupName(groupName)
                 .stream(new ByteArrayInputStream(new byte[0]), 0, request.fileExtName())
+                .metaData(request.metaData())
                 .build();
         StorePath storePath = uploadAppenderFile(uploadFileRequest);
         String group = storePath.getGroup();
@@ -757,15 +758,14 @@ public class FastDfsClient implements FastDfs {
     @Override
     public StorePath completeMultipartUpload(CompleteMultipartRequest request) {
         StorePath storePath = new StorePath(request.groupName(), request.path());
-        if (request.regenerate()) {
-            storePath = this.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
-        }
-        String group = storePath.getGroup();
-        String path = storePath.getPath();
-        // 重置metadata
-        this.mergeMetadata(group, path, request.metaData());
         //remove attachment
-        multipartAttachment.remove(group, path);
+        multipartAttachment.remove(storePath.getGroup(), storePath.getPath());
+        if (request.regenerate()) {
+            Set<MetaData> originMetadata = this.getMetadata(storePath.getGroup(), storePath.getPath());
+            this.deleteMetadata(storePath.getGroup(), storePath.getPath());
+            storePath = this.regenerateAppenderFile(storePath.getGroup(), storePath.getPath());
+            this.overwriteMetadata(storePath.getGroup(), storePath.getPath(), originMetadata);
+        }
         return storePath;
     }
 

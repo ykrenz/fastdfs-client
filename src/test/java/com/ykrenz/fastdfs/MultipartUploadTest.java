@@ -2,17 +2,20 @@ package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.common.Crc32;
 import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
+import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.security.krb5.internal.crypto.crc32;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class MultipartUploadTest extends BaseClientTest {
 
     @Test
-    public void multipartTest() throws IOException {
+    public void multipartTest() throws IOException, InterruptedException {
         int length = 1024 * 1024 * 33;
         RandomTextFile file = new RandomTextFile(length);
 
@@ -39,8 +42,20 @@ public class MultipartUploadTest extends BaseClientTest {
         long fileSize = sampleFile.length();
         long partCount = fileSize > 0 ? (long) Math.ceil((double) fileSize / partSize) : 1;
 
-        StorePath storePath = fastDFS.initMultipartUpload(fileSize, partSize, "txt");
+
+        Set<MetaData> metaData = new HashSet<>();
+        metaData.add(new MetaData("test_key", "test_value"));
+
+        InitMultipartUploadRequest uploadRequest = InitMultipartUploadRequest.builder()
+                .fileSize(fileSize).partSize(partSize).fileExtName("txt")
+                .metaData(metaData).build();
+        StorePath storePath = fastDFS.initMultipartUpload(uploadRequest);
         LOGGER.info("初始化分片成功 path={}", storePath);
+
+        Set<MetaData> meta = fastDFS.getMetadata(storePath.getGroup(), storePath.getPath());
+        assertEquals(metaData.size(), meta.size());
+        assertTrue(metaData.containsAll(meta));
+
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         for (int i = 1; i <= partCount; i++) {
             long startPos = (i - 1) * partSize;
@@ -56,30 +71,26 @@ public class MultipartUploadTest extends BaseClientTest {
          */
         executorService.shutdown();
         while (!executorService.isTerminated()) {
-            try {
-                executorService.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            executorService.awaitTermination(5, TimeUnit.SECONDS);
         }
 
         long crc32 = Crc32.file(sampleFile);
         CompleteMultipartRequest completeRequest = CompleteMultipartRequest.builder()
                 .groupName(storePath.getGroup())
                 .path(storePath.getPath())
-                .metaData("key", "Complete")
+                .regenerate(true)
                 .build();
-        StorePath path = fastDFS.completeMultipartUpload(completeRequest);
+        StorePath resultPath = fastDFS.completeMultipartUpload(completeRequest);
 
-        Set<MetaData> metaData = fastDFS.getMetadata(storePath.getGroup(), storePath.getPath());
-        assertEquals(1, metaData.size());
-        assertTrue(metaData.contains(new MetaData("key", "Complete")));
+        Set<MetaData> metaC = fastDFS.getMetadata(resultPath.getGroup(), resultPath.getPath());
+        assertEquals(metaData.size(), metaC.size());
+        assertTrue(metaData.containsAll(metaC));
 
         // crc32校验
-        FileInfo fileInfo = queryFile(path);
+        FileInfo fileInfo = queryFile(resultPath);
         Assert.assertEquals(crc32, Crc32.convertUnsigned(fileInfo.getCrc32()));
-        LOGGER.info("上传成功 path={} crc32={}", path, crc32);
-        delete(storePath);
+        LOGGER.info("上传成功 path={} crc32={}", resultPath, crc32);
+        delete(resultPath);
     }
 
 }

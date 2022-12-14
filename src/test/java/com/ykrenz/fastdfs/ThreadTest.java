@@ -1,6 +1,5 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.model.FileInfoRequest;
 import com.ykrenz.fastdfs.model.UploadFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import org.junit.Test;
@@ -13,7 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,21 +22,21 @@ public class ThreadTest extends BaseClientTest {
 
     @Test
     public void uploadThreadTest() throws InterruptedException, ExecutionException {
-        for (int count = 0; count < 1; count++) {
+        for (int count = 0; count < 5; count++) {
             int thread = 100;
             ExecutorService service = Executors.newFixedThreadPool(thread);
-            FastDfs fastDFS = new FastDfsClientBuilder().build(TRACKER_LIST);
             List<Callable<Void>> tasks = new ArrayList<>();
             for (int i = 0; i < thread; i++) {
                 tasks.add(new uploadTask(fastDFS));
             }
-            List<Future<Void>> futures = service.invokeAll(tasks);
-            for (Future f : futures) {
-                f.get();
+            service.invokeAll(tasks);
+            service.shutdown();
+            while (!service.isTerminated()) {
+                service.awaitTermination(5, TimeUnit.SECONDS);
             }
-            TimeUnit.SECONDS.sleep(10);
-            fastDFS.shutdown();
+
         }
+
     }
 
 
@@ -54,15 +52,10 @@ public class ThreadTest extends BaseClientTest {
         public Void call() throws Exception {
             StorePath storePath = null;
             try {
-//                File file = new File(testFilePath);
-//                UploadFileRequest fileRequest = UploadFileRequest.builder()
-//                        .stream(new FileInputStream(file), file.length(), "exe")
-//                        .build();
-
-            String data = UUID.randomUUID().toString();
-            UploadFileRequest fileRequest = UploadFileRequest.builder()
-                    .stream(new ByteArrayInputStream(data.getBytes()), data.length(), "txt")
-                    .build();
+                String data = UUID.randomUUID().toString();
+                UploadFileRequest fileRequest = UploadFileRequest.builder()
+                        .stream(new ByteArrayInputStream(data.getBytes()), data.length(), "txt")
+                        .build();
                 storePath = fastDFS.uploadFile(fileRequest);
                 LOGGER.info("上传成功={}", storePath);
             } finally {

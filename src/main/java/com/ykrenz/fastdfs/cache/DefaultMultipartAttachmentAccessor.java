@@ -1,9 +1,11 @@
 package com.ykrenz.fastdfs.cache;
 
 import com.ykrenz.fastdfs.FastDfs;
-import com.ykrenz.fastdfs.model.MetaDataRequest;
+import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
+import org.apache.commons.io.FilenameUtils;
 
+import java.io.ByteArrayInputStream;
 import java.util.Set;
 
 public class DefaultMultipartAttachmentAccessor implements MultipartAttachmentAccessor {
@@ -52,16 +54,19 @@ public class DefaultMultipartAttachmentAccessor implements MultipartAttachmentAc
         return attachment;
     }
 
+    private static final String ATTACHMENT_METADATA_KEY = "MultipartAttachment";
+
+    private static final String ATTACHMENT_PREFIX_KEY = "_att";
+
     private void setAttachmentMetaData(String groupName, String path, MultipartUploadAttachment attachment) {
-        fastDfs.mergeMetadata(MetaDataRequest.builder()
-                .groupName(groupName).path(path)
-                .metaData(createMetaDataKey(groupName, path), createValue(attachment)).build());
+        String attachmentValue = createValue(attachment);
+        UploadSalveFileRequest attachmentRequest = UploadSalveFileRequest.builder()
+                .groupName(groupName).masterPath(path)
+                .prefix(ATTACHMENT_PREFIX_KEY)
+                .stream(new ByteArrayInputStream(new byte[0]), 0, "")
+                .metaData(ATTACHMENT_METADATA_KEY, attachmentValue).build();
+        fastDfs.uploadSlaveFile(attachmentRequest);
     }
-
-    private void setAttachmentCache(String groupName, String path, MultipartUploadAttachment attachment) {
-        cache.put(createCacheKey(groupName, path), attachment);
-    }
-
 
     private MultipartUploadAttachment getFromMetaData(String groupName, String path) {
         MetaData attachmentMetaData = getAttachmentMetaData(groupName, path);
@@ -69,36 +74,35 @@ public class DefaultMultipartAttachmentAccessor implements MultipartAttachmentAc
     }
 
     private MetaData getAttachmentMetaData(String groupName, String path) {
-        String key = createMetaDataKey(groupName, path);
-        Set<MetaData> metadata = fastDfs.getMetadata(groupName, path);
+        Set<MetaData> metadata = fastDfs.getMetadata(groupName, getAttPath(path));
         for (MetaData metaData : metadata) {
-            if (key.equals(metaData.getName())) {
+            if (ATTACHMENT_METADATA_KEY.equals(metaData.getName())) {
                 return metaData;
             }
         }
         return null;
     }
 
+    private String getAttPath(String masterPath) {
+        return FilenameUtils.removeExtension(masterPath) + ATTACHMENT_PREFIX_KEY;
+    }
+
+
+    private void setAttachmentCache(String groupName, String path, MultipartUploadAttachment attachment) {
+        cache.put(createCacheKey(groupName, path), attachment);
+    }
+
+
     @Override
     public void remove(String groupName, String path) {
-        Set<MetaData> metadata = fastDfs.getMetadata(groupName, path);
-        String key = createMetaDataKey(groupName, path);
-        metadata.removeIf(meta -> key.equals(meta.getName()));
-        fastDfs.overwriteMetadata(MetaDataRequest.builder()
-                .groupName(groupName).path(path)
-                .metaData(metadata).build());
+        fastDfs.deleteFile(groupName, getAttPath(path));
         cache.remove(createCacheKey(groupName, path));
     }
 
-    private static final String metaDataKey = "MultipartAttachment";
     private static final String delimiter = "_";
 
     private String createCacheKey(String groupName, String path) {
         return groupName + delimiter + path;
-    }
-
-    private String createMetaDataKey(String groupName, String path) {
-        return metaDataKey;
     }
 
     private String createValue(MultipartUploadAttachment attachment) {

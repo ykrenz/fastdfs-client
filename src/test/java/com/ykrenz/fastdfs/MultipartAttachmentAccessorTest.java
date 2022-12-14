@@ -1,6 +1,5 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.BaseClientTest;
 import com.ykrenz.fastdfs.cache.DefaultMultipartAttachmentAccessor;
 import com.ykrenz.fastdfs.cache.LRUCache;
 import com.ykrenz.fastdfs.cache.MultipartAttachmentAccessor;
@@ -8,8 +7,6 @@ import com.ykrenz.fastdfs.cache.MultipartUploadAttachment;
 import com.ykrenz.fastdfs.model.fdfs.StorePath;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Objects;
 
 public class MultipartAttachmentAccessorTest extends BaseClientTest {
 
@@ -21,7 +18,7 @@ public class MultipartAttachmentAccessorTest extends BaseClientTest {
         MultipartUploadAttachment attachment = new MultipartUploadAttachment(1024, 1024);
         attachmentAccessor.put(storePath.getGroup(), storePath.getPath(), attachment);
         MultipartUploadAttachment cacheAttachment = attachmentAccessor.get(storePath.getGroup(), storePath.getPath());
-        Assert.assertTrue(Objects.equals(attachment, cacheAttachment));
+        Assert.assertEquals(attachment, cacheAttachment);
 
         attachmentAccessor.remove(storePath.getGroup(), storePath.getPath());
         cacheAttachment = attachmentAccessor.get(storePath.getGroup(), storePath.getPath());

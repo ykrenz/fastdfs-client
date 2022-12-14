@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -30,13 +30,8 @@ public class BaseClientTest {
     protected FastDfs fastDFS;
 
     protected static Logger LOGGER = LoggerFactory.getLogger(BaseClientTest.class);
-    public static final List<String> TRACKER_LIST = new ArrayList<>();
-
-    static {
-        TRACKER_LIST.add("192.168.100.200:22122");
-        TRACKER_LIST.add("192.168.100.201:22122");
-//        TRACKER_LIST.add("192.168.24.132:22122");
-    }
+    public static final List<String> TRACKER_LIST = Arrays.asList
+            ("192.168.100.200:22122", "192.168.100.201:22122");
 
     @Before
     public void initClient() {

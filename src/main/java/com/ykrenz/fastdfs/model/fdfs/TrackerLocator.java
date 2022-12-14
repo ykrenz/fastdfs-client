@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,7 +28,7 @@ public class TrackerLocator {
     /**
      * tracker服务配置地址列表
      */
-    private List<String> trackerServers;
+    private List<String> trackerServers = new CopyOnWriteArrayList<>();
     /**
      * 目录服务地址-为了加速处理，增加了一个map
      */
@@ -49,7 +50,9 @@ public class TrackerLocator {
      */
     public TrackerLocator(List<String> trackerServers) {
         super();
-        this.trackerServers = trackerServers;
+        if (trackerServers != null && !trackerServers.isEmpty()) {
+            this.trackerServers.addAll(trackerServers);
+        }
         buildTrackerAddresses();
     }
 

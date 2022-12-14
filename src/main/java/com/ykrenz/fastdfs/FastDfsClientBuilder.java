@@ -2,6 +2,7 @@ package com.ykrenz.fastdfs;
 
 import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,6 +12,11 @@ import java.util.List;
  * @date 2022/1/24
  */
 public final class FastDfsClientBuilder implements FastDfsBuilder {
+    @Override
+    public FastDfs build(String... trackerServers) {
+        return this.build(Arrays.asList(trackerServers));
+    }
+
     /**
      * 构建FastDFS
      *

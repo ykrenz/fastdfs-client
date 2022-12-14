@@ -20,10 +20,8 @@ public class TrackerTest {
 
     @Test
     public void testTrackerApi() {
-        List<String> trackerServers = new ArrayList<>();
         String tracker1 = "192.168.100.200:22122";
-        trackerServers.add(tracker1);
-        FastDfs fastDfs = new FastDfsClientBuilder().build(trackerServers);
+        FastDfs fastDfs = new FastDfsClientBuilder().build(tracker1);
         FastDfsConfiguration configuration = new FastDfsConfiguration();
         configuration.getHttp().getWebServers().add("http://192.168.100.200:8888");
         configuration.getHttp().setUrlHaveGroup(true);
@@ -57,8 +55,7 @@ public class TrackerTest {
             List<GroupState> groupStates = fastDfs.listGroups();
             for (GroupState groupState : groupStates) {
                 LOGGER.info("groupState={}", groupState);
-                LOGGER.info("groupState={}", fastDfs.getStoreStorage(groupState.getGroupName()));
-
+//                LOGGER.info("groupState={}", fastDfs.getStoreStorage(groupState.getGroupName()));
                 List<StorageState> storageStates = fastDfs.listStorages(groupState.getGroupName());
                 LOGGER.info("group = {} storages ={}", groupState.getGroupName(), storageStates);
             }
@@ -72,12 +69,9 @@ public class TrackerTest {
             LOGGER.info("fetchStorage={}", fetchStorage);
 
             StorageNodeInfo updateStorage = fastDfs.getUpdateStorage(storePath.getGroup(), storePath.getPath());
-            LOGGER.info("updateStorage={}", fetchStorage);
+            LOGGER.info("updateStorage={}", updateStorage);
 
             fastDfs.deleteFile(storePath.getGroup(), storePath.getPath());
-
-        } catch (Exception e) {
-            e.printStackTrace();
         } finally {
             fastDfs.shutdown();
         }

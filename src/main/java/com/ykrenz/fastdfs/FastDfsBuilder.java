@@ -13,6 +13,14 @@ import java.util.List;
 public interface FastDfsBuilder {
 
     /**
+     * 根据trackerServer构建 使用默认的连接池
+     *
+     * @param trackerServers
+     * @return
+     */
+    FastDfs build(String... trackerServers);
+
+    /**
      * 根据trackerServers构建 使用默认的连接池
      *
      * @param trackerServers

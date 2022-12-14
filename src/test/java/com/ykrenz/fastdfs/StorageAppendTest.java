@@ -57,7 +57,7 @@ public class StorageAppendTest extends BaseClientTest {
 
         Set<MetaData> metaData = getMetaData(storePath);
         assertTrue(metaData.isEmpty());
-
+        metaData = new HashSet<>();
         metaData.add(new MetaData("key1", "value1"));
         metaData.add(new MetaData("key2", "value2"));
         AppendFileRequest appendFileRequest = AppendFileRequest.builder()
@@ -168,7 +168,7 @@ public class StorageAppendTest extends BaseClientTest {
      * @throws IOException
      */
     @Test
-    public void modifyAppendFile() throws IOException {
+    public void modifyAppendFile() throws IOException, InterruptedException {
         LOGGER.debug("##append上传文件..##");
         RandomTextFile file = new RandomTextFile();
         UploadAppendFileRequest fileRequest = UploadAppendFileRequest.builder()
@@ -206,7 +206,7 @@ public class StorageAppendTest extends BaseClientTest {
 
         text = "456";
         inputStream = new ByteArrayInputStream(text.getBytes());
-        fastDFS.modifyFile(storePath.getGroup(),storePath.getPath(),inputStream,text.length(),0);
+        fastDFS.modifyFile(storePath.getGroup(), storePath.getPath(), inputStream, text.length(), 0);
         LOGGER.debug("modify上传文件 result={} text={}", storePath, modifyFile.getText());
 
         metaData.clear();
@@ -259,12 +259,10 @@ public class StorageAppendTest extends BaseClientTest {
                 LOGGER.info("end==========" + Thread.currentThread().getName());
             });
         }
-        try {
-            executorService.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         executorService.shutdown();
+        while (!executorService.isTerminated()) {
+            executorService.awaitTermination(5, TimeUnit.SECONDS);
+        }
         LOGGER.info("上传完成storePath={}", storePath);
         delete(storePath);
     }
@@ -302,11 +300,11 @@ public class StorageAppendTest extends BaseClientTest {
         assertEquals(size, fileInfo.getFileSize());
 
         size = 10;
-        fastDFS.truncateFile(storePath.getGroup(),storePath.getPath(),size);
+        fastDFS.truncateFile(storePath.getGroup(), storePath.getPath(), size);
         fileInfo = queryFile(storePath);
         assertEquals(size, fileInfo.getFileSize());
 
-        fastDFS.truncateFile(storePath.getGroup(),storePath.getPath());
+        fastDFS.truncateFile(storePath.getGroup(), storePath.getPath());
         fileInfo = queryFile(storePath);
         assertEquals(0, fileInfo.getFileSize());
 
