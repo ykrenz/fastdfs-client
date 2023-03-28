@@ -133,8 +133,8 @@ public class FdfsConnectionManager {
         } catch (FdfsException e) {
             throw e;
         } catch (Exception e) {
-            LOGGER.error("Unable to borrow buffer from pool", e);
-            throw new FdfsClientException("Unable to borrow buffer from pool", e);
+            LOGGER.error("Unable to get connection from pool", e);
+            throw new FdfsClientException("Unable to get connection from pool", e);
         }
         return conn;
     }
