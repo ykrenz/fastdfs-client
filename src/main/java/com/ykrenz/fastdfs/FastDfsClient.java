@@ -1,8 +1,8 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.cache.MultipartUploadAttachment;
-import com.ykrenz.fastdfs.cache.DefaultMultipartAttachmentAccessor;
-import com.ykrenz.fastdfs.cache.MultipartAttachmentAccessor;
+import com.ykrenz.fastdfs.multipart.MultipartUploadAttachment;
+import com.ykrenz.fastdfs.multipart.DefaultMultipartAttachmentAccessor;
+import com.ykrenz.fastdfs.multipart.MultipartAttachmentAccessor;
 import com.ykrenz.fastdfs.common.CodeUtils;
 import com.ykrenz.fastdfs.config.FastDfsConfiguration;
 import com.ykrenz.fastdfs.conn.FdfsConnectionManager;

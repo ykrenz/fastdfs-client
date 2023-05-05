@@ -1,4 +1,4 @@
-package com.ykrenz.fastdfs.cache;
+package com.ykrenz.fastdfs.multipart;
 
 import java.io.Serializable;
 import java.util.Objects;
