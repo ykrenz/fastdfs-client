@@ -11,10 +11,18 @@ public class DefaultMultipartAttachmentAccessor implements MultipartAttachmentAc
 
     private final MultipartAttachmentAccessor delegate;
 
-    private final FdfsCache<String, MultipartUploadAttachment> fc = new LRUCache<>(1024);
+    private FdfsCache<String, MultipartUploadAttachment> fc = new LRUCache<>(1024);
 
     public DefaultMultipartAttachmentAccessor(FastDfs fastDfs) {
         this.delegate = new FastDfsMetaAccessor(fastDfs);
+    }
+
+    public FdfsCache<String, MultipartUploadAttachment> getMultipartAttCache() {
+        return fc;
+    }
+
+    public void setMultipartAttCache(FdfsCache<String, MultipartUploadAttachment> fc) {
+        this.fc = fc;
     }
 
     @Override
