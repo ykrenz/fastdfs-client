@@ -10,6 +10,9 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotBlankString;
+import static com.ykrenz.fastdfs.common.CodeUtils.validateNotLessZero;
+
 /**
  * 修改文件请求参数
  *
@@ -20,7 +23,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
     /**
      * 文件修改起始值
      */
-    protected long fileOffset;
+    protected long offset;
     /**
      * 文件元数据类型
      */
@@ -31,7 +34,7 @@ public class ModifyFileRequest extends AbstractFileArgs {
     }
 
     public long offset() {
-        return fileOffset < 0 ? 0 : fileOffset;
+        return offset;
     }
 
     public Set<MetaData> metaData() {
@@ -54,8 +57,9 @@ public class ModifyFileRequest extends AbstractFileArgs {
         @Override
         protected void validate(ModifyFileRequest args) {
             super.validate(args);
-            CodeUtils.validateNotBlankString(args.path, "path");
-            CodeUtils.validateNotLessZero(args.fileOffset, "fileOffset");
+            validateNotBlankString(args.groupName, "groupName");
+            validateNotBlankString(args.path, "path");
+            validateNotLessZero(args.offset, "offset");
             if (args.metaData != null && !args.metaData.isEmpty()) {
                 CodeUtils.validateNotNull(args.metaType, "metadata type");
             }
@@ -87,13 +91,13 @@ public class ModifyFileRequest extends AbstractFileArgs {
          * 修改文件
          *
          * @param file
-         * @param fileOffset
+         * @param offset
          * @return
          */
-        public Builder file(File file, long fileOffset) {
+        public Builder file(File file, long offset) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.fileOffset = fileOffset);
+            operations.add(args -> args.offset = offset);
             return this;
         }
 
@@ -105,10 +109,10 @@ public class ModifyFileRequest extends AbstractFileArgs {
          * @param fileSize
          * @return
          */
-        public Builder stream(InputStream stream, long fileSize, long fileOffset) {
+        public Builder stream(InputStream stream, long fileSize, long offset) {
             operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.fileOffset = fileOffset);
+            operations.add(args -> args.offset = offset);
             return this;
         }
 
@@ -143,12 +147,12 @@ public class ModifyFileRequest extends AbstractFileArgs {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ModifyFileRequest that = (ModifyFileRequest) o;
-        return fileOffset == that.fileOffset &&
+        return offset == that.offset &&
                 metaType == that.metaType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fileOffset, metaType);
+        return Objects.hash(super.hashCode(), offset, metaType);
     }
 }

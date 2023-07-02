@@ -16,7 +16,7 @@ import java.util.Set;
  * @author ykren
  * @date 2022/2/9
  */
-public class UploadImageRequest extends AbstractFileArgs {
+public class UploadImageRequest extends AbstractFileExtHandlerArgs {
 
     /**
      * 缩略图
@@ -26,10 +26,6 @@ public class UploadImageRequest extends AbstractFileArgs {
      * 缩略图文件元数据
      */
     protected Set<MetaData> thumbMetaData = new HashSet<>();
-
-    public String fileExtName() {
-        return fileExtName;
-    }
 
     public Set<MetaData> metaData() {
         return metaData;
@@ -84,7 +80,7 @@ public class UploadImageRequest extends AbstractFileArgs {
     /**
      * 参数构建类
      */
-    public static final class Builder extends AbstractFileArgs.Builder<Builder, UploadImageRequest> {
+    public static final class Builder extends AbstractFileExtHandlerArgs.Builder<Builder, UploadImageRequest> {
         /**
          * 上传文件
          *
@@ -104,7 +100,7 @@ public class UploadImageRequest extends AbstractFileArgs {
         public Builder file(File file) {
             operations.add(args -> args.file = file);
             operations.add(args -> args.fileSize = file.length());
-            operations.add(args -> args.fileExtName = getExtension(file.getName()));
+            super.fileExtName(getExtension(file.getName()));
             return this;
         }
 
@@ -119,7 +115,7 @@ public class UploadImageRequest extends AbstractFileArgs {
         public Builder stream(InputStream stream, long fileSize, String fileExtName) {
             operations.add(args -> args.stream = stream);
             operations.add(args -> args.fileSize = fileSize);
-            operations.add(args -> args.fileExtName = fileExtName);
+            super.fileExtName(fileExtName);
             return this;
         }
 

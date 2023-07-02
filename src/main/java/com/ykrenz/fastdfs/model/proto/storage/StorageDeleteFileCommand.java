@@ -1,5 +1,6 @@
 package com.ykrenz.fastdfs.model.proto.storage;
 
+import com.ykrenz.fastdfs.model.proto.AbstractFdfsCommand;
 import com.ykrenz.fastdfs.model.proto.FdfsResponse;
 import com.ykrenz.fastdfs.model.proto.storage.internal.StorageDeleteFileRequest;
 
@@ -8,7 +9,7 @@ import com.ykrenz.fastdfs.model.proto.storage.internal.StorageDeleteFileRequest;
  *
  * @author tobato
  */
-public class StorageDeleteFileCommand extends AbstractFdfsFileNotFoundCommand<Void> {
+public class StorageDeleteFileCommand extends AbstractFdfsCommand<Void> {
 
     /**
      * 文件删除命令

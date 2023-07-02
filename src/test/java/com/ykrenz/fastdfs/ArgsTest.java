@@ -78,6 +78,7 @@ public class ArgsTest {
         UploadSalveFileRequest.builder()
                 //                .file(new File("notExist.txt"))
                 .file(file)
+                .groupName("xxx")
                 .masterPath("xxxx")
                 .prefix("xxx")
                 .build();
@@ -85,12 +86,14 @@ public class ArgsTest {
 
         UploadSalveFileRequest.builder()
                 .file(file)
+                .groupName("xxx")
                 .masterPath("xxxx")
                 .prefix("12345678901234567890")
                 .build();
 
         UploadSalveFileRequest.builder()
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, "txt")
+                .groupName("xxx")
                 .masterPath("xxxx")
                 .prefix("12345678901234567890")
                 .build();
@@ -101,6 +104,7 @@ public class ArgsTest {
         ModifyFileRequest.builder()
 //                .file(file,-1)
                 .file(file, 0)
+                .groupName("xxx")
                 .path("xxxx")
                 .build();
 
@@ -110,12 +114,14 @@ public class ArgsTest {
 //                .stream(new ByteArrayInputStream(new byte[]{}), -1, 0)
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, 0)
                 .path("xxxx")
+                .groupName("xxx")
                 .build();
 
         ModifyFileRequest.builder()
 //                .file(file,-1)
 //                .stream(new ByteArrayInputStream(new byte[]{}), -1, 0)
                 .stream(new ByteArrayInputStream(new byte[]{}), 0, 0)
+                .groupName("xxx")
                 .path("xxxx")
                 .metaData("key", "value", StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)
                 .build();
@@ -126,17 +132,20 @@ public class ArgsTest {
 
         AppendFileRequest.builder()
                 .file(file)
+                .groupName("xxx")
                 .path("xxx")
                 .build();
 
 
         AppendFileRequest.builder()
+                .groupName("xxx")
                 .path("xxx")
 //                .stream(new ByteArrayInputStream(new byte[]{}),-1)
                 .stream(new ByteArrayInputStream(new byte[]{}), 0)
                 .build();
 
         AppendFileRequest.builder()
+                .groupName("xxx")
                 .path("xxx")
                 .stream(new ByteArrayInputStream(new byte[]{}), 0)
                 .metaData("key", "value", StorageMetadataSetType.STORAGE_SET_METADATA_FLAG_OVERWRITE)

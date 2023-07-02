@@ -32,8 +32,8 @@ public final class FastDfsUtils {
     public static final Pattern FDFS_FILENAME_PATTEN = Pattern.compile(FILENAME_REGEX);
 
     /**
-     * 发现fastdfs会对文件名称和文件前缀合法校验 其实文件可以支持其以外的字符 会导致正常文件传输不上去
-     * 这里做特殊处理 过滤非法字符替换为空 只有一个字符替换为.
+     * fastdfs会对文件后缀名或slave文件前缀名合法校验 导致正常文件上传失败
+     * 这里做特殊处理 过滤非法字符替换为空
      * 校验文件名合法性 参阅fastdfs源码 tracker_proto.c fdfs_validate_filename(const char *filename)
      *
      * @param filename
@@ -60,6 +60,19 @@ public final class FastDfsUtils {
             return result;
         }
         return filename;
+    }
+
+    private static final String DEFAULT_PREFIX = "_";
+
+    /**
+     * 处理前缀名
+     *
+     * @param prefix
+     * @return
+     */
+    public static String handlerPrefix(String prefix) {
+        String handlerPrefix = handlerFilename(prefix);
+        return StringUtils.isBlank(handlerPrefix) ? DEFAULT_PREFIX : handlerPrefix;
     }
 
     /**

@@ -14,6 +14,12 @@ import java.util.List;
  * @author tobato
  */
 public interface TrackerClient {
+
+    /**
+     * 关闭客户端
+     */
+    void shutdown();
+
     /**
      * author: ykren
      * 获取tracker节点 get TrackerList

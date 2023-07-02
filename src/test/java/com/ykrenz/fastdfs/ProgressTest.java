@@ -19,7 +19,8 @@ public class ProgressTest extends BaseClientTest {
 
     @Test
     public void progressUpload() {
-        RandomTextFile file = new RandomTextFile();
+        int length = 1024 * 1024 * 100;
+        RandomTextFile file = new RandomTextFile(length);
         UploadFileRequest fileRequest = UploadFileRequest.builder()
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .listener(new UploadProgressListener() {
@@ -47,5 +48,6 @@ public class ProgressTest extends BaseClientTest {
         StorePath storePath = fastDFS.uploadFile(fileRequest);
         assertNotNull(storePath);
         LOGGER.debug("上传文件 result={}", storePath);
+        delete(storePath);
     }
 }

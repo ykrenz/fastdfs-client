@@ -4,7 +4,7 @@ import com.ykrenz.fastdfs.model.fdfs.MetaData;
 import com.ykrenz.fastdfs.model.proto.storage.internal.StorageGetMetadataRequest;
 import com.ykrenz.fastdfs.model.proto.storage.internal.StorageGetMetadataResponse;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -28,7 +28,7 @@ public class StorageGetMetadataCommand extends AbstractFdfsFileNotFoundCommand<S
     }
 
     @Override
-    protected Set<MetaData> getResult() {
-        return new HashSet<>();
+    protected Set<MetaData> handlerNotFoundFile() {
+        return Collections.emptySet();
     }
 }

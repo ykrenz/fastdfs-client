@@ -11,6 +11,8 @@ import com.ykrenz.fastdfs.model.proto.tracker.TrackerGetStoreStorageCommand;
 import com.ykrenz.fastdfs.model.proto.tracker.TrackerListGroupsCommand;
 import com.ykrenz.fastdfs.model.proto.tracker.TrackerListStoragesCommand;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -20,6 +22,11 @@ import java.util.List;
  * @author tobato
  */
 public class DefaultTrackerClient implements TrackerClient {
+
+    /**
+     * 日志
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTrackerClient.class);
 
     private TrackerConnectionManager trackerConnectionManager;
 
@@ -33,6 +40,12 @@ public class DefaultTrackerClient implements TrackerClient {
 
     public void setTrackerConnectionManager(TrackerConnectionManager trackerConnectionManager) {
         this.trackerConnectionManager = trackerConnectionManager;
+    }
+
+    @Override
+    public void shutdown() {
+        trackerConnectionManager.getPool().close();
+        LOGGER.debug("fastdfs tracker server shutdown");
     }
 
     @Override

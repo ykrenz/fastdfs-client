@@ -32,15 +32,11 @@ public abstract class AbstractFileArgs extends GroupArgs {
     /**
      * 输入流
      */
-    protected InputStream stream;
+    protected transient InputStream stream;
     /**
      * 上传内容长度
      */
     protected long fileSize;
-    /**
-     * 文件扩展名
-     */
-    protected String fileExtName;
     /**
      * 文件元数据
      */
@@ -77,7 +73,7 @@ public abstract class AbstractFileArgs extends GroupArgs {
         /**
          * 日志
          */
-        private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
+        protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
         @SuppressWarnings("unchecked")
         public B listener(ProgressListener listener) {
@@ -98,10 +94,6 @@ public abstract class AbstractFileArgs extends GroupArgs {
             }
             CodeUtils.validateNotLessZero(args.fileSize, "fileSize");
 
-            if (args.fileExtName != null && args.fileExtName.length() > OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN) {
-                String msg = String.format("fileExtName length > %d", OtherConstants.FDFS_FILE_EXT_NAME_MAX_LEN);
-                LOGGER.warn(msg);
-            }
             if (args.metaData != null && !args.metaData.isEmpty()) {
                 for (MetaData metadata : args.metaData) {
                     String name = metadata.getName();
@@ -129,13 +121,12 @@ public abstract class AbstractFileArgs extends GroupArgs {
                 Objects.equals(listener, that.listener) &&
                 Objects.equals(file, that.file) &&
                 Objects.equals(stream, that.stream) &&
-                Objects.equals(fileExtName, that.fileExtName) &&
                 Objects.equals(metaData, that.metaData) &&
                 Objects.equals(path, that.path);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), listener, file, stream, fileSize, fileExtName, metaData, path);
+        return Objects.hash(super.hashCode(), listener, file, stream, fileSize, metaData, path);
     }
 }

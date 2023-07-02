@@ -1,20 +1,6 @@
 package com.ykrenz.fastdfs;
 
-import com.ykrenz.fastdfs.model.AppendFileRequest;
-import com.ykrenz.fastdfs.model.CompleteMultipartRequest;
-import com.ykrenz.fastdfs.model.UploadAppendFileRequest;
-import com.ykrenz.fastdfs.model.UploadImageRequest;
-import com.ykrenz.fastdfs.model.DownloadFileRequest;
-import com.ykrenz.fastdfs.model.FileInfoRequest;
-import com.ykrenz.fastdfs.model.InitMultipartUploadRequest;
-import com.ykrenz.fastdfs.model.MetaDataInfoRequest;
-import com.ykrenz.fastdfs.model.MetaDataRequest;
-import com.ykrenz.fastdfs.model.ModifyFileRequest;
-import com.ykrenz.fastdfs.model.RegenerateAppenderFileRequest;
-import com.ykrenz.fastdfs.model.TruncateFileRequest;
-import com.ykrenz.fastdfs.model.UploadFileRequest;
-import com.ykrenz.fastdfs.model.UploadMultipartPartRequest;
-import com.ykrenz.fastdfs.model.UploadSalveFileRequest;
+import com.ykrenz.fastdfs.model.*;
 import com.ykrenz.fastdfs.model.fdfs.FileInfo;
 import com.ykrenz.fastdfs.model.fdfs.ImageStorePath;
 import com.ykrenz.fastdfs.model.fdfs.MetaData;
@@ -31,49 +17,12 @@ import java.util.Set;
  *
  * @author ykren
  */
-public interface FastDfs {
-
-    /**
-     * 获取trackerClient
-     *
-     * @return
-     */
-    TrackerClient getTrackerClient();
+public interface FastDfs extends TrackerClient, HttpServerClient {
 
     /**
      * 关闭客户端
      */
     void shutdown();
-
-    /**
-     * 文件访问路径url
-     *
-     * @param groupName
-     * @param path
-     * @return
-     */
-    String accessUrl(String groupName, String path);
-
-    /**
-     * 自定义下载文件名地址
-     *
-     * @param groupName
-     * @param path
-     * @param downloadFileName
-     * @return
-     */
-    String downLoadUrl(String groupName, String path, String downloadFileName);
-
-    /**
-     * 自定义下载文件名 参数名地址
-     *
-     * @param groupName
-     * @param path
-     * @param urlArgName
-     * @param downloadFileName
-     * @return
-     */
-    String downLoadUrl(String groupName, String path, String urlArgName, String downloadFileName);
 
     /**
      * 上传一般文件
@@ -451,16 +400,17 @@ public interface FastDfs {
     /**
      * 初始化分片上传
      *
-     * @param fileSize
-     * @param fileExtName
+     * @param fileSize    文件大小
+     * @param fileExtName 文件后缀
+     * @param partSize    分片大小
      * @return StorePath
      */
-    StorePath initMultipartUpload(long fileSize, String fileExtName);
+    StorePath initMultipartUpload(long fileSize, long partSize, String fileExtName);
 
     /**
      * 初始化分片上传
      *
-     * @param request group
+     * @param request
      * @return StorePath
      */
     StorePath initMultipartUpload(InitMultipartUploadRequest request);
@@ -468,71 +418,36 @@ public interface FastDfs {
     /**
      * 上传分片
      *
-     * @param groupName
-     * @param path
-     * @param file
-     * @param offset
+     * @param groupName  组名称
+     * @param path       路径
+     * @param part       分片文件 (size<=partSize)
+     * @param partNumber 分片索引 (start=1)
      */
-    void uploadMultipart(String groupName, String path, File file, long offset);
+    void uploadMultipart(String groupName, String path, File part, int partNumber);
 
     /**
      * 上传分片
      *
-     * @param groupName
-     * @param path
-     * @param file
-     * @param partNumber
-     * @param partSize
+     * @param groupName  组名称
+     * @param path       路径
+     * @param part       分片文件流 (size<=partSize)
+     * @param partNumber 分片索引 (start=1)
      */
-    void uploadMultipart(String groupName, String path, File file, int partNumber, long partSize);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param stream
-     * @param fileSize
-     * @param offset
-     */
-    void uploadMultipart(String groupName, String path, InputStream stream, long fileSize, long offset);
-
-    /**
-     * 上传分片
-     *
-     * @param groupName
-     * @param path
-     * @param stream
-     * @param fileSize
-     * @param partNumber
-     * @param partSize
-     */
-    void uploadMultipart(String groupName, String path,
-                         InputStream stream, long fileSize, int partNumber, long partSize);
+    void uploadMultipart(String groupName, String path, InputStream part, int partNumber);
 
     /**
      * 上传分片
      *
      * @param request
      */
-    void uploadMultipart(UploadMultipartPartRequest request);
+    void uploadMultipart(UploadMultipartRequest request);
 
     /**
      * 完成分片上传
      *
      * @param groupName
      * @param path
-     * @return 原文件路径
-     */
-    StorePath completeMultipartUpload(String groupName, String path);
-
-    /**
-     * 完成分片上传
-     * version<6.02 regenerate = false
-     *
-     * @param groupName
-     * @param path
-     * @param regenerate
+     * @param regenerate 是否改为普通文件 true条件 version>=6.02
      * @return regenerate=false原文件路径 true regenerate文件路径
      */
     StorePath completeMultipartUpload(String groupName, String path, boolean regenerate);

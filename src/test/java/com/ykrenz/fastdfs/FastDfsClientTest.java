@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
@@ -112,6 +113,7 @@ public class FastDfsClientTest extends BaseClientTest {
         StorePath storePath = fastDFS.uploadFile(fileRequest);
 
         UploadSalveFileRequest salveFileRequest = UploadSalveFileRequest.builder()
+                .groupName(storePath.getGroup())
                 .masterPath(storePath.getPath())
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
 //                .file(file)
@@ -130,7 +132,7 @@ public class FastDfsClientTest extends BaseClientTest {
         assertNull(queryFile(slaveFilePath));
 
         StorePath slaveFilePath2 = fastDFS.uploadSlaveFile(storePath.getGroup(), storePath.getPath(), "_is_",
-                file.getInputStream(),file.getFileSize(),file.getFileExtName());
+                file.getInputStream(), file.getFileSize(), file.getFileExtName());
         LOGGER.info("上传文件 result={} slaveFilePath={}", storePath, slaveFilePath2);
         Assert.assertNotNull(slaveFilePath2);
         delete(slaveFilePath2);
@@ -147,12 +149,11 @@ public class FastDfsClientTest extends BaseClientTest {
         StorePath storePath = uploadRandomFile();
         assertNotNull(storePath);
         delete(storePath);
-        delete(storePath);
         assertNull(queryFile(storePath));
     }
 
     @Test
-    public void downLoadTest() {
+    public void downLoadTest() throws IOException {
         StorePath storePath = uploadRandomFile();
         DownloadFileRequest request = DownloadFileRequest.builder()
                 .groupName(storePath.getGroup())
@@ -161,16 +162,10 @@ public class FastDfsClientTest extends BaseClientTest {
                 .build();
         fastDFS.downloadFile(request, new DownloadFileWriter("tmp/tmp1.txt"));
         byte[] bytes = fastDFS.downloadFile(request, new DownloadByteArray());
-        try {
-            LOGGER.info(IOUtils.toString(bytes, "UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        LOGGER.info(IOUtils.toString(bytes, "UTF-8"));
 
         try (OutputStream ous = FileUtils.openOutputStream(new File("tmp/test.txt"))) {
             fastDFS.downloadFile(request, new DownloadOutputStream(ous));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         delete(storePath);
     }
@@ -286,6 +281,7 @@ public class FastDfsClientTest extends BaseClientTest {
         StorePath storePath = fastDFS.uploadFile(fileRequest);
 
         UploadSalveFileRequest salveFileRequest = UploadSalveFileRequest.builder()
+                .groupName(storePath.getGroup())
                 .masterPath(storePath.getPath())
                 .stream(file.getInputStream(), file.getFileSize(), file.getFileExtName())
                 .prefix("aaa")
@@ -372,9 +368,24 @@ public class FastDfsClientTest extends BaseClientTest {
         FileInfo fileInfo = fastDFS.queryFileInfo(storePath.getGroup(), storePath.getPath());
         assertNotNull(fileInfo);
 
-        fastDFS.deleteFile(storePath.getGroup(), storePath.getPath());
+        delete(storePath);
         fileInfo = fastDFS.queryFileInfo(storePath.getGroup(), storePath.getPath());
         assertNull(fileInfo);
 
+    }
+
+    @Test
+    public void nullFileTest() throws IOException {
+        RandomTextFile file = new RandomTextFile(0);
+        File sampleFile = new File("tmp", "sampleFile.txt");
+        FileUtils.copyToFile(file.getInputStream(), sampleFile);
+        StorePath storePath = fastDFS.uploadFile(sampleFile);
+        LOGGER.info("上传完成 path {}", storePath);
+        Set<MetaData> set = new HashSet<>();
+        set.add(new MetaData("key", "value"));
+        fastDFS.overwriteMetadata(storePath.getGroup(), storePath.getPath(), set);
+        Set<MetaData> metadata = fastDFS.getMetadata(storePath.getGroup(), storePath.getPath());
+        System.out.println(metadata);
+        delete(storePath);
     }
 }

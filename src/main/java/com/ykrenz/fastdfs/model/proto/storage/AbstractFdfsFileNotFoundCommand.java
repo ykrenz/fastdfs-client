@@ -38,7 +38,7 @@ public abstract class AbstractFdfsFileNotFoundCommand<T> extends AbstractFdfsCom
         LOGGER.debug("服务端返回报文头{}", head);
         // 忽略异常
         if (ErrorCodeConstants.ERR_NO_ENOENT == head.getStatus()) {
-            return getResult();
+            return handlerNotFoundFile();
         }
         // 校验报文头
         head.validateResponseHead();
@@ -51,7 +51,7 @@ public abstract class AbstractFdfsFileNotFoundCommand<T> extends AbstractFdfsCom
      *
      * @return
      */
-    protected T getResult() {
+    protected T handlerNotFoundFile() {
         return null;
     }
 }
